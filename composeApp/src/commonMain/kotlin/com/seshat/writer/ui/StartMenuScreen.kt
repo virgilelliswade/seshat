@@ -1635,7 +1635,7 @@ private fun GlassStartMenuHubWide(
                 )
             }
 
-            // Right Column (Stage Play, Comic Book, Novel)
+            // Right Column (Stage Play, Comic Book)
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -1652,14 +1652,18 @@ private fun GlassStartMenuHubWide(
                     onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                GlassFormatCard(
-                    title = "Novel",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Center Novel button
+        GlassFormatCard(
+            title = "Novel",
+            iconType = 2,
+            onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+            modifier = Modifier.width(cardWidth)
+        )
 
         Spacer(modifier = Modifier.height(26.dp))
 
@@ -1733,14 +1737,18 @@ private fun GlassStartMenuHubMedium(
                     onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                GlassFormatCard(
-                    title = "Novel",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Center Novel button
+        GlassFormatCard(
+            title = "Novel",
+            iconType = 2,
+            onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+            modifier = Modifier.width(cardWidth)
+        )
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -1872,12 +1880,6 @@ private fun ConceptBActionDock(
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ConceptBPrimaryPill(
-                text = "+ New Project",
-                onClick = onNewProject,
-                isCompact = isCompact
-            )
-
             ConceptBGlassPill(
                 text = "Import Script",
                 onClick = onOpenLibrary,
