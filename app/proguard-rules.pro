@@ -1,0 +1,1 @@
+# Seshat ProGuard rules

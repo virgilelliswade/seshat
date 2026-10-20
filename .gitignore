@@ -1,0 +1,27 @@
+# Built-in Gradle files
+.gradle/
+.gradle-bin/
+.gradle-cache/
+build/
+*/build/
+
+# Kotlin / IDE
+.kotlin/
+.idea/
+*.iml
+.DS_Store
+
+# Android / Local Properties
+local.properties
+.android-user-home/
+
+# Compiled Application Binaries & Logs
+*.apk
+*.dmg
+*.app/
+build.log
+crash.log
+scratch_star_s.png
+
+# Scratch
+scratch/
