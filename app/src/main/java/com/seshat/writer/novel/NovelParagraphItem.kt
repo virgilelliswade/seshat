@@ -53,6 +53,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -72,11 +74,13 @@ import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.ui.theme.ElectrumGold
+import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ObsidianBlack
 import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
 
 /**
  * Interactive novel paragraph component handling the TAB + ENTER prose writing engine.
@@ -107,6 +111,9 @@ fun NovelParagraphItem(
     onDragHighlightEnd: () -> Unit = {},
     onCoordinatesChanged: (LayoutCoordinates) -> Unit = {},
     onInsertDialogueVerb: (String) -> Unit,
+    isEditable: Boolean = true,
+    isArcadeMode: Boolean = false,
+    onInsertTkToken: () -> Unit = {},
     isCompactScreen: Boolean = false,
     isKeyboardActive: Boolean = false,
     modifier: Modifier = Modifier
@@ -187,10 +194,12 @@ fun NovelParagraphItem(
                 bottom = if (paragraph.type == NovelParagraphType.SCENE_BREAK) 12.dp else if (isHighlighted) 4.dp else 2.dp
             )
     ) {
-        // Gutter Selector / Mouse Drag Handle
-        Box(
-            modifier = Modifier
-                .padding(
+        // Gutter Selector / Mouse Drag Handle or Lock Icon
+        if (!isEditable) {
+            Text(
+                text = "🔒",
+                fontSize = 11.sp,
+                modifier = Modifier.padding(
                     top = when (paragraph.type) {
                         NovelParagraphType.CHAPTER_HEADER -> 36.dp
                         NovelParagraphType.SCENE_BREAK -> 16.dp
@@ -198,37 +207,50 @@ fun NovelParagraphItem(
                     },
                     end = 8.dp
                 )
-                .size(14.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .pointerHoverIcon(PointerIcon.Hand)
-                .background(if (isHighlighted) ElectrumGold else Color(0x18000000))
-                .border(
-                    BorderStroke(1.dp, if (isHighlighted) ElectrumGold else Color(0x28000000)),
-                    RoundedCornerShape(3.dp)
-                )
-                .clickable { onToggleHighlight(false) }
-                .pointerInput(paragraph.id) {
-                    detectDragGestures(
-                        onDragStart = {
-                            onDragHighlightStart()
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .padding(
+                        top = when (paragraph.type) {
+                            NovelParagraphType.CHAPTER_HEADER -> 36.dp
+                            NovelParagraphType.SCENE_BREAK -> 16.dp
+                            else -> 6.dp
                         },
-                        onDrag = { change, _ ->
-                            change.consume()
-                            val rootY = itemCoordinates?.localToRoot(change.position)?.y ?: 0f
-                            onDragHighlightMove(rootY)
-                        },
-                        onDragEnd = { onDragHighlightEnd() },
-                        onDragCancel = { onDragHighlightEnd() }
+                        end = 8.dp
                     )
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            if (isHighlighted) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .background(ObsidianBlack, RoundedCornerShape(1.dp))
-                )
+                    .size(14.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .background(if (isHighlighted) ElectrumGold else Color(0x18000000))
+                    .border(
+                        BorderStroke(1.dp, if (isHighlighted) ElectrumGold else Color(0x28000000)),
+                        RoundedCornerShape(3.dp)
+                    )
+                    .clickable { onToggleHighlight(false) }
+                    .pointerInput(paragraph.id) {
+                        detectDragGestures(
+                            onDragStart = {
+                                onDragHighlightStart()
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                val rootY = itemCoordinates?.localToRoot(change.position)?.y ?: 0f
+                                onDragHighlightMove(rootY)
+                            },
+                            onDragEnd = { onDragHighlightEnd() },
+                            onDragCancel = { onDragHighlightEnd() }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isHighlighted) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(ObsidianBlack, RoundedCornerShape(1.dp))
+                    )
+                }
             }
         }
 
@@ -350,13 +372,16 @@ fun NovelParagraphItem(
                 val isDialogue = paragraph.type == NovelParagraphType.DIALOGUE
                 val indentSp = 32.sp
                 val indentDp = 32.dp
+                val proseFontFamily = if (isArcadeMode) MainAppFontFamily else FontFamily.Serif
 
                 Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     BasicTextField(
                         value = textFieldValue,
+                        readOnly = !isEditable,
                         onValueChange = { newVal ->
+                            if (!isEditable) return@BasicTextField
                             if (newVal.text.contains('\n')) {
                                 val stripped = newVal.text.replace("\n", "")
                                 onTextChange(stripped)
@@ -399,10 +424,10 @@ fun NovelParagraphItem(
                             onDone = { onEnterPressed() }
                         ),
                         textStyle = TextStyle(
-                            fontFamily = FontFamily.Serif,
+                            fontFamily = proseFontFamily,
                             fontSize = 17.sp,
                             lineHeight = 27.sp,
-                            color = if (isDialogue) Color(0xFF0F172A) else Color(0xFF1E293B),
+                            color = if (!isEditable) Color(0xFF64748B) else if (isDialogue) Color(0xFF0F172A) else Color(0xFF1E293B),
                             fontWeight = FontWeight.Normal,
                             textIndent = TextIndent(firstLine = indentSp, restLine = 0.sp)
                         ),
@@ -417,7 +442,7 @@ fun NovelParagraphItem(
                                     Text(
                                         text = if (isDialogue) "“Dialogue...”" else "Begin writing...",
                                         style = TextStyle(
-                                            fontFamily = FontFamily.Serif,
+                                            fontFamily = proseFontFamily,
                                             fontSize = 17.sp,
                                             lineHeight = 27.sp,
                                             color = Color(0xFFA0AEC0),
@@ -434,6 +459,14 @@ fun NovelParagraphItem(
                             .onFocusChanged { if (it.isFocused) onFocused() }
                             .onPreviewKeyEvent { keyEvent ->
                                 if (keyEvent.type == KeyEventType.KeyDown) {
+                                    val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+                                    if (isCmdOrCtrl && keyEvent.key == Key.K) {
+                                        onInsertTkToken()
+                                        return@onPreviewKeyEvent true
+                                    }
+                                    if (!isEditable && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete || keyEvent.key == Key.Enter || (isCmdOrCtrl && keyEvent.key == Key.X))) {
+                                        return@onPreviewKeyEvent true
+                                    }
                                     // TAB KEY: At start of paragraph, changes Narration to Dialogue & inserts quotation mark
                                     if (keyEvent.key == Key.Tab) {
                                         if (textFieldValue.selection.start == 0 || textFieldValue.text.isBlank()) {
@@ -487,8 +520,8 @@ fun NovelParagraphItem(
                     )
                 }
 
-                // AI & HEURISTIC DIALOGUE VERB SUGGESTION BAR
-                AnimatedVisibility(visible = isDialogue && isFocused && suggestedVerbs.isNotEmpty()) {
+                // AI & HEURISTIC DIALOGUE VERB SUGGESTION BAR (Hidden in First Draft Arcade Mode)
+                AnimatedVisibility(visible = !isArcadeMode && isDialogue && isFocused && suggestedVerbs.isNotEmpty()) {
                     DialogueVerbBar(
                         punctuation = detectedPunctuation ?: '.',
                         verbs = suggestedVerbs,

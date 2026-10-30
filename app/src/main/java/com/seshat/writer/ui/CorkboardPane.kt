@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.corkboard.CorkboardAct
 import com.seshat.writer.corkboard.SceneCard
+import com.seshat.writer.firstdraft.FirstDraftTextMetrics
 import com.seshat.writer.library.ProjectFormat
 import com.seshat.writer.screenplay.ScreenplayUiState
 import com.seshat.writer.screenplay.ScreenplayViewModel
@@ -609,6 +610,36 @@ fun CorkboardPane(
 
         HorizontalDivider(color = ObsidianSurfaceVariant)
 
+        // First Draft Airlock & Fog of War Banner
+        val canEditOutline = uiState.firstDraftState.canEditOutline()
+        val isArcade = uiState.firstDraftState.isArcadeLocked
+        val unlockedSceneSlots = if (isArcade) uiState.firstDraftState.unlockedCorkboardSceneSlots else Int.MAX_VALUE
+
+        if (isArcade) {
+            Surface(
+                color = if (!canEditOutline) Color(0xFF280811) else Color(0xFF0A2418),
+                border = BorderStroke(1.dp, if (!canEditOutline) Color(0xFFFF1E42) else Color(0xFF10B981)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = if (!canEditOutline) {
+                        "🔒 OUTLINE AIRLOCK SEALED (READ-ONLY) • Fog of War: $unlockedSceneSlots Scene Slots Visible (Write scenes in DRAFT to unlock rolling N+5..N+7 slots)"
+                    } else {
+                        "🔓 OUTLINE STAGE ACTIVE • Fog of War: ${cards.size}/$unlockedSceneSlots Scene Slots Unlocked • Max 2 sentences per Macro-Beat"
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (!canEditOutline) Color(0xFFFFB4AB) else Color(0xFF6EE7B7),
+                        fontSize = 11.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                )
+            }
+        }
+
         // ==========================================
         // 2. HORIZONTAL ACT SWIMLANES / COLUMNS
         // ==========================================
@@ -632,8 +663,12 @@ fun CorkboardPane(
                         totalActs = corkboard.actCount,
                         cards = actCards,
                         allCards = cards,
+                        isReadOnly = !canEditOutline,
+                        unlockedSceneSlots = unlockedSceneSlots,
                         onUpdateActTitle = { newTitle ->
-                            viewModel.updateCorkboardActTitle(context, act.actIndex, newTitle, act.subtitle)
+                            if (canEditOutline) {
+                                viewModel.updateCorkboardActTitle(context, act.actIndex, newTitle, act.subtitle)
+                            }
                         },
                         onSelectScene = { sceneNumber ->
                             val targetSceneItem = uiState.scenes.find { it.index == sceneNumber }
@@ -642,34 +677,62 @@ fun CorkboardPane(
                             }
                         },
                         onUpdateSummary = { blockId, summary ->
-                            viewModel.updateSceneCardSummary(context, blockId, summary)
+                            if (!canEditOutline) return@ActColumn
+                            val clipped = if (isArcade) {
+                                if (uiState.projectFormat == ProjectFormat.NOVEL) {
+                                    FirstDraftTextMetrics.clipToWordLimit(summary, 50)
+                                } else {
+                                    FirstDraftTextMetrics.clipToSentenceLimit(summary, 2)
+                                }
+                            } else summary
+                            viewModel.updateSceneCardSummary(context, blockId, clipped)
                         },
                         onUpdateTitle = { blockId, newTitle ->
-                            viewModel.updateSceneCardTitle(context, blockId, newTitle)
+                            if (canEditOutline) {
+                                viewModel.updateSceneCardTitle(context, blockId, newTitle)
+                            }
                         },
                         onUpdateColor = { blockId, color ->
-                            viewModel.updateSceneCardColor(context, blockId, color)
+                            if (canEditOutline) {
+                                viewModel.updateSceneCardColor(context, blockId, color)
+                            }
                         },
                         onAddCard = {
-                            viewModel.addCorkboardCard(context, act.actIndex)
+                            if (!canEditOutline) {
+                                Toast.makeText(context, "🔒 Outline Airlock is sealed!", Toast.LENGTH_SHORT).show()
+                            } else if (isArcade && cards.size >= unlockedSceneSlots) {
+                                Toast.makeText(
+                                    context,
+                                    "🔒 Fog of War: Only $unlockedSceneSlots scene slots unlocked right now. Advance to DRAFT and write scenes to reveal N+5..N+7!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                viewModel.addCorkboardCard(context, act.actIndex)
+                            }
                         },
                         onDeleteCard = { blockId ->
-                            viewModel.deleteCorkboardCard(context, blockId)
+                            if (canEditOutline) {
+                                viewModel.deleteCorkboardCard(context, blockId)
+                            }
                         },
                         onMoveSceneUp = { card ->
+                            if (!canEditOutline) return@ActColumn
                             val currentPos0 = cards.indexOfFirst { it.sceneHeadingBlockId == card.sceneHeadingBlockId }
                             if (currentPos0 > 0) {
                                 viewModel.reorderCorkboardCard(context, currentPos0, currentPos0 - 1)
                             }
                         },
                         onMoveSceneDown = { card ->
+                            if (!canEditOutline) return@ActColumn
                             val currentPos0 = cards.indexOfFirst { it.sceneHeadingBlockId == card.sceneHeadingBlockId }
                             if (currentPos0 >= 0 && currentPos0 < cards.size - 1) {
                                 viewModel.reorderCorkboardCard(context, currentPos0, currentPos0 + 1)
                             }
                         },
                         onMoveToAct = { blockId, targetActIndex ->
-                            viewModel.moveSceneCardToAct(context, blockId, targetActIndex)
+                            if (canEditOutline) {
+                                viewModel.moveSceneCardToAct(context, blockId, targetActIndex)
+                            }
                         },
                         onSummarizeWithAi = { blockId ->
                             viewModel.summarizeSceneCardWithAi(context, blockId)
@@ -701,6 +764,8 @@ private fun ActColumn(
     totalActs: Int,
     cards: List<SceneCard>,
     allCards: List<SceneCard>,
+    isReadOnly: Boolean = false,
+    unlockedSceneSlots: Int = Int.MAX_VALUE,
     onUpdateActTitle: (String) -> Unit,
     onSelectScene: (Int) -> Unit,
     onUpdateSummary: (String, String) -> Unit,
@@ -879,28 +944,62 @@ private fun ActColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(cards, key = { it.sceneHeadingBlockId }) { card ->
-                        val cardColor = remember(card.colorTag) {
-                            try {
-                                Color(android.graphics.Color.parseColor(card.colorTag))
-                            } catch (_: Exception) {
-                                ElectrumGold
+                        val globalIdx = allCards.indexOfFirst { it.sceneHeadingBlockId == card.sceneHeadingBlockId }
+                        val isFogged = globalIdx >= unlockedSceneSlots
+                        if (isFogged) {
+                            Surface(
+                                color = Color(0xFF0A0E17),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, Color(0xFF334155)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "🔒 SCENE #${card.sceneNumber} — FOG OF WAR",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = Color(0xFF94A3B8),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Complete earlier scenes in DRAFT to unlock rolling N+5 to N+7 Scene Cards.",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = ScreenplayTextMuted,
+                                            fontSize = 10.5.sp
+                                        ),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
                             }
-                        }
+                        } else {
+                            val cardColor = remember(card.colorTag) {
+                                try {
+                                    Color(android.graphics.Color.parseColor(card.colorTag))
+                                } catch (_: Exception) {
+                                    ElectrumGold
+                                }
+                            }
 
-                        CorkboardSceneCard(
-                            card = card,
-                            cardColor = cardColor,
-                            totalActs = totalActs,
-                            onSelectScene = { onSelectScene(card.sceneNumber) },
-                            onUpdateTitle = { newTitle -> onUpdateTitle(card.sceneHeadingBlockId, newTitle) },
-                            onUpdateSummary = { newSummary -> onUpdateSummary(card.sceneHeadingBlockId, newSummary) },
-                            onUpdateColor = { newColor -> onUpdateColor(card.sceneHeadingBlockId, newColor) },
-                            onDelete = { onDeleteCard(card.sceneHeadingBlockId) },
-                            onMoveUp = { onMoveSceneUp(card) },
-                            onMoveDown = { onMoveSceneDown(card) },
-                            onMoveToAct = { targetAct -> onMoveToAct(card.sceneHeadingBlockId, targetAct) },
-                            onSummarizeWithAi = { onSummarizeWithAi(card.sceneHeadingBlockId) }
-                        )
+                            CorkboardSceneCard(
+                                card = card,
+                                cardColor = cardColor,
+                                totalActs = totalActs,
+                                isReadOnly = isReadOnly,
+                                onSelectScene = { onSelectScene(card.sceneNumber) },
+                                onUpdateTitle = { newTitle -> onUpdateTitle(card.sceneHeadingBlockId, newTitle) },
+                                onUpdateSummary = { newSummary -> onUpdateSummary(card.sceneHeadingBlockId, newSummary) },
+                                onUpdateColor = { newColor -> onUpdateColor(card.sceneHeadingBlockId, newColor) },
+                                onDelete = { onDeleteCard(card.sceneHeadingBlockId) },
+                                onMoveUp = { onMoveSceneUp(card) },
+                                onMoveDown = { onMoveSceneDown(card) },
+                                onMoveToAct = { targetAct -> onMoveToAct(card.sceneHeadingBlockId, targetAct) },
+                                onSummarizeWithAi = { onSummarizeWithAi(card.sceneHeadingBlockId) }
+                            )
+                        }
                     }
                 }
             }
@@ -917,6 +1016,7 @@ private fun CorkboardSceneCard(
     card: SceneCard,
     cardColor: Color,
     totalActs: Int,
+    isReadOnly: Boolean = false,
     onSelectScene: () -> Unit,
     onUpdateTitle: (String) -> Unit,
     onUpdateSummary: (String) -> Unit,
@@ -1098,9 +1198,12 @@ private fun CorkboardSceneCard(
 
                 BasicTextField(
                     value = summaryText,
+                    readOnly = isReadOnly,
                     onValueChange = {
-                        summaryText = it
-                        onUpdateSummary(it)
+                        if (!isReadOnly) {
+                            summaryText = it
+                            onUpdateSummary(it)
+                        }
                     },
                     textStyle = MaterialTheme.typography.bodySmall.copy(
                         color = ScreenplayTextDark,

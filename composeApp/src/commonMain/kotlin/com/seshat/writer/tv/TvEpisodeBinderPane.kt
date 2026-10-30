@@ -222,6 +222,8 @@ fun TvEpisodeBinderPane(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        val isRuleZeroLocked = uiState.firstDraftState.isArcadeLocked && !uiState.firstDraftState.tvEpisode101Unlocked
+
         // Episode List Header + Add Button
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -229,20 +231,30 @@ fun TvEpisodeBinderPane(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "EPISODE DECK",
+                text = if (isRuleZeroLocked) "EPISODE DECK (🔒 RULE ZERO)" else "EPISODE DECK",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = ScreenplayTextMuted
+                    color = if (isRuleZeroLocked) Color(0xFFFF1E42) else ScreenplayTextMuted
                 )
             )
 
             Surface(
-                color = ElectrumGold,
+                color = if (isRuleZeroLocked) ObsidianSurfaceVariant else ElectrumGold,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { showAddEpisodeDialog = true }
+                    .clickable {
+                        if (isRuleZeroLocked) {
+                            Toast.makeText(
+                                context,
+                                "🔒 Rule Zero: Complete Pilot (Ep 101) to STUDIO_UNLOCKED before adding Episode 102+!",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            showAddEpisodeDialog = true
+                        }
+                    }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -251,15 +263,15 @@ fun TvEpisodeBinderPane(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Episode",
-                        tint = ObsidianBlack,
+                        tint = if (isRuleZeroLocked) ScreenplayTextMuted else ObsidianBlack,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "NEW EPISODE",
+                        text = if (isRuleZeroLocked) "🔒 EP 102+" else "NEW EPISODE",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = ObsidianBlack,
+                            color = if (isRuleZeroLocked) ScreenplayTextMuted else ObsidianBlack,
                             fontSize = 10.sp
                         )
                     )
@@ -277,9 +289,10 @@ fun TvEpisodeBinderPane(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(seriesProject.episodes) { index, ep ->
+                val isEpLockedByRuleZero = isRuleZeroLocked && index > 0
                 val isActive = index == seriesProject.activeEpisodeIndex
-                val borderColor = if (isActive) ElectrumGold else ObsidianSurfaceVariant
-                val containerColor = if (isActive) ElectrumGold.copy(alpha = 0.12f) else ObsidianBlack
+                val borderColor = if (isEpLockedByRuleZero) Color(0xFF475569) else if (isActive) ElectrumGold else ObsidianSurfaceVariant
+                val containerColor = if (isEpLockedByRuleZero) Color(0xFF090D14) else if (isActive) ElectrumGold.copy(alpha = 0.12f) else ObsidianBlack
 
                 Surface(
                     color = containerColor,
@@ -288,7 +301,17 @@ fun TvEpisodeBinderPane(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { viewModel.selectTvEpisode(context, index) }
+                        .clickable {
+                            if (isEpLockedByRuleZero) {
+                                Toast.makeText(
+                                    context,
+                                    "🔒 Rule Zero: Complete Episode 101 (Pilot) to unlock Episode ${ep.episodeNumber}!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                viewModel.selectTvEpisode(context, index)
+                            }
+                        }
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Row(

@@ -1,5 +1,6 @@
 package android.graphics
 
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -149,17 +150,25 @@ open class RectF(var left: Float = 0f, var top: Float = 0f, var right: Float = 0
 }
 
 class Bitmap(val width: Int, val height: Int) {
+    internal val awtImage = java.awt.image.BufferedImage(
+        width.coerceAtLeast(1),
+        height.coerceAtLeast(1),
+        java.awt.image.BufferedImage.TYPE_INT_ARGB
+    )
+
     enum class Config { ARGB_8888, RGB_565 }
     enum class CompressFormat { PNG, JPEG, WEBP }
 
     fun compress(format: CompressFormat, quality: Int, stream: OutputStream): Boolean {
-        // Simple 1x1 fallback PNG byte header
-        val header = byteArrayOf(
-            0x89.toByte(), 0x50.toByte(), 0x4E.toByte(), 0x47.toByte(),
-            0x0D.toByte(), 0x0A.toByte(), 0x1A.toByte(), 0x0A.toByte()
-        )
-        stream.write(header)
-        return true
+        return try {
+            val fmt = when (format) {
+                CompressFormat.JPEG -> "jpg"
+                else -> "png"
+            }
+            javax.imageio.ImageIO.write(awtImage, fmt, stream)
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     companion object {
@@ -168,14 +177,37 @@ class Bitmap(val width: Int, val height: Int) {
 }
 
 class Canvas(val width: Float = 612f, val height: Float = 792f) {
-    constructor(bitmap: Bitmap) : this(bitmap.width.toFloat(), bitmap.height.toFloat())
+    private var backingBitmap: Bitmap? = null
+    constructor(bitmap: Bitmap) : this(bitmap.width.toFloat(), bitmap.height.toFloat()) {
+        this.backingBitmap = bitmap
+    }
     internal val content = StringBuilder()
+
+    private fun withAwtGraphics(block: (java.awt.Graphics2D) -> Unit) {
+        val bmp = backingBitmap ?: return
+        val g = bmp.awtImage.createGraphics()
+        try {
+            g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+            block(g)
+        } finally {
+            g.dispose()
+        }
+    }
+
+    private fun toAwtColor(c: Int): java.awt.Color {
+        return java.awt.Color(Color.red(c), Color.green(c), Color.blue(c), Color.alpha(c))
+    }
 
     fun drawColor(color: Int) {
         val r = Color.red(color) / 255f
         val g = Color.green(color) / 255f
         val b = Color.blue(color) / 255f
         content.append(String.format(java.util.Locale.US, "q %.3f %.3f %.3f rg 0 0 %.2f %.2f re f Q\n", r, g, b, width, height))
+        withAwtGraphics { g2 ->
+            g2.color = toAwtColor(color)
+            g2.fillRect(0, 0, width.toInt(), height.toInt())
+        }
     }
 
     fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
@@ -187,6 +219,15 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
         // PDF coordinate origin is bottom-left
         val pdfY = height - bottom
         content.append(String.format(java.util.Locale.US, "q %.3f %.3f %.3f rg %.2f %.2f %.2f %.2f re f Q\n", r, g, b, left, pdfY, w, h))
+        withAwtGraphics { g2 ->
+            g2.color = toAwtColor(paint.color)
+            if (paint.style == Paint.Style.STROKE) {
+                g2.stroke = java.awt.BasicStroke(paint.strokeWidth.coerceAtLeast(1f))
+                g2.drawRect(left.toInt(), top.toInt(), w.toInt(), h.toInt())
+            } else {
+                g2.fillRect(left.toInt(), top.toInt(), w.toInt(), h.toInt())
+            }
+        }
     }
 
     fun drawRect(rect: RectF, paint: Paint) = drawRect(rect.left, rect.top, rect.right, rect.bottom, paint)
@@ -199,6 +240,11 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
         val y1 = height - startY
         val y2 = height - stopY
         content.append(String.format(java.util.Locale.US, "q %.3f %.3f %.3f RG %.2f w %.2f %.2f m %.2f %.2f l S Q\n", r, g, b, paint.strokeWidth, startX, y1, stopX, y2))
+        withAwtGraphics { g2 ->
+            g2.color = toAwtColor(paint.color)
+            g2.stroke = java.awt.BasicStroke(paint.strokeWidth.coerceAtLeast(1f))
+            g2.drawLine(startX.toInt(), startY.toInt(), stopX.toInt(), stopY.toInt())
+        }
     }
 
     fun drawCircle(cx: Float, cy: Float, radius: Float, paint: Paint) {
@@ -221,6 +267,18 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
         }
 
         content.append(String.format(java.util.Locale.US, "BT %s %.2f Tf %.3f %.3f %.3f rg 1 0 0 1 %.2f %.2f Tm (%s) Tj ET\n", fontRef, paint.textSize, r, g, b, posX, pdfY, escaped))
+        withAwtGraphics { g2 ->
+            g2.color = toAwtColor(paint.color)
+            val fontStyle = if (paint.typeface.style == Typeface.BOLD) java.awt.Font.BOLD else java.awt.Font.PLAIN
+            g2.font = java.awt.Font("SansSerif", fontStyle, paint.textSize.toInt().coerceAtLeast(8))
+            val fm = g2.fontMetrics
+            val awtX = when (paint.textAlign) {
+                Paint.Align.RIGHT -> x - fm.stringWidth(text)
+                Paint.Align.CENTER -> x - (fm.stringWidth(text) / 2f)
+                else -> x
+            }
+            g2.drawString(text, awtX, y)
+        }
     }
 
     fun save() { content.append("q\n") }
@@ -234,7 +292,13 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
 }
 
 fun Bitmap.asImageBitmap(): androidx.compose.ui.graphics.ImageBitmap {
-    return androidx.compose.ui.graphics.ImageBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
+    return try {
+        val baos = ByteArrayOutputStream()
+        javax.imageio.ImageIO.write(this.awtImage, "png", baos)
+        org.jetbrains.skia.Image.makeFromEncoded(baos.toByteArray()).toComposeImageBitmap()
+    } catch (_: Throwable) {
+        androidx.compose.ui.graphics.ImageBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
+    }
 }
 
 typealias PdfDocument = android.graphics.pdf.PdfDocument

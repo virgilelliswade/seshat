@@ -75,7 +75,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 )
 
                 Text(
-                    text = "Version 1.38.0 • macOS Edition",
+                    text = "Version 2.0.0 • Studio & First Draft Engine",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = ScreenplayTextMuted,
                         fontSize = 12.sp

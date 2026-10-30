@@ -168,6 +168,18 @@ import com.seshat.writer.novel.NovelCoverCreatorDialog
 import com.seshat.writer.novel.NovelEditorPane
 import com.seshat.writer.tv.TvEpisodeBinderPane
 import com.seshat.writer.collaboration.WritersRoomDialog
+import com.seshat.writer.firstdraft.AbandonedDraftWatermarkOverlay
+import com.seshat.writer.firstdraft.AccountabilityReceiptModal
+import com.seshat.writer.firstdraft.FirstDraftControlStrip
+import com.seshat.writer.firstdraft.FirstDraftStage
+import com.seshat.writer.firstdraft.IdleInstigatorBanner
+import com.seshat.writer.firstdraft.PenaltySprintModal
+import com.seshat.writer.firstdraft.ReadOnlyReferenceDrawer
+import com.seshat.writer.firstdraft.ReceiptGenerator
+import com.seshat.writer.firstdraft.SparkStageEditorView
+import com.seshat.writer.firstdraft.WorkShiftReverseLockoutOverlay
+import com.seshat.writer.firstdraft.WorkShiftRosterDialog
+import com.seshat.writer.firstdraft.XpShopDialog
 import java.util.Locale
 
 @Composable
@@ -188,7 +200,16 @@ fun ScreenplayEditorScreen(
     var aiConfig by remember { mutableStateOf(AiPreferences.load(context)) }
 
     LaunchedEffect(Unit) {
+        viewModel.bindAppContext(context)
         viewModel.initTheme(context)
+    }
+
+    LaunchedEffect(uiState.firstDraftState.lastLootToastMessage) {
+        val msg = uiState.firstDraftState.lastLootToastMessage
+        if (!msg.isNullOrBlank()) {
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            viewModel.clearLootToastMessage()
+        }
     }
 
     LaunchedEffect(uiState.title) {
@@ -240,7 +261,40 @@ fun ScreenplayEditorScreen(
                     }
             )
 
-            if (isCompactScreen && uiState.isSidebarExpanded && !uiState.isZenMode) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                val totalProjectWords = if (uiState.projectFormat == ProjectFormat.NOVEL) {
+                    uiState.novelManuscript.totalWordCount()
+                } else {
+                    uiState.wordCount
+                }
+
+                // Persistent First Draft Anti-Procrastination HUD Strip
+                FirstDraftControlStrip(
+                    state = uiState.firstDraftState,
+                    currentWordCount = totalProjectWords,
+                    onAdvanceStage = { viewModel.advanceFirstDraftStage(context) },
+                    onToggleSprint = { viewModel.toggleFirstDraftSprint() },
+                    onOpenXpShop = { viewModel.openXpShop() },
+                    onOpenDutyRoster = { viewModel.openDutyRoster() },
+                    onToggleReferenceDrawer = { viewModel.toggleReferenceDrawer() },
+                    onOpenDailyReceipt = { viewModel.openDailyReceiptModal(context) },
+                    onInsertTkToken = { viewModel.insertTkFixLaterToken(context) }
+                )
+
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    if (uiState.firstDraftState.isFirstDraftMode &&
+                        uiState.firstDraftState.stage == FirstDraftStage.SPARK
+                    ) {
+                        SparkStageEditorView(
+                            state = uiState.firstDraftState,
+                            projectTitle = uiState.title,
+                            onUpdateLogline = { viewModel.updateSparkLogline(context, it) },
+                            onUpdatePilotLogline = { viewModel.updateSparkPilotLogline(context, it) },
+                            onSealSparkAndAdvance = { viewModel.advanceFirstDraftStage(context) },
+                            onOpenDutyRoster = { viewModel.openDutyRoster() },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (isCompactScreen && uiState.isSidebarExpanded && !uiState.isZenMode) {
             // Full-screen sidebar drawer on mobile
             if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
                 TvEpisodeBinderPane(
@@ -289,6 +343,16 @@ fun ScreenplayEditorScreen(
             )
         } else {
             Row(modifier = Modifier.fillMaxSize()) {
+                // Split-Pane Read-Only Reference Drawer for sealed SPARK / BIBLE / OUTLINE
+                if (uiState.firstDraftState.isReferenceDrawerOpen) {
+                    ReadOnlyReferenceDrawer(
+                        state = uiState.firstDraftState,
+                        bible = uiState.storyBible,
+                        sceneCards = uiState.sceneCards,
+                        onCloseDrawer = { viewModel.toggleReferenceDrawer() }
+                    )
+                }
+
                 // Adaptive Left Sidebar (Tablet / Desktop side-by-side)
                 AnimatedVisibility(
                     visible = uiState.isSidebarExpanded && !uiState.isZenMode && !isCompactScreen
@@ -407,8 +471,66 @@ fun ScreenplayEditorScreen(
                 }
             }
         }
+                }
+
+                // Gemini AI Bouncer / 60s Idle Instigator Bottom Banner
+                IdleInstigatorBanner(
+                    promptText = uiState.firstDraftState.idleInstigatorPrompt,
+                    isLoading = uiState.firstDraftState.isIdleInstigatorLoading,
+                    onDismiss = { viewModel.dismissIdleInstigator() }
+                )
+            }
+
+            // Red Diagonal "ABANDONED DRAFT" Watermark when 48-Hour Decay is active
+            AbandonedDraftWatermarkOverlay(
+                isDecayed = uiState.firstDraftState.isDecayed
+            )
+
+            // Reverse-Lockout Overlay when a scheduled Day Job WorkShiftBlock is active
+            val activeWorkShift = uiState.firstDraftState.workShiftFreeze.activeShiftAt()
+            if (activeWorkShift != null && uiState.firstDraftState.isArcadeLocked) {
+                WorkShiftReverseLockoutOverlay(activeShift = activeWorkShift)
+            }
     }
 }
+
+    // 48-Hour Decay Penalty Sprint Modal (500 net-new words in 25 minutes)
+    if (uiState.firstDraftState.isDecayed && uiState.firstDraftState.isArcadeLocked) {
+        PenaltySprintModal(
+            state = uiState.firstDraftState,
+            onUpdateScratchpad = { viewModel.updatePenaltyScratchpad(context, it) },
+            onUseFreezeToken = { viewModel.purchaseXpShopItem(context, com.seshat.writer.firstdraft.XpShopItem.FREEZE_TOKEN) },
+            onOpenDecayReceipt = { viewModel.openMandatoryDecayReceiptModal() }
+        )
+    }
+
+    // Forward-Momentum XP Shop Modal
+    if (uiState.isXpShopOpen) {
+        XpShopDialog(
+            state = uiState.firstDraftState,
+            onPurchaseItem = { item -> viewModel.purchaseXpShopItem(context, item) },
+            onDismiss = { viewModel.closeXpShop() }
+        )
+    }
+
+    // Day Job Duty Roster (WorkShiftFreeze) Modal
+    if (uiState.isDutyRosterOpen) {
+        WorkShiftRosterDialog(
+            freeze = uiState.firstDraftState.workShiftFreeze,
+            onSaveAndLockRoster = { shifts -> viewModel.saveWorkShiftRoster(context, shifts) },
+            onDismiss = { viewModel.closeDutyRoster() }
+        )
+    }
+
+    // Social Accountability Receipt Modal (1080x1920 9:16 PNG + Native OS Share Sheet)
+    val activeReceipt = uiState.activeReceiptModal
+    if (activeReceipt != null) {
+        AccountabilityReceiptModal(
+            receipt = activeReceipt,
+            onShareClicked = { ReceiptGenerator.shareReceiptViaNativeOs(context, activeReceipt) },
+            onDismiss = { viewModel.dismissReceiptModal() }
+        )
+    }
 
     if (uiState.isStudioDrawerOpen) {
         StudioNavigationDrawer(
@@ -554,6 +676,7 @@ fun ScreenplayEditorScreen(
             activeLocationsInScript = activeLocations,
             projectFormat = uiState.projectFormat,
             screenplayType = uiState.screenplayType,
+            firstDraftState = uiState.firstDraftState,
             onSaveBible = { updated -> viewModel.saveStoryBible(context, updated) },
             onDismiss = { viewModel.closeStoryBible() },
             onToggleTheme = { viewModel.toggleThemeMode(context) }
@@ -1230,7 +1353,8 @@ private fun buildBlockCallbacks(
         onToggleDictation = actions::toggleDictation,
         onCancelDictation = actions::cancelDictation,
         onOpenStoryBible = actions::openStoryBible,
-        onToggleCorkboard = actions::toggleCorkboard
+        onToggleCorkboard = actions::toggleCorkboard,
+        onInsertTkToken = actions::insertTkToken
     )
 }
 
@@ -1261,7 +1385,8 @@ private fun buildDualBlockCallbacks(
         onToggleDictation = actions.onToggleDictation,
         onCancelDictation = actions.onCancelDictation,
         onOpenStoryBible = actions.onOpenStoryBible,
-        onToggleCorkboard = actions.onToggleCorkboard
+        onToggleCorkboard = actions.onToggleCorkboard,
+        onInsertTkToken = actions.onInsertTkToken
     )
 }
 
@@ -1385,15 +1510,19 @@ private fun CompactScreenplayTopBar(
                 onClick = actions::openStoryBible
             )
 
-            GlassEditorPillButton(
-                text = "🧠 Doctor",
-                onClick = actions::openScriptDoctor
-            )
+            if (uiState.firstDraftState.canUseAiDoctor()) {
+                GlassEditorPillButton(
+                    text = "🧠 Doctor",
+                    onClick = actions::openScriptDoctor
+                )
+            }
 
-            GlassEditorPillButton(
-                text = "🚀 Compile",
-                onClick = onOpenFileExport
-            )
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = "🚀 Compile",
+                    onClick = onOpenFileExport
+                )
+            }
 
             if (uiState.isDictating) {
                 GlassEditorPillButton(
@@ -1518,15 +1647,19 @@ private fun DesktopScreenplayTopBar(
                 onClick = actions::openStoryBible
             )
 
-            GlassEditorPillButton(
-                text = "🧠 Doctor",
-                onClick = actions::openScriptDoctor
-            )
+            if (uiState.firstDraftState.canUseAiDoctor()) {
+                GlassEditorPillButton(
+                    text = "🧠 Doctor",
+                    onClick = actions::openScriptDoctor
+                )
+            }
 
-            GlassEditorPillButton(
-                text = "🚀 Compile",
-                onClick = onOpenFileExport
-            )
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = "🚀 Compile",
+                    onClick = onOpenFileExport
+                )
+            }
 
             GlassEditorPillButton(
                 text = "💾 Save",
@@ -1542,10 +1675,12 @@ private fun DesktopScreenplayTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            GlassEditorPillButton(
-                text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
-                onClick = actions::toggleViewMode
-            )
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
+                    onClick = actions::toggleViewMode
+                )
+            }
 
             // Floating Zoom Pill Capsule
             val isDarkThemeForZoom = LocalSeshatDarkTheme.current
@@ -1604,11 +1739,13 @@ private fun DesktopScreenplayTopBar(
                 }
             }
 
-            GlassEditorPillButton(
-                text = if (uiState.showSceneNumbers) "# Scene #s ON" else "# Scene #s",
-                onClick = actions::toggleSceneNumbers,
-                isHighlight = uiState.showSceneNumbers
-            )
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = if (uiState.showSceneNumbers) "# Scene #s ON" else "# Scene #s",
+                    onClick = actions::toggleSceneNumbers,
+                    isHighlight = uiState.showSceneNumbers
+                )
+            }
 
             GlassEditorPillButton(
                 text = if (uiState.notesCount > 0) "📝 Notes (${uiState.notesCount})" else "📝 Notes",
@@ -1671,6 +1808,10 @@ private fun EditorCanvas(
                     val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
                     if (isCmdOrCtrl && keyEvent.key == Key.S) {
                         onSaveProject()
+                        return@onPreviewKeyEvent true
+                    }
+                    if (isCmdOrCtrl && keyEvent.key == Key.K) {
+                        actions.insertTkToken()
                         return@onPreviewKeyEvent true
                     }
                     if ((isCmdOrCtrl && keyEvent.key == Key.D) ||
@@ -1773,7 +1914,8 @@ private fun EditorCanvas(
                 onToggleDictation = actions::toggleDictation,
                 onCancelDictation = actions::cancelDictation,
                 onOpenStoryBible = actions::openStoryBible,
-                onToggleCorkboard = actions::toggleCorkboard
+                onToggleCorkboard = actions::toggleCorkboard,
+                onInsertTkToken = actions::insertTkToken
             )
         }
 
@@ -1811,7 +1953,7 @@ private fun EditorCanvas(
                 .verticalScroll(scrollState)
                 .padding(vertical = (24 * zoom).dp)
         ) {
-            if (isPageView) {
+            if (isPageView && !uiState.firstDraftState.isArcadeLocked) {
                 // PAGE VIEW (Default): Distinct US Letter Paper Sheets separated by realistic gaps
                 val totalPages = maxOf(1, uiState.pageCount)
                 val blocksByPage = remember(uiState.blocks, uiState.blockPageNumbers) {
@@ -2069,7 +2211,7 @@ private fun EditorCanvas(
                             when (item) {
                                 is RenderItem.Single -> {
                                     val block = item.block
-                                    if (uiState.pageBreakBeforeBlockIds.contains(block.id)) {
+                                    if (!uiState.firstDraftState.isArcadeLocked && uiState.pageBreakBeforeBlockIds.contains(block.id)) {
                                         val pageNum = uiState.blockPageNumbers[block.id] ?: 2
                                         InlinePageBreakMarker(pageNumber = pageNum, zoom = zoom)
                                     }
@@ -2087,15 +2229,17 @@ private fun EditorCanvas(
                                             cursorTarget = uiState.cursorTarget,
                                             isFirstBlock = item.overallIndex == 0,
                                             zoom = zoom,
-                                            showSceneNumbers = uiState.showSceneNumbers,
+                                            showSceneNumbers = uiState.showSceneNumbers && !uiState.firstDraftState.isArcadeLocked,
                                             sceneNumber = sNum,
                                             isFindReplaceVisible = uiState.isFindReplaceVisible,
                                             showWriterNotes = uiState.showWriterNotes,
-                                            isRevisionTrackingEnabled = uiState.isRevisionTrackingEnabled,
-                                            isAiPolishEnabled = isAiPolishEnabled,
+                                            isRevisionTrackingEnabled = uiState.isRevisionTrackingEnabled && !uiState.firstDraftState.isArcadeLocked,
+                                            isAiPolishEnabled = isAiPolishEnabled && uiState.firstDraftState.canUseAiDoctor(),
                                             isDictating = uiState.isDictating,
                                             isCompactScreen = isCompactScreen,
-                                            isKeyboardActive = isKeyboardActive
+                                            isKeyboardActive = isKeyboardActive,
+                                            isEditable = uiState.isBlockEditableInFirstDraft(item.overallIndex),
+                                            isArcadeMode = uiState.firstDraftState.isArcadeLocked
                                         ),
                                         callbacks = buildBlockCallbacks(
                                             blockId = block.id,
@@ -2120,7 +2264,7 @@ private fun EditorCanvas(
                                 }
                                 is RenderItem.Dual -> {
                                     val firstBlockId = item.leftBlocks.firstOrNull()?.id ?: item.rightBlocks.firstOrNull()?.id
-                                    if (firstBlockId != null && uiState.pageBreakBeforeBlockIds.contains(firstBlockId)) {
+                                    if (!uiState.firstDraftState.isArcadeLocked && firstBlockId != null && uiState.pageBreakBeforeBlockIds.contains(firstBlockId)) {
                                         val pageNum = uiState.blockPageNumbers[firstBlockId] ?: 2
                                         InlinePageBreakMarker(pageNumber = pageNum, zoom = zoom)
                                     }
@@ -3186,19 +3330,21 @@ private fun BottomHud(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "${uiState.pageCount} ${if (uiState.pageCount == 1) "Page" else "Pages"} (~${uiState.pageCount}m)",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontSize = 11.5.sp
+                        if (!uiState.firstDraftState.isArcadeLocked) {
+                            Text(
+                                text = "${uiState.pageCount} ${if (uiState.pageCount == 1) "Page" else "Pages"} (~${uiState.pageCount}m)",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isDark) Color.White else Color(0xFF0F172A),
+                                    fontSize = 11.5.sp
+                                )
                             )
-                        )
-                        Text(
-                            text = "•",
-                            style = MaterialTheme.typography.labelSmall.copy(color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
-                        )
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.labelSmall.copy(color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
+                            )
+                        }
                         Text(
                             text = "${uiState.wordCount} Words",
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -3222,7 +3368,7 @@ private fun BottomHud(
                             )
                         )
                         Text(
-                            text = "• Courier 12pt",
+                            text = if (uiState.firstDraftState.isArcadeLocked) "• Arcade Scroll" else "• Courier 12pt",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
                                 fontWeight = FontWeight.Medium,
@@ -3711,7 +3857,12 @@ private fun handleBlockPreviewKeyEvent(
             Key.H -> { callbacks.onOpenFind(true); return true }
             Key.B -> { callbacks.onOpenStoryBible(); return true }
             Key.O -> { callbacks.onToggleCorkboard(); return true }
+            Key.K -> { callbacks.onInsertTkToken(); return true }
+            Key.X -> { if (!config.isEditable) return true }
         }
+    }
+    if (!config.isEditable && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete || keyEvent.key == Key.Enter)) {
+        return true
     }
     if (keyEvent.key == Key.F10 || keyEvent.key == Key.F5 || (isCmdOrCtrl && keyEvent.key == Key.D)) {
         callbacks.onToggleDictation()
@@ -4132,6 +4283,7 @@ private fun ScreenplayBlockItem(
     val isDark = LocalSeshatDarkTheme.current
     val baseFontSize = (14.5f * config.zoom).sp
     val baseLineHeight = (22f * config.zoom).sp
+    val blockFontFamily = if (config.isArcadeMode) MainAppFontFamily else ScreenplayCourierFontFamily
 
     val defaultTextColor = Color(0xFF111111)
     val headingTextColor = Color(0xFF000000)
@@ -4209,15 +4361,23 @@ private fun ScreenplayBlockItem(
 
                 // Subtle Gutter highlight selector handle (omitted in dual column to preserve full width and true centering)
                 if (!config.isDualColumn) {
-                    BlockGutterHandle(
-                        blockId = block.id,
-                        note = block.note,
-                        isHighlighted = config.isHighlighted,
-                        showWriterNotes = config.showWriterNotes,
-                        zoom = config.zoom,
-                        blockCoordinates = blockCoordinates,
-                        callbacks = callbacks
-                    )
+                    if (!config.isEditable) {
+                        Text(
+                            text = "🔒",
+                            fontSize = (11 * config.zoom).sp,
+                            modifier = Modifier.padding(top = (6 * config.zoom).dp, end = (6 * config.zoom).dp)
+                        )
+                    } else {
+                        BlockGutterHandle(
+                            blockId = block.id,
+                            note = block.note,
+                            isHighlighted = config.isHighlighted,
+                            showWriterNotes = config.showWriterNotes,
+                            zoom = config.zoom,
+                            blockCoordinates = blockCoordinates,
+                            callbacks = callbacks
+                        )
+                    }
                 }
 
                 Box(modifier = Modifier.weight(1f)) {
@@ -4226,7 +4386,7 @@ private fun ScreenplayBlockItem(
                             text = placeholderText,
                             textAlign = textAlign,
                             style = TextStyle(
-                                fontFamily = ScreenplayCourierFontFamily,
+                                fontFamily = blockFontFamily,
                                 fontSize = baseFontSize,
                                 fontWeight = if (isHeading || isCharacter || isTransition) FontWeight.Bold else FontWeight.Normal,
                                 fontStyle = if (isItalic) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
@@ -4240,7 +4400,9 @@ private fun ScreenplayBlockItem(
 
                     BasicTextField(
                         value = textFieldValue,
+                        readOnly = !config.isEditable,
                         onValueChange = { newValue ->
+                            if (!config.isEditable) return@BasicTextField
                             if (newValue.text.contains('\n')) {
                                 val stripped = newValue.text.replace("\n", "")
                                 if (stripped != block.text) {
@@ -4271,13 +4433,13 @@ private fun ScreenplayBlockItem(
                                 )
                             },
                         textStyle = TextStyle(
-                            fontFamily = ScreenplayCourierFontFamily,
+                            fontFamily = blockFontFamily,
                             fontSize = baseFontSize,
                             fontWeight = if (isHeading || isCharacter || isTransition) FontWeight.Bold else FontWeight.Normal,
                             fontStyle = if (isItalic) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
                             lineHeight = baseLineHeight,
                             textAlign = textAlign,
-                            color = if (block.isOmitted) Color.Gray.copy(alpha = 0.5f) else if (isHeading) headingTextColor else if (isCharacter) charTextColor else defaultTextColor,
+                            color = if (!config.isEditable) Color(0xFF475569) else if (block.isOmitted) Color.Gray.copy(alpha = 0.5f) else if (isHeading) headingTextColor else if (isCharacter) charTextColor else defaultTextColor,
                             textDecoration = if (block.isOmitted && !isHeading) androidx.compose.ui.text.style.TextDecoration.LineThrough else androidx.compose.ui.text.style.TextDecoration.None
                         ),
                         keyboardOptions = KeyboardOptions(
@@ -4291,6 +4453,27 @@ private fun ScreenplayBlockItem(
                         cursorBrush = SolidColor(cursorColor),
                         singleLine = isSingleLine
                     )
+                }
+
+                // Glowing ruby-neon [TK - FIX LATER] badge when present in block
+                if (block.text.contains("[TK - FIX LATER]")) {
+                    Surface(
+                        color = Color(0xFF280811),
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(1.dp, ScribeStarNeonRed),
+                        modifier = Modifier.padding(start = (6 * config.zoom).dp, top = (2 * config.zoom).dp)
+                    ) {
+                        Text(
+                            text = "TK",
+                            style = TextStyle(
+                                fontFamily = MainAppFontFamily,
+                                fontSize = (9.5f * config.zoom).sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = ScribeStarNeonRed
+                            ),
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                        )
+                    }
                 }
 
                 // Right scene number (aligned flush at right margin)
@@ -4309,17 +4492,19 @@ private fun ScreenplayBlockItem(
             }
 
             // Right-margin Hollywood Revision Asterisk (*)
-            BlockRevisionMarker(
-                isRevised = block.isRevised,
-                revisionColor = block.revisionColor,
-                isRevisionTrackingEnabled = config.isRevisionTrackingEnabled,
-                isFocused = config.isFocused,
-                isDualColumn = config.isDualColumn,
-                topPadding = topPadding,
-                zoom = config.zoom,
-                onToggleRevised = callbacks.onToggleRevised,
-                modifier = Modifier.align(Alignment.TopEnd)
-            )
+            if (!config.isArcadeMode) {
+                BlockRevisionMarker(
+                    isRevised = block.isRevised,
+                    revisionColor = block.revisionColor,
+                    isRevisionTrackingEnabled = config.isRevisionTrackingEnabled,
+                    isFocused = config.isFocused,
+                    isDualColumn = config.isDualColumn,
+                    topPadding = topPadding,
+                    zoom = config.zoom,
+                    onToggleRevised = callbacks.onToggleRevised,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            }
         }
 
         // Writer's Note Section

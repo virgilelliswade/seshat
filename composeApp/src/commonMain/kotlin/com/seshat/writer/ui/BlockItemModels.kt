@@ -23,7 +23,9 @@ data class BlockDisplayConfig(
     val isAiPolishEnabled: Boolean = false,
     val isDictating: Boolean = false,
     val isCompactScreen: Boolean = false,
-    val isKeyboardActive: Boolean = false
+    val isKeyboardActive: Boolean = false,
+    val isEditable: Boolean = true,
+    val isArcadeMode: Boolean = false
 )
 
 /**
@@ -65,7 +67,8 @@ data class BlockCallbacks(
     val onNavigatePreviousScene: () -> Unit = {},
     val onNavigateNextScene: () -> Unit = {},
     val onNavigatePageUp: () -> Unit = {},
-    val onNavigatePageDown: () -> Unit = {}
+    val onNavigatePageDown: () -> Unit = {},
+    val onInsertTkToken: () -> Unit = {}
 )
 
 /**
@@ -94,7 +97,8 @@ data class DualDialogueActions(
     val onToggleDictation: () -> Unit = {},
     val onCancelDictation: () -> Unit = {},
     val onOpenStoryBible: () -> Unit = {},
-    val onToggleCorkboard: () -> Unit = {}
+    val onToggleCorkboard: () -> Unit = {},
+    val onInsertTkToken: () -> Unit = {}
 )
 
 /**
@@ -175,4 +179,5 @@ class EditorCanvasActions(
     fun openScriptDoctor() = viewModel.openScriptDoctorDialog()
     fun toggleThemeMode() = viewModel.toggleThemeMode(context)
     fun openCompiler() = viewModel.openNovelCompiler()
+    fun insertTkToken() = viewModel.insertTkFixLaterToken(context)
 }

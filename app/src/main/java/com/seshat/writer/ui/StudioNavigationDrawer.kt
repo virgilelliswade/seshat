@@ -329,7 +329,7 @@ fun StudioNavigationDrawer(
                                 )
                             }
 
-                            if (!isNovel) {
+                            if (!isNovel && !uiState.firstDraftState.isArcadeLocked) {
                                 DrawerNavItem(
                                     icon = "📑",
                                     title = "Compare Drafts",
@@ -345,85 +345,95 @@ fun StudioNavigationDrawer(
                         // SECTION: PUBLISHING & PRODUCTION
                         DrawerSection(title = "PUBLISHING & PRODUCTION") {
                             if (isNovel) {
-                                DrawerNavItem(
-                                    icon = "📚",
-                                    title = "Compile Manuscript",
-                                    subtitle = "Standard manuscript, EPUB & PDF",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenCompiler()
-                                    }
-                                )
-                                DrawerNavItem(
-                                    icon = "🎨",
-                                    title = "Cover & Jacket Studio",
-                                    subtitle = "Dust jackets, wraps & AI art",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenCoverCreator()
-                                    }
-                                )
+                                if (!uiState.firstDraftState.isArcadeLocked) {
+                                    DrawerNavItem(
+                                        icon = "📚",
+                                        title = "Compile Manuscript",
+                                        subtitle = "Standard manuscript, EPUB & PDF",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenCompiler()
+                                        }
+                                    )
+                                }
+                                if (uiState.firstDraftState.canUseNovelCoverGenerator()) {
+                                    DrawerNavItem(
+                                        icon = "🎨",
+                                        title = "Cover & Jacket Studio",
+                                        subtitle = if (uiState.firstDraftState.isArcadeLocked) "🎁 10k-Word Loot Pass Active" else "Dust jackets, wraps & AI art",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenCoverCreator()
+                                        }
+                                    )
+                                }
                             } else {
-                                DrawerNavItem(
-                                    icon = "💾",
-                                    title = "File & Export",
-                                    subtitle = "FDX, PDF, Fountain, HTML & TXT",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenFileExport()
-                                    }
-                                )
-                                DrawerNavItem(
-                                    icon = "📜",
-                                    title = "Title Page Creator",
-                                    subtitle = "Standard industry title card",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenTitlePage()
-                                    }
-                                )
-                                DrawerNavItem(
-                                    icon = "📊",
-                                    title = "Production Reports",
-                                    subtitle = "Cast breakdown, locations & stats",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenReports()
-                                    }
-                                )
-                                val revColorText = if (uiState.isRevisionTrackingEnabled) " (${uiState.currentRevisionColor.draftTag})" else ""
-                                DrawerNavItem(
-                                    icon = "🎬",
-                                    title = "Production Revisions$revColorText",
-                                    subtitle = "Standard Hollywood colored drafts",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenRevisions()
-                                    }
-                                )
-                                DrawerNavItem(
-                                    icon = "🎙️",
-                                    title = "Table Read / Audio",
-                                    subtitle = "Neural multi-voice read-through",
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenTableRead()
-                                    }
-                                )
+                                if (!uiState.firstDraftState.isArcadeLocked) {
+                                    DrawerNavItem(
+                                        icon = "💾",
+                                        title = "File & Export",
+                                        subtitle = "FDX, PDF, Fountain, HTML & TXT",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenFileExport()
+                                        }
+                                    )
+                                    DrawerNavItem(
+                                        icon = "📜",
+                                        title = "Title Page Creator",
+                                        subtitle = "Standard industry title card",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenTitlePage()
+                                        }
+                                    )
+                                    DrawerNavItem(
+                                        icon = "📊",
+                                        title = "Production Reports",
+                                        subtitle = "Cast breakdown, locations & stats",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenReports()
+                                        }
+                                    )
+                                    val revColorText = if (uiState.isRevisionTrackingEnabled) " (${uiState.currentRevisionColor.draftTag})" else ""
+                                    DrawerNavItem(
+                                        icon = "🎬",
+                                        title = "Production Revisions$revColorText",
+                                        subtitle = "Standard Hollywood colored drafts",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenRevisions()
+                                        }
+                                    )
+                                }
+                                if (uiState.firstDraftState.canUseTableRead()) {
+                                    DrawerNavItem(
+                                        icon = "🎙️",
+                                        title = "Table Read / Audio",
+                                        subtitle = if (uiState.firstDraftState.isArcadeLocked) "🎁 Unlocked via Loot Drop" else "Neural multi-voice read-through",
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenTableRead()
+                                        }
+                                    )
+                                }
                             }
                         }
 
                         // SECTION: AUTHOR TOOLS & AI
                         DrawerSection(title = "AUTHOR TOOLS & AI") {
-                            DrawerNavItem(
-                                icon = "✨",
-                                title = "Script Doctor & AI",
-                                subtitle = if (aiConfig.isEnabled) "Coverage, polish & brainstorm" else "Configure AI keys in Settings",
-                                onClick = {
-                                    onCloseDrawer()
-                                    onOpenScriptDoctor()
-                                }
-                            )
+                            if (uiState.firstDraftState.canUseAiDoctor()) {
+                                DrawerNavItem(
+                                    icon = "✨",
+                                    title = "Script Doctor & AI",
+                                    subtitle = if (aiConfig.isEnabled) "Coverage, polish & brainstorm" else "Configure AI keys in Settings",
+                                    onClick = {
+                                        onCloseDrawer()
+                                        onOpenScriptDoctor()
+                                    }
+                                )
+                            }
 
                             DrawerNavItem(
                                 icon = "🔍",

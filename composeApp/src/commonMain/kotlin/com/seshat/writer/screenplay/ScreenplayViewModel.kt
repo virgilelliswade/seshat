@@ -61,6 +61,15 @@ import com.seshat.writer.templates.ProjectTemplate
 import com.seshat.writer.templates.TemplateRegistry
 import com.seshat.writer.export.FountainSerializer
 import com.seshat.writer.bundle.SeshatBundleManager
+import com.seshat.writer.firstdraft.AccountabilityReceipt
+import com.seshat.writer.firstdraft.FirstDraftController
+import com.seshat.writer.firstdraft.FirstDraftStage
+import com.seshat.writer.firstdraft.FirstDraftState
+import com.seshat.writer.firstdraft.ReceiptGenerator
+import com.seshat.writer.firstdraft.WorkShiftBlock
+import com.seshat.writer.firstdraft.XpShopItem
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 enum class CursorTargetType {
     DEFAULT,
@@ -176,13 +185,37 @@ data class ScreenplayUiState(
     val isTitlePageOpen: Boolean = false,
     val isShortcutsDialogOpen: Boolean = false,
     val isAboutDialogOpen: Boolean = false,
-    val themeMode: ThemeMode = ThemeMode.DARK
-)
+    val themeMode: ThemeMode = ThemeMode.DARK,
+    val firstDraftState: FirstDraftState = FirstDraftController.createForNewProject(
+        format = ProjectFormat.SCREENPLAY,
+        screenplayType = ScreenplayType.FEATURE
+    ),
+    val isXpShopOpen: Boolean = false,
+    val isDutyRosterOpen: Boolean = false,
+    val activeReceiptModal: AccountabilityReceipt? = null,
+    val isWindowFocused: Boolean = true
+) {
+    /**
+     * Enforces the Forward-Only Paragraph Lock while in First Draft Arcade Mode:
+     * Once the user creates a new element/paragraph block and types >= 20 characters,
+     * all preceding blocks at currentIndex - 2 or earlier become strictly isEditable = false
+     * (unless a 20-minute Mulligan Pass is active).
+     */
+    fun isBlockEditableInFirstDraft(blockIndex: Int): Boolean {
+        if (!firstDraftState.isArcadeLocked) return true
+        if (firstDraftState.isMulliganActive()) return true
+        if (firstDraftState.stage != FirstDraftStage.DRAFT) return true
+        val highestQualifiedIndex = blocks.indexOfLast { it.text.length >= 20 }
+        if (highestQualifiedIndex < 2) return true
+        return blockIndex > (highestQualifiedIndex - 2)
+    }
+}
 
 class ScreenplayViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScreenplayUiState())
     val uiState: StateFlow<ScreenplayUiState> = _uiState.asStateFlow()
+    private var latestAppContext: Context? = null
 
     init {
         val initialBlock = ScreenplayBlock(type = BlockType.SCENE_HEADING, text = "")
@@ -199,26 +232,35 @@ class ScreenplayViewModel : ViewModel() {
                 focusedBlockId = initialBlock.id
             )
         }
-        viewModelScope.launch {
-            ScreenplayDocumentStore.titlePage.collect { titleData ->
-                _uiState.update { current ->
-                    if (current.title != titleData.title || current.author != titleData.author) {
-                        current.copy(
-                            title = titleData.title,
-                            author = titleData.author,
-                            storyBible = if (current.storyBible.scriptTitle.isNotBlank()) {
-                                current.storyBible.copy(scriptTitle = titleData.title)
-                            } else current.storyBible,
-                            corkboardDoc = if (current.corkboardDoc.scriptTitle.isNotBlank()) {
-                                current.corkboardDoc.copy(scriptTitle = titleData.title)
-                            } else current.corkboardDoc
-                        )
-                    } else {
-                        current
+        try {
+            viewModelScope.launch {
+                ScreenplayDocumentStore.titlePage.collect { titleData ->
+                    _uiState.update { current ->
+                        if (current.title != titleData.title || current.author != titleData.author) {
+                            current.copy(
+                                title = titleData.title,
+                                author = titleData.author,
+                                storyBible = if (current.storyBible.scriptTitle.isNotBlank()) {
+                                    current.storyBible.copy(scriptTitle = titleData.title)
+                                } else current.storyBible,
+                                corkboardDoc = if (current.corkboardDoc.scriptTitle.isNotBlank()) {
+                                    current.corkboardDoc.copy(scriptTitle = titleData.title)
+                                } else current.corkboardDoc
+                            )
+                        } else {
+                            current
+                        }
                     }
                 }
             }
-        }
+            // 1-second First Draft Engine & 48-Hour Decay / 60s Idle Instigator heartbeat
+            viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+                while (isActive) {
+                    delay(1000L)
+                    onFirstDraftSecondTick()
+                }
+            }
+        } catch (_: Throwable) {}
     }
 
     companion object {
@@ -817,6 +859,13 @@ class ScreenplayViewModel : ViewModel() {
 
     fun updateBlockText(id: String, newText: String) {
         _uiState.update { current ->
+            val targetIdx = current.blocks.indexOfFirst { it.id == id }
+            if (targetIdx != -1 && !current.isBlockEditableInFirstDraft(targetIdx)) {
+                return@update current
+            }
+            val oldBlock = current.blocks.getOrNull(targetIdx)
+            val isBackspace = oldBlock != null && newText.length < oldBlock.text.length
+
             val updatedBlocks = current.blocks.map { block ->
                 if (block.id == id) {
                     var targetType = block.type
@@ -864,12 +913,23 @@ class ScreenplayViewModel : ViewModel() {
                 }
             }
 
-            buildUpdatedState(current, updatedBlocks)
+            val nextState = buildUpdatedState(current, updatedBlocks)
+            val updatedFd = FirstDraftController.onKeystrokeRecorded(
+                state = nextState.firstDraftState,
+                isBackspace = isBackspace,
+                totalBlockCount = nextState.blocks.count { it.text.isNotBlank() },
+                totalSceneCount = nextState.sceneCount
+            )
+            nextState.copy(firstDraftState = updatedFd)
         }
     }
 
     fun changeBlockType(id: String, newType: BlockType) {
         _uiState.update { current ->
+            val targetIdx = current.blocks.indexOfFirst { it.id == id }
+            if (targetIdx != -1 && !current.isBlockEditableInFirstDraft(targetIdx)) {
+                return@update current
+            }
             val updatedBlocks = current.blocks.map { block ->
                 if (block.id == id) {
                     val formatted = when (newType) {
@@ -1282,6 +1342,9 @@ class ScreenplayViewModel : ViewModel() {
 
             val index = current.blocks.indexOfFirst { it.id == blockId }
             if (index <= 0) return@update current
+            if (!current.isBlockEditableInFirstDraft(index) || !current.isBlockEditableInFirstDraft(index - 1)) {
+                return@update current
+            }
 
             val targetBlock = current.blocks[index]
             if (targetBlock.text.isNotEmpty()) return@update current
@@ -2714,6 +2777,7 @@ class ScreenplayViewModel : ViewModel() {
             }
             CorkboardRepository.saveCorkboard(context, _uiState.value.corkboardDoc)
             StoryBibleRepository.saveBible(context, _uiState.value.storyBible)
+            FirstDraftController.saveState(context, title, _uiState.value.firstDraftState)
             true
         } catch (_: Exception) {
             false
@@ -3185,6 +3249,13 @@ class ScreenplayViewModel : ViewModel() {
             file.writeText(content)
         } catch (_: Exception) {}
 
+        latestAppContext = context.applicationContext
+        val newFirstDraft = FirstDraftController.createForNewProject(
+            format = format,
+            screenplayType = screenplayType ?: ScreenplayType.FEATURE
+        )
+        FirstDraftController.saveState(context, defaultTitle, newFirstDraft)
+
         _uiState.update { current ->
             current.copy(
                 isStartMenuOpen = false,
@@ -3197,23 +3268,42 @@ class ScreenplayViewModel : ViewModel() {
                 activeChapterIndex = 0,
                 isStoryBibleOpen = initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
                 isCorkboardOpen = initialWorkspaceView == InitialWorkspaceView.OUTLINE,
-                isCorkboardSideBySide = false
+                isCorkboardSideBySide = false,
+                firstDraftState = newFirstDraft
             )
         }
     }
 
     fun selectNovelChapter(index: Int) {
         _uiState.update {
-            it.copy(activeChapterIndex = index.coerceIn(0, (it.novelManuscript.chapters.size - 1).coerceAtLeast(0)))
+            val maxAllowed = if (it.firstDraftState.isArcadeLocked && !it.firstDraftState.isMulliganActive()) {
+                it.firstDraftState.novelUnlockedChapterIndex
+            } else {
+                (it.novelManuscript.chapters.size - 1).coerceAtLeast(0)
+            }
+            val clamped = index.coerceIn(0, minOf(maxAllowed, (it.novelManuscript.chapters.size - 1).coerceAtLeast(0)))
+            it.copy(activeChapterIndex = clamped)
         }
     }
 
     fun updateNovelManuscript(context: Context, manuscript: NovelManuscript) {
+        latestAppContext = context.applicationContext
         _uiState.update { current ->
+            val oldWords = current.novelManuscript.totalWordCount()
+            val newWords = manuscript.totalWordCount()
+            val isBackspace = newWords < oldWords
+            val totalParagraphs = manuscript.chapters.sumOf { ch -> ch.paragraphs.count { p -> p.text.isNotBlank() } }
+            val updatedFd = FirstDraftController.onKeystrokeRecorded(
+                state = current.firstDraftState,
+                isBackspace = isBackspace,
+                totalBlockCount = totalParagraphs,
+                totalSceneCount = manuscript.chapters.count { it.wordCount() >= 3500 }
+            )
             val chapterCards = NovelRepository.chaptersToSceneCards(manuscript)
             current.copy(
                 novelManuscript = manuscript,
-                sceneCards = chapterCards
+                sceneCards = chapterCards,
+                firstDraftState = updatedFd
             )
         }
         NovelRepository.saveManuscript(context, manuscript)
@@ -3269,6 +3359,13 @@ class ScreenplayViewModel : ViewModel() {
         }
         TvSeriesRepository.saveProject(context, series)
 
+        latestAppContext = context.applicationContext
+        val newFirstDraft = FirstDraftController.createForNewProject(
+            format = ProjectFormat.TV_SERIES,
+            screenplayType = format
+        )
+        FirstDraftController.saveState(context, series.title, newFirstDraft)
+
         val activeEp = series.episodes.first()
         _uiState.update { current ->
             buildUpdatedState(
@@ -3285,7 +3382,8 @@ class ScreenplayViewModel : ViewModel() {
                     storyBible = series.seriesBible,
                     isStoryBibleOpen = initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
                     isCorkboardOpen = initialWorkspaceView == InitialWorkspaceView.OUTLINE,
-                    isCorkboardSideBySide = false
+                    isCorkboardSideBySide = false,
+                    firstDraftState = newFirstDraft
                 ),
                 activeEp.blocks,
                 focusedBlockId = activeEp.blocks.firstOrNull()?.id ?: ""
@@ -3296,6 +3394,13 @@ class ScreenplayViewModel : ViewModel() {
     fun selectTvEpisode(context: Context, index: Int) {
         val currentSeries = _uiState.value.tvSeriesProject ?: return
         if (index !in currentSeries.episodes.indices) return
+        // Rule Zero (The "Showrunner" Lock): Episodes 102+ are hard-locked until Episode 101 reaches STUDIO_UNLOCKED
+        if (_uiState.value.firstDraftState.isArcadeLocked &&
+            !_uiState.value.firstDraftState.tvEpisode101Unlocked &&
+            index > 0
+        ) {
+            return
+        }
 
         // 1. Sync current episode state
         val oldIdx = currentSeries.activeEpisodeIndex.coerceIn(0, currentSeries.episodes.size - 1)
@@ -3345,6 +3450,12 @@ class ScreenplayViewModel : ViewModel() {
         episodeTitle: String,
         writerCredit: String = ""
     ) {
+        // Rule Zero: Lock Episode 102+ creation until Episode 101 reaches STUDIO_UNLOCKED
+        if (_uiState.value.firstDraftState.isArcadeLocked &&
+            !_uiState.value.firstDraftState.tvEpisode101Unlocked
+        ) {
+            return
+        }
         val currentSeries = _uiState.value.tvSeriesProject ?: return
         val acts = if (currentSeries.format == ScreenplayType.TV_HALF_HOUR_COMEDY) {
             CorkboardDocument.actsForTvHalfHour()
@@ -3525,6 +3636,436 @@ class ScreenplayViewModel : ViewModel() {
 
     fun closeAboutDialog() {
         _uiState.update { it.copy(isAboutDialogOpen = false) }
+    }
+
+    // =========================================================================
+    // 🚀 "FIRST DRAFT" ANTI-PROCRASTINATION ENGINE & GEMINI AI BOUNCER
+    // =========================================================================
+
+    fun bindAppContext(context: Context) {
+        latestAppContext = context.applicationContext
+    }
+
+    fun onWindowFocusChanged(focused: Boolean) {
+        _uiState.update { current ->
+            val updatedFd = if (!focused) {
+                FirstDraftController.onWindowFocusLost(current.firstDraftState)
+            } else {
+                current.firstDraftState
+            }
+            current.copy(
+                isWindowFocused = focused,
+                firstDraftState = updatedFd
+            )
+        }
+    }
+
+    private fun currentTotalProjectWordCount(state: ScreenplayUiState): Int {
+        return if (state.projectFormat == ProjectFormat.NOVEL) {
+            state.novelManuscript.totalWordCount()
+        } else {
+            state.wordCount
+        }
+    }
+
+    private fun hasFadeOutAtEndOfScript(state: ScreenplayUiState): Boolean {
+        return state.blocks.takeLast(4).any { b ->
+            val upper = b.text.uppercase(Locale.US)
+            upper.contains("FADE OUT") || upper.contains("FADE TO BLACK") || upper.contains("THE END")
+        }
+    }
+
+    private fun onFirstDraftSecondTick() {
+        val current = _uiState.value
+        if (current.isStartMenuOpen || !current.firstDraftState.isFirstDraftMode) return
+
+        val nowMs = System.currentTimeMillis()
+        val oldStage = current.firstDraftState.stage
+        val totalWords = currentTotalProjectWordCount(current)
+        val hasFadeOut = hasFadeOutAtEndOfScript(current)
+
+        var nextFd = FirstDraftController.onSecondTick(
+            state = current.firstDraftState,
+            isWindowFocused = current.isWindowFocused,
+            currentWordCount = totalWords,
+            currentSceneCount = current.sceneCount,
+            hasFadeOut = hasFadeOut,
+            nowMs = nowMs
+        )
+
+        var nextStoryBibleOpen = current.isStoryBibleOpen
+        var nextCorkboardOpen = current.isCorkboardOpen
+        if (nextFd.stage != oldStage) {
+            when (nextFd.stage) {
+                FirstDraftStage.BIBLE -> {
+                    nextStoryBibleOpen = true
+                    nextCorkboardOpen = false
+                }
+                FirstDraftStage.OUTLINE -> {
+                    nextStoryBibleOpen = false
+                    nextCorkboardOpen = true
+                }
+                FirstDraftStage.DRAFT -> {
+                    nextStoryBibleOpen = false
+                    nextCorkboardOpen = false
+                }
+                else -> {}
+            }
+        }
+
+        // Check for pending Stage-Gate High-Five Receipt or Mandatory Decay Receipt
+        var nextReceiptModal = current.activeReceiptModal
+        val pendingGate = nextFd.pendingStageGateReceipt
+        if (pendingGate != null) {
+            nextReceiptModal = AccountabilityReceipt.StageGateHighFive(
+                projectTitle = current.title.ifBlank { "UNTITLED PROJECT" },
+                data = pendingGate
+            )
+            nextFd = nextFd.copy(pendingStageGateReceipt = null)
+        } else if (nextFd.pendingDecayReceipt) {
+            nextReceiptModal = AccountabilityReceipt.MandatoryDecayPenalty(
+                projectTitle = current.title.ifBlank { "UNTITLED PROJECT" }
+            )
+            nextFd = nextFd.copy(pendingDecayReceipt = false)
+        }
+
+        val shouldTriggerBouncer = nextFd.stage == FirstDraftStage.DRAFT &&
+            nextFd.idleSecondsInDraft == 60 &&
+            !nextFd.isIdleInstigatorLoading &&
+            nextFd.idleInstigatorBannerText == null
+
+        if (shouldTriggerBouncer) {
+            nextFd = nextFd.copy(isIdleInstigatorLoading = true)
+        }
+
+        _uiState.update {
+            it.copy(
+                firstDraftState = nextFd,
+                isStoryBibleOpen = nextStoryBibleOpen,
+                isCorkboardOpen = nextCorkboardOpen,
+                activeReceiptModal = nextReceiptModal
+            )
+        }
+
+        if (shouldTriggerBouncer) {
+            triggerGeminiIdleInstigator()
+        }
+    }
+
+    /**
+     * Gemini AI Bouncer (Idle Instigator):
+     * Triggered when keystroke delta == 0 for 60 seconds of active window focus in DRAFT state.
+     * Sends the last 15 lines of the active scene to Gemini with the strict system prompt:
+     * "Give a blunt, 1-sentence action instruction to escalate conflict immediately in this scene."
+     */
+    private fun triggerGeminiIdleInstigator() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val last15Lines = if (state.projectFormat == ProjectFormat.NOVEL) {
+                val activeCh = state.novelManuscript.chapters.getOrNull(state.activeChapterIndex)
+                activeCh?.paragraphs?.takeLast(15)?.joinToString("\n") { it.text }.orEmpty()
+            } else {
+                state.blocks.takeLast(15).joinToString("\n") { "${it.type.name}: ${it.text}" }
+            }
+
+            val systemPrompt = "Give a blunt, 1-sentence action instruction to escalate conflict immediately in this scene."
+            val userPrompt = last15Lines.ifBlank { "The protagonist hesitates in an empty room." }
+
+            val ctx = latestAppContext
+            val aiResponse = if (ctx != null) {
+                val config = AiPreferences.load(ctx)
+                if (config.isConfigured) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        AiClient.callLlm(
+                            config = config,
+                            systemPrompt = systemPrompt,
+                            userPrompt = userPrompt
+                        ).getOrNull()
+                    }
+                } else null
+            } else null
+
+            val finalPrompt = aiResponse?.trim()?.takeIf { it.isNotEmpty() }
+                ?: "Force the antagonist or a sudden physical obstacle through the door right now and strip the protagonist's safest option away in the next line."
+
+            _uiState.update { current ->
+                current.copy(
+                    firstDraftState = current.firstDraftState.copy(
+                        isIdleInstigatorLoading = false,
+                        idleInstigatorBannerText = finalPrompt
+                    )
+                )
+            }
+        }
+    }
+
+    fun dismissIdleInstigator() {
+        _uiState.update { current ->
+            current.copy(
+                firstDraftState = current.firstDraftState.copy(
+                    idleInstigatorBannerText = null,
+                    isIdleInstigatorLoading = false,
+                    idleSecondsInDraft = 0
+                )
+            )
+        }
+    }
+
+    fun advanceFirstDraftStage(context: Context? = latestAppContext) {
+        if (context != null) latestAppContext = context.applicationContext
+        _uiState.update { current ->
+            val totalWords = currentTotalProjectWordCount(current)
+            var nextFd = FirstDraftController.advanceStage(
+                state = current.firstDraftState,
+                nowMs = System.currentTimeMillis()
+            )
+            if (nextFd.stage == FirstDraftStage.DRAFT) {
+                nextFd = nextFd.copy(
+                    wordsAtQuotaWindowStart = totalWords,
+                    wordsAtDayStart = totalWords
+                )
+            }
+            var nextStoryBibleOpen = current.isStoryBibleOpen
+            var nextCorkboardOpen = current.isCorkboardOpen
+            when (nextFd.stage) {
+                FirstDraftStage.BIBLE -> {
+                    nextStoryBibleOpen = true
+                    nextCorkboardOpen = false
+                }
+                FirstDraftStage.OUTLINE -> {
+                    nextStoryBibleOpen = false
+                    nextCorkboardOpen = true
+                }
+                FirstDraftStage.DRAFT -> {
+                    nextStoryBibleOpen = false
+                    nextCorkboardOpen = false
+                }
+                else -> {}
+            }
+
+            var nextReceipt = current.activeReceiptModal
+            val ctx = context ?: latestAppContext
+            val pendingGate = nextFd.pendingStageGateReceipt
+            if (pendingGate != null) {
+                nextReceipt = AccountabilityReceipt.StageGateHighFive(
+                    projectTitle = current.title.ifBlank { "UNTITLED PROJECT" },
+                    data = pendingGate
+                )
+                nextFd = nextFd.copy(pendingStageGateReceipt = null)
+            }
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+
+            current.copy(
+                firstDraftState = nextFd,
+                isStoryBibleOpen = nextStoryBibleOpen,
+                isCorkboardOpen = nextCorkboardOpen,
+                activeReceiptModal = nextReceipt
+            )
+        }
+    }
+
+    fun toggleFirstDraftSprint() {
+        _uiState.update { current ->
+            val fd = current.firstDraftState
+            if (fd.stage != FirstDraftStage.DRAFT) return@update current
+            val nextRunning = !fd.isSprintRunning
+            current.copy(
+                firstDraftState = fd.copy(
+                    isSprintRunning = nextRunning,
+                    activeSprintRemainingMs = 25L * 60L * 1000L
+                )
+            )
+        }
+    }
+
+    fun openXpShop() {
+        _uiState.update { it.copy(isXpShopOpen = true) }
+    }
+
+    fun closeXpShop() {
+        _uiState.update { it.copy(isXpShopOpen = false) }
+    }
+
+    fun purchaseXpShopItem(context: Context? = latestAppContext, item: XpShopItem) {
+        _uiState.update { current ->
+            val nextFd = FirstDraftController.purchaseXpItem(
+                state = current.firstDraftState,
+                item = item,
+                nowMs = System.currentTimeMillis()
+            )
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+            current.copy(firstDraftState = nextFd)
+        }
+    }
+
+    fun openDutyRoster() {
+        _uiState.update { it.copy(isDutyRosterOpen = true) }
+    }
+
+    fun closeDutyRoster() {
+        _uiState.update { it.copy(isDutyRosterOpen = false) }
+    }
+
+    fun saveWorkShiftRoster(context: Context? = latestAppContext, shifts: List<WorkShiftBlock>) {
+        _uiState.update { current ->
+            val nextFd = FirstDraftController.saveAndLockWorkRoster(
+                state = current.firstDraftState,
+                shifts = shifts,
+                nowMs = System.currentTimeMillis()
+            )
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+            current.copy(firstDraftState = nextFd)
+        }
+    }
+
+    fun toggleReferenceDrawer() {
+        _uiState.update { current ->
+            val fd = current.firstDraftState
+            current.copy(
+                firstDraftState = fd.copy(isReferenceDrawerOpen = !fd.isReferenceDrawerOpen)
+            )
+        }
+    }
+
+    fun updateSparkLogline(context: Context? = latestAppContext, text: String) {
+        _uiState.update { current ->
+            if (current.firstDraftState.isSparkReadOnly) return@update current
+            val capped = FirstDraftController.trimToWordLimit(text, current.firstDraftState.maxSparkWords())
+            val nextFd = current.firstDraftState.copy(sparkLogline = capped)
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+            current.copy(firstDraftState = nextFd)
+        }
+    }
+
+    fun updateSparkPilotLogline(context: Context? = latestAppContext, text: String) {
+        _uiState.update { current ->
+            if (current.firstDraftState.isSparkReadOnly) return@update current
+            val capped = FirstDraftController.trimToWordLimit(text, 50)
+            val nextFd = current.firstDraftState.copy(sparkPilotLogline = capped)
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+            current.copy(firstDraftState = nextFd)
+        }
+    }
+
+    fun updatePenaltyScratchpad(context: Context? = latestAppContext, newText: String) {
+        _uiState.update { current ->
+            val nextFd = FirstDraftController.updatePenaltyScratchpad(
+                state = current.firstDraftState,
+                newText = newText,
+                nowMs = System.currentTimeMillis()
+            )
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                FirstDraftController.saveState(ctx, current.title, nextFd)
+            }
+            current.copy(firstDraftState = nextFd)
+        }
+    }
+
+    /**
+     * [TK] Hotkey (Cmd+K on macOS / Ctrl+K on Android & ChromeOS):
+     * Inserts a glowing ruby-neon [TK - FIX LATER] token into the active block/paragraph
+     * and immediately forces the cursor to a new line/block to prevent research rabbit holes.
+     */
+    fun insertTkFixLaterToken(context: Context? = latestAppContext) {
+        val current = _uiState.value
+        if (current.projectFormat == ProjectFormat.NOVEL) {
+            val ms = current.novelManuscript
+            val chIdx = current.activeChapterIndex.coerceIn(0, (ms.chapters.size - 1).coerceAtLeast(0))
+            val ch = ms.chapters.getOrNull(chIdx) ?: return
+            val paragraphs = ch.paragraphs.toMutableList()
+            if (paragraphs.isEmpty()) {
+                paragraphs.add(NovelParagraph(text = "[TK - FIX LATER]"))
+            } else {
+                val lastIdx = paragraphs.lastIndex
+                val lastP = paragraphs[lastIdx]
+                val sep = if (lastP.text.isEmpty() || lastP.text.endsWith(" ")) "" else " "
+                paragraphs[lastIdx] = lastP.copy(text = "${lastP.text}$sep[TK - FIX LATER]")
+            }
+            paragraphs.add(NovelParagraph(text = ""))
+            val updatedCh = ch.copy(paragraphs = paragraphs)
+            val updatedChapters = ms.chapters.mapIndexed { idx, c -> if (idx == chIdx) updatedCh else c }
+            val updatedMs = ms.copy(chapters = updatedChapters)
+            val ctx = context ?: latestAppContext
+            if (ctx != null) {
+                updateNovelManuscript(ctx, updatedMs)
+            } else {
+                _uiState.update { it.copy(novelManuscript = updatedMs) }
+            }
+            return
+        }
+
+        val targetId = current.focusedBlockId.ifBlank { current.blocks.lastOrNull()?.id ?: "" }
+        if (targetId.isBlank()) return
+        val block = current.blocks.find { it.id == targetId } ?: return
+        val sep = if (block.text.isEmpty() || block.text.endsWith(" ")) "" else " "
+        updateBlockText(targetId, "${block.text}$sep[TK - FIX LATER]")
+        onEnterPressed(targetId)
+    }
+
+    fun openDailyReceiptModal(context: Context) {
+        latestAppContext = context.applicationContext
+        val current = _uiState.value
+        val nowMs = System.currentTimeMillis()
+        if (!current.firstDraftState.canShareDailyReceipt(nowMs)) return
+        val totalWords = currentTotalProjectWordCount(current)
+        val totalPages = if (current.projectFormat == ProjectFormat.NOVEL) {
+            current.novelManuscript.estimatedPages()
+        } else {
+            current.pageCount
+        }
+        val netWords = (totalWords - current.firstDraftState.wordsAtQuotaWindowStart).coerceAtLeast(0)
+        val receipt = AccountabilityReceipt.DailyDraftReceipt(
+            projectTitle = current.title.ifBlank { "UNTITLED PROJECT" },
+            netNewWords24h = netWords,
+            activeStreakDays = current.firstDraftState.activeStreakDays,
+            totalWords = totalWords,
+            totalPages = totalPages,
+            backspaceShamePercent = current.firstDraftState.backspaceShameRatioPercent(),
+            hoursUntilDecay = current.firstDraftState.hoursUntilDecay(nowMs)
+        )
+        val nextFd = current.firstDraftState.copy(lastShareTimestamp = nowMs)
+        FirstDraftController.saveState(context, current.title, nextFd)
+        _uiState.update {
+            it.copy(
+                firstDraftState = nextFd,
+                activeReceiptModal = receipt
+            )
+        }
+    }
+
+    fun openMandatoryDecayReceiptModal() {
+        val current = _uiState.value
+        val receipt = AccountabilityReceipt.MandatoryDecayPenalty(
+            projectTitle = current.title.ifBlank { "UNTITLED PROJECT" }
+        )
+        _uiState.update { it.copy(activeReceiptModal = receipt) }
+    }
+
+    fun dismissReceiptModal() {
+        _uiState.update { it.copy(activeReceiptModal = null) }
+    }
+
+    fun clearLootToastMessage() {
+        _uiState.update { current ->
+            current.copy(
+                firstDraftState = current.firstDraftState.copy(lastLootToastMessage = null)
+            )
+        }
     }
 
     override fun onCleared() {

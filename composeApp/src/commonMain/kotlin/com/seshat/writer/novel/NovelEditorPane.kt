@@ -269,6 +269,7 @@ fun NovelEditorPane(
                 manuscript = manuscript,
                 isBinderVisible = isBinderVisible,
                 isTypewriterMode = isTypewriterMode,
+                isArcadeMode = uiState.firstDraftState.isArcadeLocked,
                 onToggleBinder = { isBinderVisible = !isBinderVisible },
                 onOpenStudioDrawer = onOpenStudioDrawer,
                 onToggleCorkboard = onToggleCorkboard,
@@ -286,6 +287,7 @@ fun NovelEditorPane(
                 isDictating = uiState.isDictating,
                 isCorkboardOpen = uiState.isCorkboardOpen,
                 isTypewriterMode = isTypewriterMode,
+                isArcadeMode = uiState.firstDraftState.isArcadeLocked,
                 onOpenStudioDrawer = onOpenStudioDrawer,
                 onToggleDictation = { onToggleDictation() },
                 onOpenStoryBible = onOpenStoryBible,
@@ -425,13 +427,46 @@ fun NovelEditorPane(
                                 vertical = if (isCompactScreen) 8.dp else 20.dp
                             )
                     ) {
+                    val isChapterEditable = !uiState.firstDraftState.isArcadeLocked ||
+                        uiState.firstDraftState.isMulliganActive() ||
+                        activeChapterIndex == uiState.firstDraftState.novelUnlockedChapterIndex
+
+                    if (uiState.firstDraftState.isArcadeLocked) {
+                        Surface(
+                            color = if (isChapterEditable) Color(0xFF0F172A) else Color(0xFF450A0A),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, if (isChapterEditable) ScribeStarNeonRed.copy(alpha = 0.55f) else Color(0xFFEF4444)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        ) {
+                            val bannerText = if (isChapterEditable) {
+                                "📖 SEQUENTIAL CHAPTER AIRLOCK: Chapter ${activeChapterIndex + 1} (${currentChapter.wordCount()} / 3,500 words to seal & unlock Chapter ${activeChapterIndex + 2})"
+                            } else if (activeChapterIndex < uiState.firstDraftState.novelUnlockedChapterIndex) {
+                                "🔒 CHAPTER ${activeChapterIndex + 1} SEALED (READ-ONLY) — Purchase 20-min Mulligan (5,000 XP) in XP Shop to edit"
+                            } else {
+                                "🔒 CHAPTER ${activeChapterIndex + 1} LOCKED — Reach 3,500 words in Chapter ${uiState.firstDraftState.novelUnlockedChapterIndex + 1} first"
+                            }
+                            Text(
+                                text = bannerText,
+                                color = Color.White,
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+
                     // Chapter Header Bar
                     NovelChapterHeaderBar(
                         chapter = currentChapter,
                         isTypewriterMode = isTypewriterMode,
+                        isArcadeMode = uiState.firstDraftState.isArcadeLocked,
                         onOpenSnapshots = { showSnapshotDialog = true },
                         onToggleTypewriter = onToggleTypewriterAction,
                         onInsertSceneBreak = {
+                            if (!isChapterEditable) return@NovelChapterHeaderBar
                             val breakP = NovelParagraph(
                                 type = NovelParagraphType.SCENE_BREAK,
                                 text = "* * *"
@@ -449,9 +484,11 @@ fun NovelEditorPane(
                         }
                     )
 
-                    // Book Page Sheet (Soft cream book paper background)
+                    // Book Page Sheet (Soft cream book paper background, or Obsidian Arcade Canvas)
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAF7)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (uiState.firstDraftState.isArcadeLocked) Color(0xFF0B0F19) else Color(0xFFFAFAF7)
+                        ),
                         shape = RoundedCornerShape(4.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                         modifier = Modifier
@@ -494,6 +531,10 @@ fun NovelEditorPane(
                                     }
                             )
 
+                            val highestQualifiedIdx = if (uiState.firstDraftState.isArcadeLocked && !uiState.firstDraftState.isMulliganActive()) {
+                                currentChapter.paragraphs.indexOfLast { it.text.length >= 20 }
+                            } else -1
+
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -508,11 +549,15 @@ fun NovelEditorPane(
                                     val isHighlighted = highlightedParagraphIds.contains(paragraph.id)
                                     val hasHeader = currentChapter.paragraphs.firstOrNull()?.type == NovelParagraphType.CHAPTER_HEADER
                                     val isFirstNarrative = if (hasHeader) pIdx == 1 else pIdx == 0
+                                    val isParaEditable = isChapterEditable && (highestQualifiedIdx < 2 || pIdx > highestQualifiedIdx - 2)
                                     NovelParagraphItem(
                                         paragraph = paragraph,
                                         isFocused = focusedParagraphId == paragraph.id,
                                         isFirstParagraphInChapter = isFirstNarrative,
                                         isHighlighted = isHighlighted,
+                                        isEditable = isParaEditable,
+                                        isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                                        onInsertTkToken = { viewModel.insertTkFixLaterToken(context) },
                                         onToggleHighlight = { isShift ->
                                             toggleParagraphHighlight(paragraph.id, isShift)
                                         },
@@ -881,6 +926,7 @@ private fun CompactNovelTopBar(
     manuscript: NovelManuscript,
     isBinderVisible: Boolean,
     isTypewriterMode: Boolean,
+    isArcadeMode: Boolean = false,
     onToggleBinder: () -> Unit,
     onOpenStudioDrawer: () -> Unit,
     onToggleCorkboard: () -> Unit,
@@ -955,6 +1001,7 @@ private fun CompactNovelTopBar(
 
         CompactNovelTopBarTools(
             isTypewriterMode = isTypewriterMode,
+            isArcadeMode = isArcadeMode,
             onOpenFindReplace = onOpenFindReplace,
             onOpenSprint = onOpenSprint,
             onToggleTypewriter = onToggleTypewriter,
@@ -968,6 +1015,7 @@ private fun CompactNovelTopBar(
 @Composable
 private fun CompactNovelTopBarTools(
     isTypewriterMode: Boolean,
+    isArcadeMode: Boolean = false,
     onOpenFindReplace: () -> Unit,
     onOpenSprint: () -> Unit,
     onToggleTypewriter: () -> Unit,
@@ -987,7 +1035,9 @@ private fun CompactNovelTopBarTools(
             isHighlight = isTypewriterMode
         )
         NovelGlassPillButton(text = "🪦", onClick = onOpenScraps)
-        NovelGlassPillButton(text = "🚀", onClick = onOpenCompiler)
+        if (!isArcadeMode) {
+            NovelGlassPillButton(text = "🚀", onClick = onOpenCompiler)
+        }
         NovelGlassPillButton(
             text = "💾",
             onClick = onSaveProject,
@@ -1002,6 +1052,7 @@ private fun DesktopNovelTopBar(
     isDictating: Boolean,
     isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
+    isArcadeMode: Boolean = false,
     onOpenStudioDrawer: () -> Unit,
     onToggleDictation: () -> Unit,
     onOpenStoryBible: () -> Unit,
@@ -1148,6 +1199,7 @@ private fun DesktopNovelTopBar(
             isDictating = isDictating,
             isCorkboardOpen = isCorkboardOpen,
             isTypewriterMode = isTypewriterMode,
+            isArcadeMode = isArcadeMode,
             onToggleDictation = onToggleDictation,
             onOpenStoryBible = onOpenStoryBible,
             onToggleCorkboard = onToggleCorkboard,
@@ -1167,6 +1219,7 @@ private fun DesktopNovelTopBarActions(
     isDictating: Boolean,
     isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
+    isArcadeMode: Boolean = false,
     onToggleDictation: () -> Unit,
     onOpenStoryBible: () -> Unit,
     onToggleCorkboard: () -> Unit,
@@ -1226,12 +1279,14 @@ private fun DesktopNovelTopBarActions(
             onClick = onOpenScraps,
             isBig = true
         )
-        NovelGlassPillButton(
-            text = "Compile",
-            icon = "🚀",
-            onClick = onOpenCompiler,
-            isBig = true
-        )
+        if (!isArcadeMode) {
+            NovelGlassPillButton(
+                text = "Compile",
+                icon = "🚀",
+                onClick = onOpenCompiler,
+                isBig = true
+            )
+        }
         NovelGlassPillButton(
             text = "Save",
             icon = "💾",
@@ -1246,6 +1301,7 @@ private fun DesktopNovelTopBarActions(
 private fun NovelChapterHeaderBar(
     chapter: NovelChapter,
     isTypewriterMode: Boolean,
+    isArcadeMode: Boolean = false,
     onOpenSnapshots: () -> Unit,
     onToggleTypewriter: () -> Unit,
     onInsertSceneBreak: () -> Unit,
@@ -1283,12 +1339,14 @@ private fun NovelChapterHeaderBar(
                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(6.dp))
-            NovelGlassPillButton(
-                text = "Snapshots (${chapter.snapshots.size})",
-                icon = "📸",
-                onClick = onOpenSnapshots
-            )
+            if (!isArcadeMode) {
+                Spacer(modifier = Modifier.width(6.dp))
+                NovelGlassPillButton(
+                    text = "Snapshots (${chapter.snapshots.size})",
+                    icon = "📸",
+                    onClick = onOpenSnapshots
+                )
+            }
         }
 
         Row(

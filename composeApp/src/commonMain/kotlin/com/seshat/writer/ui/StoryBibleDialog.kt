@@ -122,6 +122,9 @@ import com.seshat.writer.bible.StoryBible
 import com.seshat.writer.bible.StoryBibleRepository
 import com.seshat.writer.bible.TvEpisodeOutline
 import com.seshat.writer.bible.TvSeriesBibleConfig
+import com.seshat.writer.firstdraft.FirstDraftStage
+import com.seshat.writer.firstdraft.FirstDraftState
+import com.seshat.writer.firstdraft.FirstDraftTextMetrics
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LightGold
 import com.seshat.writer.ui.theme.ObsidianBlack
@@ -295,6 +298,7 @@ fun StoryBibleDialog(
     activeLocationsInScript: List<String> = emptyList(),
     projectFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
     screenplayType: ScreenplayType = ScreenplayType.FEATURE,
+    firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     onSaveBible: (StoryBible) -> Unit,
     onDismiss: () -> Unit,
     onToggleTheme: () -> Unit = {}
@@ -303,6 +307,7 @@ fun StoryBibleDialog(
     val clipboardManager = LocalClipboardManager.current
     val configuration = LocalConfiguration.current
     val isCompactScreen = configuration.screenWidthDp < 700
+    val isReadOnlyAirlock = !firstDraftState.canEditBible()
 
     var bible by remember { mutableStateOf(initialBible) }
     var mainTab by remember { mutableIntStateOf(0) }
@@ -314,6 +319,10 @@ fun StoryBibleDialog(
     }
 
     fun updateAndPersist(updated: StoryBible) {
+        if (isReadOnlyAirlock) {
+            Toast.makeText(context, "🔒 Bible Airlock is sealed! Purchase a 15-min Airlock Pass in the XP Shop to edit.", Toast.LENGTH_SHORT).show()
+            return
+        }
         bible = updated
         onSaveBible(updated)
         StoryBibleRepository.saveBible(context, updated)
@@ -644,6 +653,33 @@ fun StoryBibleDialog(
                     }
                 }
 
+                // Airlock Status Banner when in First Draft Mode
+                if (firstDraftState.isArcadeLocked) {
+                    Surface(
+                        color = if (isReadOnlyAirlock) Color(0xFF280811) else Color(0xFF0A2418),
+                        border = BorderStroke(1.dp, if (isReadOnlyAirlock) ScribeStarNeonRed else Color(0xFF10B981)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isReadOnlyAirlock) {
+                                "🔒 BIBLE AIRLOCK SEALED (READ-ONLY) • Purchase 15-min Airlock Pass (2,500 XP) in XP Shop to unlock edits"
+                            } else {
+                                "🔓 BIBLE STAGE ACTIVE • Max ${firstDraftState.maxCharacterDossierSlots()} Character Dossiers (${firstDraftState.maxWordsPerCharacterDossier()}w each) • Max ${firstDraftState.maxWordsPerLorePillar()}w per Lore Pillar"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (isReadOnlyAirlock) Color(0xFFFFB4AB) else Color(0xFF6EE7B7),
+                                fontSize = 11.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+
                 // Tab Content - Fills the entire screen
                 Box(
                     modifier = Modifier
@@ -658,6 +694,7 @@ fun StoryBibleDialog(
                             onUpdateLore = { updatedLore ->
                                 updateAndPersist(bible.copy(lore = updatedLore))
                             },
+                            firstDraftState = firstDraftState,
                             isCompactScreen = isCompactScreen
                         )
                         1 -> CharacterDossiersSection(
@@ -666,6 +703,7 @@ fun StoryBibleDialog(
                             onUpdateCharacters = { updatedList ->
                                 updateAndPersist(bible.copy(characters = updatedList))
                             },
+                            firstDraftState = firstDraftState,
                             isCompactScreen = isCompactScreen
                         )
                         2 -> LocationCodexSection(
@@ -689,6 +727,7 @@ fun StoryBibleDialog(
                             onUpdateTvConfig = { updatedTv ->
                                 updateAndPersist(bible.copy(tvConfig = updatedTv))
                             },
+                            firstDraftState = firstDraftState,
                             isCompactScreen = isCompactScreen
                         )
                     }
@@ -881,6 +920,7 @@ private fun LorePillarsSection(
     subTab: Int,
     onSubTabChange: (Int) -> Unit,
     onUpdateLore: (LoreDocument) -> Unit,
+    firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     isCompactScreen: Boolean = false
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1026,18 +1066,52 @@ private fun LorePillarsSection(
             ) { text: String -> onUpdateLore(lore.copy(chronology = text)) }
         }
 
+        val maxPillarWords = firstDraftState.maxWordsPerLorePillar()
+        val maxTotalWords = firstDraftState.maxTotalLoreWords()
+        val currentPillarWords = FirstDraftTextMetrics.countWords(pillarContent)
+        val totalLoreWords = lore.wordCount()
+
+        val cappedUpdatePillar: (String) -> Unit = { newText ->
+            val clipped = if (firstDraftState.isArcadeLocked) {
+                FirstDraftTextMetrics.clipToWordLimit(newText, maxPillarWords)
+            } else newText
+            val deltaWords = FirstDraftTextMetrics.countWords(clipped) - currentPillarWords
+            if (firstDraftState.isArcadeLocked && totalLoreWords + deltaWords > maxTotalWords && deltaWords > 0) {
+                val allowedForThisPillar = (maxTotalWords - (totalLoreWords - currentPillarWords)).coerceAtLeast(0)
+                updatePillar(FirstDraftTextMetrics.clipToWordLimit(clipped, allowedForThisPillar))
+            } else {
+                updatePillar(clipped)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = pillarTitle,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (isDark) LightGold else Color(0xFF991B1B)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = pillarTitle,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isDark) LightGold else Color(0xFF991B1B)
+                    )
                 )
-            )
+                if (firstDraftState.isArcadeLocked) {
+                    Text(
+                        text = "$currentPillarWords / $maxPillarWords words",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = if (currentPillarWords >= maxPillarWords) ScribeStarNeonRed else ElectrumGold
+                        )
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = pillarPrompt,
@@ -1063,7 +1137,8 @@ private fun LorePillarsSection(
             ) {
                 OutlinedTextField(
                     value = pillarContent,
-                    onValueChange = updatePillar,
+                    onValueChange = cappedUpdatePillar,
+                    readOnly = !firstDraftState.canEditBible(),
                     modifier = Modifier.fillMaxSize(),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0xFF111111),
@@ -1105,9 +1180,44 @@ private fun CharacterDossiersSection(
     characters: List<CharacterDossier>,
     activeCharactersInScript: List<String>,
     onUpdateCharacters: (List<CharacterDossier>) -> Unit,
+    firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     isCompactScreen: Boolean = false
 ) {
+    val context = LocalContext.current
     val isDark = LocalSeshatDarkTheme.current
+    val maxSlots = firstDraftState.maxCharacterDossierSlots()
+    val maxWordsPerDossier = firstDraftState.maxWordsPerCharacterDossier()
+    val canAddSlot = characters.size < maxSlots
+
+    fun tryAddCharacter() {
+        if (!canAddSlot) {
+            Toast.makeText(
+                context,
+                "🔒 First Draft Mode caps Character Dossiers at $maxSlots slots (unlock more via Draft milestone loot drops!).",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        onUpdateCharacters(characters + CharacterDossier(name = "NEW CHARACTER"))
+    }
+
+    fun clipDossierIfNeeded(updated: CharacterDossier): CharacterDossier {
+        if (!firstDraftState.isArcadeLocked) return updated
+        // Enforce total words across dossier fields <= maxWordsPerDossier
+        val combinedWords = FirstDraftTextMetrics.countWords(
+            "${updated.physicalDescription} ${updated.arcAndNeed} ${updated.goalAndStakes} ${updated.voiceCadence} ${updated.secretsAndLore}"
+        )
+        if (combinedWords <= maxWordsPerDossier) return updated
+        val perFieldCap = (maxWordsPerDossier / 3).coerceAtLeast(35)
+        return updated.copy(
+            physicalDescription = FirstDraftTextMetrics.clipToWordLimit(updated.physicalDescription, perFieldCap),
+            arcAndNeed = FirstDraftTextMetrics.clipToWordLimit(updated.arcAndNeed, perFieldCap),
+            goalAndStakes = FirstDraftTextMetrics.clipToWordLimit(updated.goalAndStakes, perFieldCap),
+            voiceCadence = FirstDraftTextMetrics.clipToWordLimit(updated.voiceCadence, perFieldCap),
+            secretsAndLore = FirstDraftTextMetrics.clipToWordLimit(updated.secretsAndLore, perFieldCap)
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1117,7 +1227,7 @@ private fun CharacterDossiersSection(
         if (isCompactScreen) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "CHARACTER PROFILES (${characters.size})",
+                    text = if (firstDraftState.isArcadeLocked) "CHARACTER PROFILES (${characters.size} / $maxSlots SLOTS • MAX ${maxWordsPerDossier}w)" else "CHARACTER PROFILES (${characters.size})",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
                         fontWeight = FontWeight.ExtraBold
@@ -1128,7 +1238,7 @@ private fun CharacterDossiersSection(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (activeCharactersInScript.isNotEmpty()) {
+                    if (activeCharactersInScript.isNotEmpty() && !firstDraftState.isArcadeLocked) {
                         GlassActionButton(
                             text = "⚡ Import (${activeCharactersInScript.size})",
                             onClick = {
@@ -1136,20 +1246,18 @@ private fun CharacterDossiersSection(
                                 val newOnes = activeCharactersInScript
                                     .filter { it.isNotBlank() && !existingNames.contains(it.trim().uppercase()) }
                                     .map { CharacterDossier(name = it.trim().uppercase()) }
-                                onUpdateCharacters(characters + newOnes)
+                                onUpdateCharacters((characters + newOnes).take(maxSlots))
                             },
                             modifier = Modifier.weight(1f)
                         )
                     }
 
                     GlassActionButton(
-                        text = "Add Character",
+                        text = if (canAddSlot) "Add Character (${characters.size}/$maxSlots)" else "🔒 Max $maxSlots Slots",
                         icon = { Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(15.dp)) },
-                        onClick = {
-                            onUpdateCharacters(characters + CharacterDossier(name = "NEW CHARACTER"))
-                        },
-                        isPrimary = true,
-                        modifier = if (activeCharactersInScript.isNotEmpty()) Modifier.weight(1f) else Modifier.fillMaxWidth()
+                        onClick = { tryAddCharacter() },
+                        isPrimary = canAddSlot,
+                        modifier = if (activeCharactersInScript.isNotEmpty() && !firstDraftState.isArcadeLocked) Modifier.weight(1f) else Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -1160,7 +1268,7 @@ private fun CharacterDossiersSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "CHARACTER PROFILES & FACTION ALLEGIANCES",
+                    text = if (firstDraftState.isArcadeLocked) "CHARACTER PROFILES (${characters.size} / $maxSlots SLOTS • MAX ${maxWordsPerDossier}w EACH)" else "CHARACTER PROFILES & FACTION ALLEGIANCES",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
                         fontWeight = FontWeight.ExtraBold
@@ -1168,7 +1276,7 @@ private fun CharacterDossiersSection(
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (activeCharactersInScript.isNotEmpty()) {
+                    if (activeCharactersInScript.isNotEmpty() && !firstDraftState.isArcadeLocked) {
                         GlassActionButton(
                             text = "⚡ Import Script Cast (${activeCharactersInScript.size})",
                             onClick = {
@@ -1176,18 +1284,18 @@ private fun CharacterDossiersSection(
                                 val newOnes = activeCharactersInScript
                                     .filter { it.isNotBlank() && !existingNames.contains(it.trim().uppercase()) }
                                     .map { CharacterDossier(name = it.trim().uppercase()) }
-                                onUpdateCharacters(characters + newOnes)
+                                onUpdateCharacters((characters + newOnes).take(maxSlots))
                             }
                         )
                     }
 
                     GlassActionButton(
-                        text = "Add Character",
+                        text = if (firstDraftState.isArcadeLocked) {
+                            if (canAddSlot) "Add Character (${characters.size}/$maxSlots)" else "🔒 Max $maxSlots Slots"
+                        } else "Add Character",
                         icon = { Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(15.dp)) },
-                        onClick = {
-                            onUpdateCharacters(characters + CharacterDossier(name = "NEW CHARACTER"))
-                        },
-                        isPrimary = true
+                        onClick = { tryAddCharacter() },
+                        isPrimary = canAddSlot
                     )
                 }
             }
@@ -1214,11 +1322,13 @@ private fun CharacterDossiersSection(
                     CharacterCardItem(
                         character = char,
                         onUpdate = { updated ->
-                            onUpdateCharacters(characters.map { if (it.id == updated.id) updated else it })
+                            val clipped = clipDossierIfNeeded(updated)
+                            onUpdateCharacters(characters.map { if (it.id == clipped.id) clipped else it })
                         },
                         onDelete = {
                             onUpdateCharacters(characters.filter { it.id != char.id })
                         },
+                        canUseAiPortrait = firstDraftState.canUseAiCharacterPortraits(),
                         isCompactScreen = isCompactScreen
                     )
                 }
@@ -1232,6 +1342,7 @@ private fun CharacterPortraitSection(
     character: CharacterDossier,
     onUpdate: (CharacterDossier) -> Unit,
     isDark: Boolean,
+    canUseAiPortrait: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -1388,12 +1499,27 @@ private fun CharacterPortraitSection(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassActionButton(
-                    text = if (isGenerating) "Generating..." else "✨ AI Portrait",
-                    onClick = { if (!isGenerating) generateAiPortrait() },
-                    modifier = Modifier.weight(1f),
-                    isPrimary = true
-                )
+                if (canUseAiPortrait) {
+                    GlassActionButton(
+                        text = if (isGenerating) "Generating..." else "✨ AI Portrait",
+                        onClick = { if (!isGenerating) generateAiPortrait() },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = true
+                    )
+                } else {
+                    GlassActionButton(
+                        text = "🔒 AI Portrait (Loot Drop)",
+                        onClick = {
+                            Toast.makeText(
+                                context,
+                                "🔒 AI Character Portraits unlock as a Draft Milestone Loot Drop!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        isPrimary = false
+                    )
+                }
                 GlassActionButton(
                     text = "🖼️ Upload",
                     onClick = { if (!isGenerating) imagePickerLauncher.launch("image/*") }
@@ -1416,7 +1542,8 @@ private fun CharacterCardCompact(
     character: CharacterDossier,
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
-    isDark: Boolean
+    isDark: Boolean,
+    canUseAiPortrait: Boolean = true
 ) {
     Column(modifier = Modifier.padding(10.dp)) {
         // Name + Delete
@@ -1483,6 +1610,7 @@ private fun CharacterCardCompact(
             character = character,
             onUpdate = onUpdate,
             isDark = isDark,
+            canUseAiPortrait = canUseAiPortrait,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -1554,7 +1682,8 @@ private fun CharacterCardDesktop(
     character: CharacterDossier,
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
-    isDark: Boolean
+    isDark: Boolean,
+    canUseAiPortrait: Boolean = true
 ) {
     Column(modifier = Modifier.padding(14.dp)) {
         Row(
@@ -1623,6 +1752,7 @@ private fun CharacterCardDesktop(
                 character = character,
                 onUpdate = onUpdate,
                 isDark = isDark,
+                canUseAiPortrait = canUseAiPortrait,
                 modifier = Modifier.weight(0.48f)
             )
             OutlinedTextField(
@@ -1681,6 +1811,7 @@ private fun CharacterCardItem(
     character: CharacterDossier,
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
+    canUseAiPortrait: Boolean = true,
     isCompactScreen: Boolean = false
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1692,14 +1823,16 @@ private fun CharacterCardItem(
                 character = character,
                 onUpdate = onUpdate,
                 onDelete = onDelete,
-                isDark = isDark
+                isDark = isDark,
+                canUseAiPortrait = canUseAiPortrait
             )
         } else {
             CharacterCardDesktop(
                 character = character,
                 onUpdate = onUpdate,
                 onDelete = onDelete,
-                isDark = isDark
+                isDark = isDark,
+                canUseAiPortrait = canUseAiPortrait
             )
         }
     }
@@ -2232,10 +2365,12 @@ private fun SeriesHubSection(
     descriptor: SeriesHubDescriptor,
     tvConfig: TvSeriesBibleConfig,
     onUpdateTvConfig: (TvSeriesBibleConfig) -> Unit,
+    firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     isCompactScreen: Boolean = false
 ) {
     val isDark = LocalSeshatDarkTheme.current
     val scroll = rememberScrollState()
+    val maxArcWords = firstDraftState.maxWordsTvSeasonArc()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -2328,9 +2463,18 @@ private fun SeriesHubSection(
 
         OutlinedTextField(
             value = tvConfig.seasonalArcSummary,
-            onValueChange = { onUpdateTvConfig(tvConfig.copy(seasonalArcSummary = it)) },
+            onValueChange = {
+                val clipped = if (firstDraftState.isArcadeLocked) {
+                    FirstDraftTextMetrics.clipToWordLimit(it, maxArcWords)
+                } else it
+                onUpdateTvConfig(tvConfig.copy(seasonalArcSummary = clipped))
+            },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(descriptor.arcLabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold) },
+            label = {
+                val arcWords = FirstDraftTextMetrics.countWords(tvConfig.seasonalArcSummary)
+                val suffix = if (firstDraftState.isArcadeLocked) " ($arcWords/$maxArcWords words)" else ""
+                Text(descriptor.arcLabel + suffix, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold)
+            },
             placeholder = { Text(descriptor.arcPlaceholder, color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)) },
             minLines = 3,
             textStyle = MaterialTheme.typography.bodySmall.copy(

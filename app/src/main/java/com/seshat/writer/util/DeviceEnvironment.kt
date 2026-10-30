@@ -49,4 +49,6 @@ object DeviceEnvironment {
     fun getDeviceLabel(context: Context): String {
         return if (isGooglebook(context)) "💻 Googlebook • Arrow Nav" else "📱 Touch Screen"
     }
+
+    fun getDeviceNavLabel(context: Context): String = getDeviceLabel(context)
 }
