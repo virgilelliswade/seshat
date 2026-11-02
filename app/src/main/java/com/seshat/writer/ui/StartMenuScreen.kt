@@ -105,11 +105,20 @@ import com.seshat.writer.ui.theme.opticalPillBrush
 import com.seshat.writer.ui.theme.smokedGlassBrush
 import com.seshat.writer.templates.ProjectTemplate
 import com.seshat.writer.templates.TemplateRegistry
+import com.seshat.writer.firstdraft.AmbientGenrePreviewCanvas
 import com.seshat.writer.firstdraft.CampaignGenre
 import com.seshat.writer.firstdraft.FirstDraftController
 import com.seshat.writer.firstdraft.FirstDraftStage
 import com.seshat.writer.firstdraft.FirstDraftState
+import com.seshat.writer.firstdraft.GenreIgnitionTransitionOverlay
 import kotlinx.coroutines.delay
+
+private data class PendingCampaignLaunch(
+    val format: ProjectFormat,
+    val screenplayType: ScreenplayType?,
+    val genre: CampaignGenre,
+    val title: String
+)
 
 /**
  * Navigation steps within the Start Menu hierarchy.
@@ -143,6 +152,7 @@ fun StartMenuScreen(
     var projectTitleInput by remember { mutableStateOf("") }
     var showLibraryDialog by remember { mutableStateOf(false) }
     var isUniverseMode by remember { mutableStateOf(false) }
+    var pendingCampaignLaunch by remember { mutableStateOf<PendingCampaignLaunch?>(null) }
 
     val buttonsAlpha by animateFloatAsState(
         targetValue = if (areButtonsVisible) 1f else 0f,
@@ -648,17 +658,12 @@ fun StartMenuScreen(
                                     onTitleChange = { projectTitleInput = it },
                                     isDark = isDark,
                                     onLaunchSpark = { format, sType, genre ->
-                                        viewModel.startNewProject(
-                                            context = context,
+                                        pendingCampaignLaunch = PendingCampaignLaunch(
                                             format = format,
                                             screenplayType = sType,
-                                            initialWorkspaceView = InitialWorkspaceView.EDITOR,
-                                            customTitle = projectTitleInput,
-                                            template = TemplateRegistry.getBlankTemplate(format, sType),
-                                            enableSparkMode = true,
-                                            campaignGenre = genre
+                                            genre = genre,
+                                            title = projectTitleInput
                                         )
-                                        onCloseMenu()
                                     },
                                     onBack = { currentStep = StartMenuStep.TOP_LEVEL }
                                 )
@@ -666,6 +671,30 @@ fun StartMenuScreen(
                         }
                     }
                 }
+            }
+
+            // Full-Screen 2.2s Genre Campaign Ignition Transition Overlay
+            val activeLaunch = pendingCampaignLaunch
+            if (activeLaunch != null) {
+                GenreIgnitionTransitionOverlay(
+                    genre = activeLaunch.genre,
+                    projectTitle = activeLaunch.title,
+                    onFinished = {
+                        pendingCampaignLaunch = null
+                        viewModel.startNewProject(
+                            context = context,
+                            format = activeLaunch.format,
+                            screenplayType = activeLaunch.screenplayType,
+                            initialWorkspaceView = InitialWorkspaceView.EDITOR,
+                            customTitle = activeLaunch.title,
+                            template = TemplateRegistry.getBlankTemplate(activeLaunch.format, activeLaunch.screenplayType),
+                            enableSparkMode = true,
+                            campaignGenre = activeLaunch.genre
+                        )
+                        onCloseMenu()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
@@ -1184,7 +1213,7 @@ private fun SparkNewSetupContent(
             }
         }
 
-        // 2. LIVE CAMPAIGN BRIEFING CARD
+        // 2. LIVE CAMPAIGN BRIEFING CARD (with Ambient Procedural Genre Transition Backdrop)
         Surface(
             color = Color(0xFF0A0F1A).copy(alpha = 0.94f),
             shape = RoundedCornerShape(14.dp),
@@ -1201,10 +1230,15 @@ private fun SparkNewSetupContent(
                     midAlpha = 0.30f
                 )
         ) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AmbientGenrePreviewCanvas(
+                    genre = selectedGenre,
+                    modifier = Modifier.matchParentSize()
+                )
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1306,6 +1340,7 @@ private fun SparkNewSetupContent(
                         fontSize = 11.sp
                     )
                 )
+                }
             }
         }
 
