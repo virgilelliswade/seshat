@@ -105,6 +105,9 @@ import com.seshat.writer.ui.theme.opticalPillBrush
 import com.seshat.writer.ui.theme.smokedGlassBrush
 import com.seshat.writer.templates.ProjectTemplate
 import com.seshat.writer.templates.TemplateRegistry
+import com.seshat.writer.firstdraft.FirstDraftController
+import com.seshat.writer.firstdraft.FirstDraftStage
+import com.seshat.writer.firstdraft.FirstDraftState
 import kotlinx.coroutines.delay
 
 /**
@@ -118,7 +121,9 @@ enum class StartMenuStep {
     NOVEL_SELECT,      // Level 2 (Novel Sub-menu): [Single Novel] vs [Novel Series]
     SCREENPLAY_TYPE,   // Level 2 (TV Series Only): [1-Hour Drama Show] vs [30-Min Comedy Show]
     TEMPLATE_SELECT,   // Level 3: [Blank (Default)] vs [Template 1] vs [Template 2]...
-    WORKSPACE_VIEW     // Level 4: [Lore Doc & Story Bible] vs [Corkboard Outline] vs [Drafting Canvas]
+    WORKSPACE_VIEW,    // Level 4: [Lore Doc & Story Bible] vs [Corkboard Outline] vs [Drafting Canvas]
+    SPARK_HUB,         // Dedicated Spark Mode Hub: [New Spark] vs [Continue Existing Spark]
+    SPARK_NEW_SETUP    // New Spark Project Setup (Title + Medium Selection)
 }
 
 @Composable
@@ -392,6 +397,10 @@ fun StartMenuScreen(
                                             isUniverseMode = false
                                             currentStep = StartMenuStep.FORMAT_SELECT
                                         },
+                                        onOpenSparkMode = {
+                                            projectTitleInput = ""
+                                            currentStep = StartMenuStep.SPARK_HUB
+                                        },
                                         onOpenLibrary = {
                                             showLibraryDialog = true
                                         },
@@ -582,7 +591,8 @@ fun StartMenuScreen(
                                             screenplayType = selectedScreenplayType,
                                             initialWorkspaceView = view,
                                             customTitle = projectTitleInput,
-                                            template = selectedTemplate
+                                            template = selectedTemplate,
+                                            enableSparkMode = false
                                         )
                                         onCloseMenu()
                                     },
@@ -595,6 +605,50 @@ fun StartMenuScreen(
                                             currentStep = StartMenuStep.FORMAT_SELECT
                                         }
                                     }
+                                )
+                            }
+
+                            StartMenuStep.SPARK_HUB -> {
+                                val savedSparkProjects = remember(context, uiState.title, uiState.firstDraftState) {
+                                    FirstDraftController.listSparkProjects(context)
+                                }
+                                SparkModeHubContent(
+                                    activeSparkState = if (uiState.firstDraftState.isFirstDraftMode) uiState.firstDraftState else null,
+                                    activeProjectTitle = uiState.title,
+                                    savedSparkProjects = savedSparkProjects,
+                                    onStartNewSpark = {
+                                        projectTitleInput = ""
+                                        currentStep = StartMenuStep.SPARK_NEW_SETUP
+                                    },
+                                    onContinueActiveSpark = {
+                                        onCloseMenu()
+                                    },
+                                    onResumeSparkProject = { sparkState ->
+                                        viewModel.resumeSparkProject(context, sparkState)
+                                        onCloseMenu()
+                                    },
+                                    onBack = { currentStep = StartMenuStep.TOP_LEVEL }
+                                )
+                            }
+
+                            StartMenuStep.SPARK_NEW_SETUP -> {
+                                SparkNewSetupContent(
+                                    projectTitleInput = projectTitleInput,
+                                    onTitleChange = { projectTitleInput = it },
+                                    isDark = isDark,
+                                    onLaunchSpark = { format, sType ->
+                                        viewModel.startNewProject(
+                                            context = context,
+                                            format = format,
+                                            screenplayType = sType,
+                                            initialWorkspaceView = InitialWorkspaceView.EDITOR,
+                                            customTitle = projectTitleInput,
+                                            template = TemplateRegistry.getBlankTemplate(format, sType),
+                                            enableSparkMode = true
+                                        )
+                                        onCloseMenu()
+                                    },
+                                    onBack = { currentStep = StartMenuStep.SPARK_HUB }
                                 )
                             }
                         }
@@ -907,6 +961,214 @@ private fun WorkspaceViewContent(
             subtitle = draftingDesc,
             badgeColor = Color(0xFF10B981),
             onClick = { onSelectView(InitialWorkspaceView.EDITOR) }
+        )
+    }
+}
+
+@Composable
+private fun SparkModeHubContent(
+    activeSparkState: FirstDraftState?,
+    activeProjectTitle: String,
+    savedSparkProjects: List<FirstDraftState>,
+    onStartNewSpark: () -> Unit,
+    onContinueActiveSpark: () -> Unit,
+    onResumeSparkProject: (FirstDraftState) -> Unit,
+    onBack: () -> Unit
+) {
+    StartMenuLayout(
+        headerTitle = "⚡ SPARK MODE • FIRST DRAFT ENGINE",
+        headerSubtitle = "Anti-Procrastination Arcade Mode • Strict stage airlocks, 48-hour survival quotas & forward-only drafting",
+        showBackButton = true,
+        onBack = onBack
+    ) {
+        // 1. START NEW SPARK
+        StartMenuBigButton(
+            badgeText = "⚡",
+            title = "START NEW SPARK PROJECT",
+            subtitle = "Ignite a brand-new First Draft run • Choose Feature Screenplay, TV Pilot, or Prose Novel with strict SPARK → BIBLE → OUTLINE → DRAFT airlocks",
+            badgeColor = ScribeStarNeonRed,
+            onClick = onStartNewSpark
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 2. CONTINUE EXISTING SPARK
+        if (activeSparkState != null) {
+            StartMenuBigButton(
+                badgeText = "🔥",
+                title = "CONTINUE ACTIVE SPARK: ${activeProjectTitle.uppercase(Locale.US)}",
+                subtitle = "Current Stage: ${activeSparkState.stage.name} • ⚡ ${activeSparkState.xpBalance} XP • 🔥 ${activeSparkState.activeStreakDays}d Streak • Return immediately to your active Spark run",
+                badgeColor = ElectrumGold,
+                onClick = onContinueActiveSpark
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        if (savedSparkProjects.isNotEmpty()) {
+            Text(
+                text = "CONTINUE EXISTING SPARK PROJECTS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = MainAppFontFamily,
+                    color = ElectrumGold,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.5.sp,
+                    fontSize = 11.5.sp
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 10.dp)
+            )
+
+            savedSparkProjects.forEach { spark ->
+                val formatBadge = when {
+                    spark.projectFormat == ProjectFormat.NOVEL -> "📖 NOVEL"
+                    spark.projectFormat == ProjectFormat.TV_SERIES && spark.screenplayType == ScreenplayType.TV_HALF_HOUR_COMEDY -> "🛋️ TV 30M"
+                    spark.projectFormat == ProjectFormat.TV_SERIES -> "📺 TV 60M"
+                    else -> "🎬 FEATURE"
+                }
+                val stageBadge = when (spark.stage) {
+                    FirstDraftStage.SPARK -> "⚡ SPARK (LOGLINE)"
+                    FirstDraftStage.BIBLE -> "📖 BIBLE (LORE)"
+                    FirstDraftStage.OUTLINE -> "📌 OUTLINE (BEATS)"
+                    FirstDraftStage.DRAFT -> "🔥 DRAFT (FORWARD-ONLY)"
+                    FirstDraftStage.STUDIO_UNLOCKED -> "🏆 STUDIO UNLOCKED"
+                }
+                val loglinePreview = spark.sparkLogline.take(90).let {
+                    if (spark.sparkLogline.length > 90) "$it…" else it
+                }
+                val sub = buildString {
+                    append("$formatBadge • Stage: $stageBadge • ⚡ ${spark.xpBalance} XP • 🔥 ${spark.activeStreakDays}d Streak")
+                    if (loglinePreview.isNotBlank()) {
+                        append("\n\"$loglinePreview\"")
+                    }
+                }
+                StartMenuBigButton(
+                    badgeText = "🔥",
+                    title = spark.projectTitle.ifBlank { "UNTITLED SPARK" }.uppercase(Locale.US),
+                    subtitle = sub,
+                    badgeColor = Color(0xFF10B981),
+                    onClick = { onResumeSparkProject(spark) }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        } else if (activeSparkState == null) {
+            StartMenuBigButton(
+                badgeText = "🔥",
+                title = "CONTINUE EXISTING SPARK",
+                subtitle = "No saved Spark projects found yet • Click 'Start New Spark Project' above to ignite your first run!",
+                badgeColor = ElectrumGold,
+                onClick = onStartNewSpark
+            )
+        }
+    }
+}
+
+@Composable
+private fun SparkNewSetupContent(
+    projectTitleInput: String,
+    onTitleChange: (String) -> Unit,
+    isDark: Boolean,
+    onLaunchSpark: (ProjectFormat, ScreenplayType?) -> Unit,
+    onBack: () -> Unit
+) {
+    StartMenuLayout(
+        headerTitle = "⚡ NEW SPARK PROJECT",
+        headerSubtitle = "Name your project and choose your First Draft Engine ruleset",
+        showBackButton = true,
+        onBack = onBack
+    ) {
+        // Optional Project Title Input
+        Surface(
+            color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.4.dp, ScribeStarNeonRed.copy(alpha = 0.70f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .neonBloom(
+                    color = ScribeStarNeonRed,
+                    cornerRadius = 14.dp,
+                    glowRadius = 6.dp,
+                    strokeWidth = 1.4.dp,
+                    outerAlpha = 0.12f,
+                    midAlpha = 0.28f
+                )
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(
+                    text = "SPARK PROJECT TITLE (OPTIONAL)",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        color = ScribeStarNeonRed,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box {
+                    if (projectTitleInput.isEmpty()) {
+                        Text(
+                            text = "e.g. Velocity Run / The Zero Hour",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (isDark) Color(0xFF94A3B8) else ScreenplayTextMuted
+                            )
+                        )
+                    }
+                    BasicTextField(
+                        value = projectTitleInput,
+                        onValueChange = onTitleChange,
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = if (isDark) Color.White else Color(0xFF0F172A),
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        cursorBrush = SolidColor(ScribeStarNeonRed),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // 1. FEATURE SCREENPLAY SPARK
+        StartMenuBigButton(
+            badgeText = "🎬",
+            title = "FEATURE SCREENPLAY SPARK",
+            subtitle = "Target: 90 Pages (~18,000 Words) • 30m Logline Spark → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Rolling Fog of War",
+            badgeColor = ElectrumGold,
+            onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 2. TV SERIES 1-HOUR DRAMA SPARK
+        StartMenuBigButton(
+            badgeText = "📺",
+            title = "TV DRAMA SPARK (1-HOUR PILOT)",
+            subtitle = "Target: 10,000 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Act-Gate Locks",
+            badgeColor = Color(0xFF3B82F6),
+            onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA) }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 3. TV SERIES 30-MIN COMEDY SPARK
+        StartMenuBigButton(
+            badgeText = "🛋️",
+            title = "TV COMEDY SPARK (30-MIN PILOT)",
+            subtitle = "Target: 5,500 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Sitcom Act-Gates",
+            badgeColor = Color(0xFFEC4899),
+            onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY) }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 4. PROSE NOVEL SPARK
+        StartMenuBigButton(
+            badgeText = "📖",
+            title = "PROSE NOVEL SPARK",
+            subtitle = "Target: 60,000 Words • 30m Premise Spark → 96h World Bible → 48h Chapter Skeleton → 1,000w / 48h Quota & 3,500w Chapter Airlocks",
+            badgeColor = Color(0xFF8B5CF6),
+            onClick = { onLaunchSpark(ProjectFormat.NOVEL, null) }
         )
     }
 }
@@ -1526,6 +1788,7 @@ private fun GlassStartMenuHub(
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
     onNewProject: () -> Unit,
+    onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinueWriting: () -> Unit,
     onOpenProject: (ScriptProject) -> Unit,
@@ -1563,6 +1826,7 @@ private fun GlassStartMenuHub(
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
                 onNewProject = onNewProject,
+                onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
                 onContinue = handleContinue
             )
@@ -1572,6 +1836,7 @@ private fun GlassStartMenuHub(
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
                 onNewProject = onNewProject,
+                onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
                 onContinue = handleContinue
             )
@@ -1581,6 +1846,7 @@ private fun GlassStartMenuHub(
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
                 onNewProject = onNewProject,
+                onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
                 onContinue = handleContinue
             )
@@ -1594,6 +1860,7 @@ private fun GlassStartMenuHubWide(
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
     onNewProject: () -> Unit,
+    onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
@@ -1671,6 +1938,7 @@ private fun GlassStartMenuHubWide(
         ConceptBActionDock(
             isCompact = false,
             onNewProject = onNewProject,
+            onOpenSparkMode = onOpenSparkMode,
             onOpenLibrary = onOpenLibrary,
             onContinue = onContinue
         )
@@ -1683,6 +1951,7 @@ private fun GlassStartMenuHubMedium(
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
     onNewProject: () -> Unit,
+    onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
@@ -1755,6 +2024,7 @@ private fun GlassStartMenuHubMedium(
         ConceptBActionDock(
             isCompact = false,
             onNewProject = onNewProject,
+            onOpenSparkMode = onOpenSparkMode,
             onOpenLibrary = onOpenLibrary,
             onContinue = onContinue
         )
@@ -1767,6 +2037,7 @@ private fun GlassStartMenuHubCompact(
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
     onNewProject: () -> Unit,
+    onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
@@ -1831,6 +2102,7 @@ private fun GlassStartMenuHubCompact(
         ConceptBActionDock(
             isCompact = true,
             onNewProject = onNewProject,
+            onOpenSparkMode = onOpenSparkMode,
             onOpenLibrary = onOpenLibrary,
             onContinue = onContinue
         )
@@ -1839,12 +2111,13 @@ private fun GlassStartMenuHubCompact(
 
 /**
  * Concept B Floating Action Pill Dock.
- * Displays + New Project (radiant neon red), Import Script (frosted glass), and Continue (smoky glass).
+ * Displays ⚡ Spark Mode (radiant neon red), Import Script (frosted glass), and Continue (smoky glass).
  */
 @Composable
 private fun ConceptBActionDock(
     isCompact: Boolean,
     onNewProject: () -> Unit,
+    onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
@@ -1880,6 +2153,12 @@ private fun ConceptBActionDock(
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            ConceptBPrimaryPill(
+                text = "⚡ Spark Mode",
+                onClick = onOpenSparkMode,
+                isCompact = isCompact
+            )
+
             ConceptBGlassPill(
                 text = "Import Script",
                 onClick = onOpenLibrary,

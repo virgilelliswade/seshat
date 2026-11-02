@@ -186,7 +186,7 @@ data class ScreenplayUiState(
     val isShortcutsDialogOpen: Boolean = false,
     val isAboutDialogOpen: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
-    val firstDraftState: FirstDraftState = FirstDraftController.createForNewProject(
+    val firstDraftState: FirstDraftState = FirstDraftController.createForStandardProject(
         format = ProjectFormat.SCREENPLAY,
         screenplayType = ScreenplayType.FEATURE
     ),
@@ -3133,7 +3133,8 @@ class ScreenplayViewModel : ViewModel() {
         screenplayType: ScreenplayType?,
         initialWorkspaceView: InitialWorkspaceView,
         customTitle: String? = null,
-        template: ProjectTemplate? = null
+        template: ProjectTemplate? = null,
+        enableSparkMode: Boolean = false
     ) {
         val resolvedTemplate = template ?: TemplateRegistry.getBlankTemplate(format, screenplayType)
         if (format == ProjectFormat.TV_SERIES) {
@@ -3147,7 +3148,8 @@ class ScreenplayViewModel : ViewModel() {
                 showrunner = "",
                 format = screenplayType ?: ScreenplayType.TV_HOUR_DRAMA,
                 initialWorkspaceView = initialWorkspaceView,
-                template = resolvedTemplate
+                template = resolvedTemplate,
+                enableSparkMode = enableSparkMode
             )
             return
         }
@@ -3250,10 +3252,19 @@ class ScreenplayViewModel : ViewModel() {
         } catch (_: Exception) {}
 
         latestAppContext = context.applicationContext
-        val newFirstDraft = FirstDraftController.createForNewProject(
-            format = format,
-            screenplayType = screenplayType ?: ScreenplayType.FEATURE
-        )
+        val newFirstDraft = if (enableSparkMode) {
+            FirstDraftController.createForNewProject(
+                format = format,
+                screenplayType = screenplayType ?: ScreenplayType.FEATURE,
+                projectTitle = defaultTitle
+            )
+        } else {
+            FirstDraftController.createForStandardProject(
+                format = format,
+                screenplayType = screenplayType ?: ScreenplayType.FEATURE,
+                projectTitle = defaultTitle
+            )
+        }
         FirstDraftController.saveState(context, defaultTitle, newFirstDraft)
 
         _uiState.update { current ->
@@ -3266,8 +3277,8 @@ class ScreenplayViewModel : ViewModel() {
                 novelManuscript = starterManuscript,
                 sceneCards = if (initialChapterCards.isNotEmpty()) initialChapterCards else current.sceneCards,
                 activeChapterIndex = 0,
-                isStoryBibleOpen = initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
-                isCorkboardOpen = initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
+                isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
                 isCorkboardSideBySide = false,
                 firstDraftState = newFirstDraft
             )
@@ -3336,7 +3347,8 @@ class ScreenplayViewModel : ViewModel() {
         showrunner: String = "",
         format: ScreenplayType = ScreenplayType.TV_HOUR_DRAMA,
         initialWorkspaceView: InitialWorkspaceView = InitialWorkspaceView.EDITOR,
-        template: ProjectTemplate? = null
+        template: ProjectTemplate? = null,
+        enableSparkMode: Boolean = false
     ) {
         var series = TvSeriesProject.createDefault(
             title = seriesTitle.ifBlank { "Untitled TV Series" },
@@ -3360,10 +3372,19 @@ class ScreenplayViewModel : ViewModel() {
         TvSeriesRepository.saveProject(context, series)
 
         latestAppContext = context.applicationContext
-        val newFirstDraft = FirstDraftController.createForNewProject(
-            format = ProjectFormat.TV_SERIES,
-            screenplayType = format
-        )
+        val newFirstDraft = if (enableSparkMode) {
+            FirstDraftController.createForNewProject(
+                format = ProjectFormat.TV_SERIES,
+                screenplayType = format,
+                projectTitle = series.title
+            )
+        } else {
+            FirstDraftController.createForStandardProject(
+                format = ProjectFormat.TV_SERIES,
+                screenplayType = format,
+                projectTitle = series.title
+            )
+        }
         FirstDraftController.saveState(context, series.title, newFirstDraft)
 
         val activeEp = series.episodes.first()
@@ -3380,13 +3401,117 @@ class ScreenplayViewModel : ViewModel() {
                     focusedBlockId = activeEp.blocks.firstOrNull()?.id ?: "",
                     corkboardDoc = activeEp.corkboard,
                     storyBible = series.seriesBible,
-                    isStoryBibleOpen = initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
-                    isCorkboardOpen = initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                    isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
+                    isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
                     isCorkboardSideBySide = false,
                     firstDraftState = newFirstDraft
                 ),
                 activeEp.blocks,
                 focusedBlockId = activeEp.blocks.firstOrNull()?.id ?: ""
+            )
+        }
+    }
+
+    /**
+     * Resumes an existing saved Spark Mode project from the Splash Screen Spark Hub.
+     */
+    fun resumeSparkProject(context: Context, sparkState: FirstDraftState) {
+        latestAppContext = context.applicationContext
+        val title = sparkState.projectTitle.ifBlank { "Untitled Spark Project" }
+        val format = sparkState.projectFormat
+        val sType = sparkState.screenplayType
+
+        if (format == ProjectFormat.TV_SERIES) {
+            val loadedSeries = TvSeriesRepository.loadProject(context, title)
+                ?: TvSeriesProject.createDefault(
+                    title = title,
+                    showrunner = "",
+                    format = sType,
+                    pilotTitle = "Pilot"
+                )
+            val activeEp = loadedSeries.getActiveEpisode() ?: loadedSeries.episodes.first()
+            _uiState.update { current ->
+                buildUpdatedState(
+                    current.copy(
+                        isStartMenuOpen = false,
+                        projectFormat = ProjectFormat.TV_SERIES,
+                        screenplayType = sType,
+                        tvSeriesProject = loadedSeries,
+                        title = "${loadedSeries.title} - Ep ${activeEp.episodeNumber}: ${activeEp.title}",
+                        author = loadedSeries.showrunner,
+                        blocks = activeEp.blocks,
+                        focusedBlockId = activeEp.blocks.firstOrNull()?.id ?: "",
+                        corkboardDoc = activeEp.corkboard,
+                        storyBible = loadedSeries.seriesBible,
+                        isStoryBibleOpen = sparkState.stage == FirstDraftStage.BIBLE,
+                        isCorkboardOpen = sparkState.stage == FirstDraftStage.OUTLINE,
+                        isCorkboardSideBySide = false,
+                        firstDraftState = sparkState
+                    ),
+                    activeEp.blocks,
+                    focusedBlockId = activeEp.blocks.firstOrNull()?.id ?: ""
+                )
+            }
+            return
+        }
+
+        val loadedBible = StoryBibleRepository.loadBible(context, title)
+        val loadedCorkboard = CorkboardRepository.loadCorkboard(context, title)
+
+        if (format == ProjectFormat.NOVEL) {
+            val ms = NovelRepository.loadManuscript(context, title)
+            val chapterCards = NovelRepository.chaptersToSceneCards(ms)
+            _uiState.update { current ->
+                current.copy(
+                    isStartMenuOpen = false,
+                    projectFormat = ProjectFormat.NOVEL,
+                    screenplayType = sType,
+                    title = ms.title.ifBlank { title },
+                    author = ms.author,
+                    novelManuscript = ms,
+                    sceneCards = chapterCards,
+                    activeChapterIndex = sparkState.novelUnlockedChapterIndex.coerceIn(0, (ms.chapters.size - 1).coerceAtLeast(0)),
+                    corkboardDoc = loadedCorkboard,
+                    storyBible = loadedBible,
+                    isStoryBibleOpen = sparkState.stage == FirstDraftStage.BIBLE,
+                    isCorkboardOpen = sparkState.stage == FirstDraftStage.OUTLINE,
+                    isCorkboardSideBySide = false,
+                    firstDraftState = sparkState
+                )
+            }
+            return
+        }
+
+        // Standard / Feature Screenplay Spark Project
+        val safeName = title.replace(Regex("[^a-zA-Z0-9._-]"), "_").trim('_').ifBlank { "Screenplay" }
+        val file = File(ScriptLibraryManager.getScriptsDirectory(context), "$safeName.fountain")
+        if (file.exists() && file.canRead()) {
+            try {
+                val imp = ScriptImporter.importFromFile(file)
+                val doc = imp.document
+                if (imp.isSuccess && doc != null) {
+                    loadDocument(doc.blocks, doc.titlePage.copy(title = doc.titlePage.title.ifBlank { title }))
+                } else {
+                    loadDocument(listOf(ScreenplayBlock(type = BlockType.SCENE_HEADING, text = "")), TitlePageData(title = title))
+                }
+            } catch (_: Exception) {
+                loadDocument(listOf(ScreenplayBlock(type = BlockType.SCENE_HEADING, text = "")), TitlePageData(title = title))
+            }
+        } else {
+            loadDocument(listOf(ScreenplayBlock(type = BlockType.SCENE_HEADING, text = "")), TitlePageData(title = title))
+        }
+
+        _uiState.update { current ->
+            current.copy(
+                isStartMenuOpen = false,
+                projectFormat = format,
+                screenplayType = sType,
+                corkboardDoc = loadedCorkboard,
+                storyBible = loadedBible,
+                isStoryBibleOpen = sparkState.stage == FirstDraftStage.BIBLE,
+                isCorkboardOpen = sparkState.stage == FirstDraftStage.OUTLINE,
+                isCorkboardSideBySide = false,
+                firstDraftState = sparkState
             )
         }
     }

@@ -236,8 +236,9 @@ data class StageGateReceiptData(
  * Serialized into .seshat project bundle metadata and local storage.
  */
 data class FirstDraftState(
-    val isFirstDraftMode: Boolean = true,
-    val stage: FirstDraftStage = FirstDraftStage.SPARK,
+    val isFirstDraftMode: Boolean = false,
+    val stage: FirstDraftStage = FirstDraftStage.STUDIO_UNLOCKED,
+    val projectTitle: String = "",
     val projectFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
     val screenplayType: ScreenplayType = ScreenplayType.FEATURE,
 
@@ -470,6 +471,7 @@ data class FirstDraftState(
     fun toJson(): JSONObject = JSONObject().apply {
         put("isFirstDraftMode", isFirstDraftMode)
         put("stage", stage.name)
+        put("projectTitle", projectTitle)
         put("projectFormat", projectFormat.name)
         put("screenplayType", screenplayType.name)
         put("sparkLogline", sparkLogline)
@@ -523,16 +525,19 @@ data class FirstDraftState(
     companion object {
         fun fromJson(json: JSONObject?): FirstDraftState {
             if (json == null) return FirstDraftState()
-            val stageStr = json.optString("stage", FirstDraftStage.SPARK.name)
-            val stage = FirstDraftStage.entries.find { it.name == stageStr } ?: FirstDraftStage.SPARK
+            val isFirstDraft = json.optBoolean("isFirstDraftMode", false)
+            val defaultStage = if (isFirstDraft) FirstDraftStage.SPARK else FirstDraftStage.STUDIO_UNLOCKED
+            val stageStr = json.optString("stage", defaultStage.name)
+            val stage = FirstDraftStage.entries.find { it.name == stageStr } ?: defaultStage
             val fmtStr = json.optString("projectFormat", ProjectFormat.SCREENPLAY.name)
             val format = ProjectFormat.entries.find { it.name == fmtStr } ?: ProjectFormat.SCREENPLAY
             val stStr = json.optString("screenplayType", ScreenplayType.FEATURE.name)
             val sType = ScreenplayType.entries.find { it.name == stStr } ?: ScreenplayType.FEATURE
 
             return FirstDraftState(
-                isFirstDraftMode = json.optBoolean("isFirstDraftMode", true),
+                isFirstDraftMode = isFirstDraft,
                 stage = stage,
+                projectTitle = json.optString("projectTitle", ""),
                 projectFormat = format,
                 screenplayType = sType,
                 sparkLogline = json.optString("sparkLogline", ""),
@@ -591,10 +596,25 @@ object FirstDraftController {
 
     private const val FIRST_DRAFT_DIR = "first_draft_states"
 
+    fun createForStandardProject(
+        format: ProjectFormat,
+        screenplayType: ScreenplayType = ScreenplayType.FEATURE,
+        projectTitle: String = ""
+    ): FirstDraftState {
+        return FirstDraftState(
+            isFirstDraftMode = false,
+            stage = FirstDraftStage.STUDIO_UNLOCKED,
+            projectTitle = projectTitle,
+            projectFormat = format,
+            screenplayType = screenplayType
+        )
+    }
+
     fun createForNewProject(
         format: ProjectFormat,
         screenplayType: ScreenplayType = ScreenplayType.FEATURE,
-        nowMs: Long = System.currentTimeMillis()
+        nowMs: Long = System.currentTimeMillis(),
+        projectTitle: String = ""
     ): FirstDraftState {
         val isTv = format == ProjectFormat.TV_SERIES ||
             screenplayType == ScreenplayType.TV_HOUR_DRAMA ||
@@ -608,6 +628,7 @@ object FirstDraftController {
         return FirstDraftState(
             isFirstDraftMode = true,
             stage = FirstDraftStage.SPARK,
+            projectTitle = projectTitle,
             projectFormat = format,
             screenplayType = screenplayType,
             sparkActiveRemainingMs = sparkDurationMs,
@@ -1210,7 +1231,8 @@ object FirstDraftController {
             val dir = File(context.filesDir, FIRST_DRAFT_DIR)
             if (!dir.exists()) dir.mkdirs()
             val file = File(dir, "${sanitizeTitle(projectTitle)}_first_draft.json")
-            file.writeText(state.toJson().toString(2))
+            val stateWithTitle = if (projectTitle.isNotBlank()) state.copy(projectTitle = projectTitle) else state
+            file.writeText(stateWithTitle.toJson().toString(2))
         } catch (_: Exception) {}
     }
 
@@ -1226,10 +1248,38 @@ object FirstDraftController {
             if (file.exists() && file.canRead()) {
                 FirstDraftState.fromJson(JSONObject(file.readText()))
             } else {
-                createForNewProject(format, screenplayType)
+                createForStandardProject(format, screenplayType, projectTitle)
             }
         } catch (_: Exception) {
-            createForNewProject(format, screenplayType)
+            createForStandardProject(format, screenplayType, projectTitle)
+        }
+    }
+
+    /**
+     * Lists all saved Spark Mode projects (where isFirstDraftMode == true), sorted most recent first.
+     */
+    fun listSparkProjects(context: Context): List<FirstDraftState> {
+        return try {
+            val dir = File(context.filesDir, FIRST_DRAFT_DIR)
+            if (!dir.exists() || !dir.isDirectory) return emptyList()
+            val files = dir.listFiles { f -> f.isFile && f.name.endsWith("_first_draft.json") } ?: return emptyList()
+            files.mapNotNull { file ->
+                try {
+                    val parsed = FirstDraftState.fromJson(JSONObject(file.readText()))
+                    if (parsed.isFirstDraftMode) {
+                        val fallbackTitle = file.name.removeSuffix("_first_draft.json")
+                            .replace("_", " ")
+                            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
+                        if (parsed.projectTitle.isBlank()) parsed.copy(projectTitle = fallbackTitle) else parsed
+                    } else {
+                        null
+                    }
+                } catch (_: Exception) {
+                    null
+                }
+            }.sortedByDescending { it.stageStartWallClockMs }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 }
