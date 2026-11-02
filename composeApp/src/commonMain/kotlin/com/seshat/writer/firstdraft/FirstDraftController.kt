@@ -51,7 +51,8 @@ enum class CampaignGenre(
     val bouncerQuotePreview: String,
     val bouncerSystemPrompt: String,
     val bouncerFallbackPrompt: String,
-    val launchCtaLabel: String
+    val launchCtaLabel: String,
+    val novelTargetWords: Int
 ) {
     HORROR(
         icon = "🩸",
@@ -69,7 +70,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Standing still in a horror movie means you die first. Somebody kicks open the door right now—who is it?\"",
         bouncerSystemPrompt = "You are a menacing horror-movie survival narrator (like Jigsaw meets a slasher director). The writer has frozen for 60 seconds. Output a single provocative 1-sentence horror escalation or threat demanding they keep moving forward.",
         bouncerFallbackPrompt = "🩸 SURVIVAL BOUNCER: Standing still in a horror script means you die first—kill the lights or have someone kick the door open right now!",
-        launchCtaLabel = "🩸 ENTER SURVIVAL MODE →"
+        launchCtaLabel = "🩸 ENTER SURVIVAL MODE →",
+        novelTargetWords = 80000
     ),
     SCIFI(
         icon = "🚀",
@@ -87,7 +89,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Warning: Cognitive stall detected. Trigger an EMP or breach the airlock in the next sentence.\"",
         bouncerSystemPrompt = "You are a cold, rogue starship AI (like HAL-9000). The writer has stalled for 60 seconds. Output a single urgent 1-sentence system warning or sci-fi anomaly demanding immediate forward action.",
         bouncerFallbackPrompt = "🚀 SHIP AI: Warning—writer cognitive stall detected. Trigger an EMP, breach the hull, or jump to warp immediately!",
-        launchCtaLabel = "🚀 INITIATE PROTOCOL MODE →"
+        launchCtaLabel = "🚀 INITIATE PROTOCOL MODE →",
+        novelTargetWords = 95000
     ),
     FANTASY(
         icon = "⚔️",
@@ -105,7 +108,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Roll for initiative! Your party is staring at a sealed rune door—what bursts out of the shadows?\"",
         bouncerSystemPrompt = "You are an intense, theatrical tabletop Dungeon Master. The writer has stalled for 60 seconds. Output a single 1-sentence dungeon encounter or magical twist demanding they roll for initiative and keep writing.",
         bouncerFallbackPrompt = "⚔️ DUNGEON MASTER: Roll for initiative! Your heroes hesitated too long—something ancient just burst through the gates!",
-        launchCtaLabel = "⚔️ EMBARK ON QUEST MODE →"
+        launchCtaLabel = "⚔️ EMBARK ON QUEST MODE →",
+        novelTargetWords = 100000
     ),
     THRILLER(
         icon = "🕵️",
@@ -123,7 +127,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Clock is ticking, pal. The cops are two blocks away and your lead is holding a smoking gun—what now?\"",
         bouncerSystemPrompt = "You are a gritty, hardboiled noir fixer and heist mastermind. The writer has stalled for 60 seconds. Output a single sharp 1-sentence double-cross or ticking-clock complication.",
         bouncerFallbackPrompt = "🕵️ FIXER: Clock's ticking, pal—the sirens are two blocks away and your lead is holding a smoking gun. Move!",
-        launchCtaLabel = "🕵️ START HEIST MODE →"
+        launchCtaLabel = "🕵️ START HEIST MODE →",
+        novelTargetWords = 85000
     ),
     ACTION(
         icon = "💥",
@@ -141,7 +146,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Cut! Why is nobody exploding?! Throw someone through a plate-glass window right now!\"",
         bouncerSystemPrompt = "You are a high-octane blockbuster action director yelling through a megaphone. The writer has stopped typing for 60 seconds. Output a single explosive 1-sentence stunt or escalation command.",
         bouncerFallbackPrompt = "💥 DIRECTOR: Cut! Why is nobody moving?! Throw someone through a plate-glass window or cut the brakes right now!",
-        launchCtaLabel = "💥 ENGAGE OVERDRIVE MODE →"
+        launchCtaLabel = "💥 ENGAGE OVERDRIVE MODE →",
+        novelTargetWords = 85000
     ),
     COMEDY(
         icon = "🎤",
@@ -159,7 +165,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Boo! You have been staring at that setup for 60 seconds! Make the worst possible person walk in right now!\"",
         bouncerSystemPrompt = "You are a ruthless, hilarious comedy club heckler and sitcom showrunner. The writer has stalled for 60 seconds. Output a single punchy 1-sentence roast or chaotic comedic escalation.",
         bouncerFallbackPrompt = "🎤 HECKLER: Boo! You've been staring at that setup for a full minute—make the worst possible person walk into the room!",
-        launchCtaLabel = "🎤 HIT THE STAGE (ROAST MODE) →"
+        launchCtaLabel = "🎤 HIT THE STAGE (ROAST MODE) →",
+        novelTargetWords = 75000
     ),
     DRAMA(
         icon = "🏆",
@@ -177,7 +184,8 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"Where is the subtext?! Have your character confess the one secret that ruins their life right now!\"",
         bouncerSystemPrompt = "You are an uncompromising prestige film/theatre director demanding raw emotional truth. The writer has paused for 60 seconds. Output a single piercing 1-sentence dramatic confrontation or emotional betrayal.",
         bouncerFallbackPrompt = "🏆 DIRECTOR: Stop playing it safe—have the character confess the one secret that ruins everything right now!",
-        launchCtaLabel = "🏆 ENTER VIRTUOSO MODE →"
+        launchCtaLabel = "🏆 ENTER VIRTUOSO MODE →",
+        novelTargetWords = 80000
     ),
     MYSTERY(
         icon = "🔍",
@@ -195,8 +203,15 @@ enum class CampaignGenre(
         bouncerQuotePreview = "\"The witness is lying and you know it. Drop a contradiction or a hidden clue into the dialogue immediately.\"",
         bouncerSystemPrompt = "You are a razor-sharp master detective (like Sherlock Holmes or Benoit Blanc). The writer has paused for 60 seconds. Output a single clever 1-sentence clue, alibi contradiction, or suspect twist.",
         bouncerFallbackPrompt = "🔍 SLEUTH: The witness is lying and you know it—drop a contradiction or reveal a hidden piece of evidence right now!",
-        launchCtaLabel = "🔍 OPEN DETECTIVE MODE →"
+        launchCtaLabel = "🔍 OPEN DETECTIVE MODE →",
+        novelTargetWords = 85000
     );
+
+    val novelTargetLabel: String
+        get() = String.format(Locale.US, "%,d Words", novelTargetWords)
+
+    val novelShortTargetLabel: String
+        get() = "${novelTargetWords / 1000}k w"
 
     fun stageTitleFor(stage: FirstDraftStage): String = when (stage) {
         FirstDraftStage.SPARK -> "$icon $stage1Title"
@@ -1146,9 +1161,10 @@ object FirstDraftController {
             }
 
             s.projectFormat == ProjectFormat.NOVEL -> {
-                // Prose Novel & Book Manuscript Loot Drops (Target: 60,000 Words)
-                // Sequential Chapter Airlock (3,500 words per chapter)
-                val unlockedCh = (currentWordCount / 3500).coerceIn(0, 11)
+                // Prose Novel & Book Manuscript Loot Drops (Genre-Calibrated Target: 75,000 to 100,000 Words)
+                val targetWords = s.campaignGenre.novelTargetWords
+                val chapterSize = (targetWords / 20).coerceIn(3500, 5000)
+                val unlockedCh = (currentWordCount / chapterSize).coerceIn(0, 24)
                 if (unlockedCh > s.novelUnlockedChapterIndex) {
                     s = s.copy(
                         novelUnlockedChapterIndex = unlockedCh,
@@ -1157,31 +1173,34 @@ object FirstDraftController {
                     )
                 }
 
-                if (!s.isNovelCoverPassAvailable && currentWordCount >= 10000) {
+                val coverWords = (targetWords * 0.16f).toInt()
+                if (!s.isNovelCoverPassAvailable && currentWordCount >= coverWords) {
                     s = s.copy(
                         isNovelCoverPassAvailable = true,
-                        lastLootToastMessage = "🎁 LOOT DROP (10,000 Words): Novel Cover Generator (1 Pass) Unlocked!"
+                        lastLootToastMessage = "🎁 LOOT DROP (${String.format(Locale.US, "%,d", coverWords)} Words): Novel Cover Generator (1 Pass) Unlocked!"
                     )
                 }
-                if (s.loreExpansionPassUntilWallClockMs == 0L && currentWordCount >= 25000) {
+                val loreWords = (targetWords * 0.40f).toInt()
+                if (s.loreExpansionPassUntilWallClockMs == 0L && currentWordCount >= loreWords) {
                     s = s.copy(
                         loreExpansionPassUntilWallClockMs = nowMs + 24L * 3600L * 1000L,
-                        lastLootToastMessage = "🎁 LOOT DROP (25,000 Words): 24-Hour 'Lore Expansion Pass' on Story Bible Unlocked!"
+                        lastLootToastMessage = "🎁 LOOT DROP (${String.format(Locale.US, "%,d", loreWords)} Words): 24-Hour 'Lore Expansion Pass' on Story Bible Unlocked!"
                     )
                 }
-                if (!s.isNovelPlotTwistAiUnlocked && currentWordCount >= 40000) {
+                val twistWords = (targetWords * 0.65f).toInt()
+                if (!s.isNovelPlotTwistAiUnlocked && currentWordCount >= twistWords) {
                     s = s.copy(
                         isNovelPlotTwistAiUnlocked = true,
-                        lastLootToastMessage = "🎁 LOOT DROP (40,000 Words): AI Co-Writer Plot-Twist Brainstormer Unlocked!"
+                        lastLootToastMessage = "🎁 LOOT DROP (${String.format(Locale.US, "%,d", twistWords)} Words): AI Co-Writer Plot-Twist Brainstormer Unlocked!"
                     )
                 }
-                if (currentWordCount >= 60000) {
+                if (currentWordCount >= targetWords) {
                     s = s.copy(
                         stage = FirstDraftStage.STUDIO_UNLOCKED,
                         isSparkReadOnly = false,
                         isBibleReadOnly = false,
                         isOutlineReadOnly = false,
-                        lastLootToastMessage = "🏆 60,000 WORDS REACHED! STUDIO UNLOCKED — All Chapters, Shunn & EPUB 3 Compilers Enabled!"
+                        lastLootToastMessage = "🏆 ${String.format(Locale.US, "%,d", targetWords)} WORDS REACHED! STUDIO UNLOCKED — All Chapters, Shunn & EPUB 3 Compilers Enabled!"
                     )
                 }
             }
@@ -1218,7 +1237,7 @@ object FirstDraftController {
                         isSparkReadOnly = false,
                         isBibleReadOnly = false,
                         isOutlineReadOnly = false,
-                        lastLootToastMessage = "🏆 FADE OUT AT 17,000+ WORDS! STUDIO UNLOCKED — Full Seshat v2.1.0 Unlocked!"
+                        lastLootToastMessage = "🏆 FADE OUT AT 17,000+ WORDS! STUDIO UNLOCKED — Full Seshat v2.1.1 Unlocked!"
                     )
                 }
             }

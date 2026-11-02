@@ -33,6 +33,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.style.TextOverflow
 import com.seshat.writer.library.ScriptLibraryManager
 import com.seshat.writer.library.ScriptProject
@@ -1115,7 +1121,7 @@ private fun SparkNewSetupContent(
 
     val mediumName = when {
         isUniverseMode -> "UNIVERSE / TV SERIES CAMPAIGN"
-        selectedFormat == ProjectFormat.NOVEL -> "NOVEL CAMPAIGN (60,000W TARGET)"
+        selectedFormat == ProjectFormat.NOVEL -> "NOVEL CAMPAIGN (${selectedGenre.novelTargetLabel.uppercase(Locale.US)} TARGET)"
         selectedFormat == ProjectFormat.STAGE_PLAY -> "STAGE PLAY CAMPAIGN"
         selectedFormat == ProjectFormat.COMIC_BOOK -> "COMIC BOOK CAMPAIGN"
         else -> "SCREENPLAY CAMPAIGN (90 PAGES / ~18,000W)"
@@ -1419,7 +1425,7 @@ private fun SparkNewSetupContent(
             )
         } else {
             val primarySub = when (selectedFormat) {
-                ProjectFormat.NOVEL -> "${selectedGenre.modeTitle} • 60,000w Target • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (96h) → ${selectedGenre.stage3Title} (48h) → ${selectedGenre.stage4Title}"
+                ProjectFormat.NOVEL -> "${selectedGenre.modeTitle} • ${selectedGenre.novelTargetLabel} Target • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (96h) → ${selectedGenre.stage3Title} (48h) → ${selectedGenre.stage4Title}"
                 ProjectFormat.STAGE_PLAY -> "${selectedGenre.modeTitle} • Stage Play • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
                 ProjectFormat.COMIC_BOOK -> "${selectedGenre.modeTitle} • Comic Issue • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
                 else -> "${selectedGenre.modeTitle} • 90-Page Feature • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
@@ -2136,13 +2142,43 @@ private fun SplashColumnHeaderPill(
         if (isDark) Brush.verticalGradient(listOf(Color(0xD80F172A), Color(0xE8090D16)))
         else Brush.verticalGradient(listOf(Color(0xF5FFFFFF), Color(0xEDF1F5F9)))
     }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    var isPressedOrHeld by remember { mutableStateOf(false) }
+    var showPopupManual by remember { mutableStateOf(false) }
+
+    val isPopupVisible = isHovered || isPressedOrHeld || showPopupManual
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(bgBrush)
-            .border(BorderStroke(1.2.dp, borderColor), RoundedCornerShape(16.dp))
-            .padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 5.dp else 7.dp),
+            .border(
+                BorderStroke(
+                    width = if (isPopupVisible) 1.8.dp else 1.2.dp,
+                    color = if (isPopupVisible) (if (isSpark) ElectrumGold else ScribeStarNeonRed) else borderColor
+                ),
+                RoundedCornerShape(16.dp)
+            )
+            .hoverable(interactionSource = interactionSource)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressedOrHeld = true
+                        tryAwaitRelease()
+                        isPressedOrHeld = false
+                    },
+                    onLongPress = {
+                        showPopupManual = !showPopupManual
+                    },
+                    onTap = {
+                        showPopupManual = !showPopupManual
+                    }
+                )
+            }
+            .padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 6.dp else 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -2161,18 +2197,101 @@ private fun SplashColumnHeaderPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            if (!isCompact && subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            // Subtle (i) badge indicating interactive info popup on hover or press & hold
+            Surface(
+                color = if (isSpark) ElectrumGold.copy(alpha = 0.18f) else (if (isDark) Color.White.copy(alpha = 0.12f) else Color(0x180F172A)),
+                shape = CircleShape,
+                border = BorderStroke(0.6.dp, if (isSpark) ElectrumGold.copy(alpha = 0.5f) else (if (isDark) Color.White.copy(alpha = 0.3f) else Color(0x300F172A)))
+            ) {
                 Text(
-                    text = subtitle,
+                    text = "ⓘ",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 10.5.sp,
-                        color = if (isSpark) Color(0xFFFECDD3) else Color(0xFF94A3B8)
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSpark) ElectrumGold else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155))
                     ),
-                    maxLines = 1
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                 )
+            }
+        }
+
+        if (isPopupVisible) {
+            Popup(
+                alignment = Alignment.TopCenter,
+                offset = IntOffset(0, 48),
+                onDismissRequest = { showPopupManual = false },
+                properties = PopupProperties(focusable = false)
+            ) {
+                Surface(
+                    color = if (isDark) Color(0xF80A0E17) else Color(0xF8FFFFFF),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(
+                        1.5.dp,
+                        if (isSpark) ElectrumGold.copy(alpha = 0.9f) else ScribeStarNeonRed.copy(alpha = 0.85f)
+                    ),
+                    shadowElevation = 18.dp,
+                    modifier = Modifier
+                        .widthIn(min = 260.dp, max = 340.dp)
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = if (isSpark) "🎮 GAMIFIED GENRE CAMPAIGNS" else "🏛️ STANDARD STUDIO (FREEFORM)",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.5.sp,
+                                color = if (isSpark) ElectrumGold else (if (isDark) Color.White else Color(0xFF0F172A))
+                            )
+                        )
+
+                        Surface(
+                            color = if (isSpark) Color(0x30EAB308) else Color(0x2538BDF8),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.8.dp, if (isSpark) ElectrumGold.copy(alpha = 0.6f) else Color(0xFF38BDF8).copy(alpha = 0.6f))
+                        ) {
+                            Text(
+                                text = if (isSpark) "⚡ TIMED STAGES • XP LOOT • 48H SURVIVAL" else "🔓 WRITE AT YOUR OWN PACE • ZERO TIMERS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 9.5.sp,
+                                    color = if (isSpark) ElectrumGold else Color(0xFF38BDF8),
+                                    letterSpacing = 0.5.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                            )
+                        }
+
+                        Text(
+                            text = if (isSpark) {
+                                "Anti-procrastination arcade mode powered by the First Draft Engine. Pick your genre, race against 4 strict timed airlocks (Spark → Bible → Outline → Draft), maintain 48-hour word quotas, survive the AI Bouncer, and earn XP to buy items and unlock loot drops."
+                            } else {
+                                "Write at your own pace with all creative tools unlocked from day one. Full unrestricted access to Lore Bible, Corkboard Outline, and Drafting Editor with zero stage airlocks, survival quotas, or typing speed constraints."
+                            },
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
+                            )
+                        )
+
+                        Text(
+                            text = if (isSpark) "Hover away or tap to dismiss • Click any card to play" else "Hover away or tap to dismiss • Click any format to start",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontSize = 9.sp,
+                                color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -2214,8 +2333,8 @@ private fun GlassStartMenuHubWide(
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "🏛️ STANDARD STUDIO (FREEFORM)",
-                    subtitle = "(No Timers or Locks)",
+                    title = "🏛️ STANDARD STUDIO",
+                    subtitle = "",
                     isSpark = false
                 )
                 GlassFormatCard(
@@ -2261,8 +2380,8 @@ private fun GlassStartMenuHubWide(
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "🎮 GAMIFIED GENRE CAMPAIGNS",
-                    subtitle = "(Timed Stages, XP & Loot)",
+                    title = "🎮 GENRE CAMPAIGNS",
+                    subtitle = "",
                     isSpark = true
                 )
                 GlassFormatCard(
@@ -2303,10 +2422,10 @@ private fun GlassStartMenuHubWide(
                 )
                 GlassFormatCard(
                     title = "Novel Campaign",
-                    subtitle = "60,000-Word RPG • Chapter Quests & XP",
+                    subtitle = "75k–100k Word RPG • Chapter Quests & XP",
                     iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "Play →",
+                    badgeTag = "75k-100k",
                     onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2451,10 +2570,10 @@ private fun GlassStartMenuHubMedium(
                 )
                 GlassFormatCard(
                     title = "Novel Campaign",
-                    subtitle = "60,000-Word RPG",
+                    subtitle = "75k–100k Word RPG",
                     iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "Play →",
+                    badgeTag = "75k-100k",
                     onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
