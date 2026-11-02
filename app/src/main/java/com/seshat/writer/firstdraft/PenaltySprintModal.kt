@@ -92,13 +92,14 @@ fun PenaltySprintModal(
                 .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(24.dp))
                 .padding(28.dp)
         ) {
+            // Penalty Header Badge
             Surface(
                 color = ScribeStarNeonRed.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, ScribeStarNeonRed)
             ) {
                 Text(
-                    text = "🚨 48-HOUR QUOTA FAILED — DRAFT DECAYED 🚨",
+                    text = "🚨 ${state.campaignGenre.modeTitle} • 48-HOUR QUOTA FAILED 🚨",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontFamily = MainAppFontFamily,
                         color = ScribeStarNeonRed,
@@ -113,7 +114,7 @@ fun PenaltySprintModal(
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = "MANDATORY PENALTY SPRINT",
+                text = state.campaignGenre.decayPenaltyTitle,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = Color.White,
@@ -126,7 +127,7 @@ fun PenaltySprintModal(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "All project views & Read-Only Bibles are locked. Type 500 net-new words within 25:00 of active session time to purge Decay. Minimizing or closing the window resets your word counter to 0.",
+                text = "${state.campaignGenre.decayPenaltyDescription} Minimizing or closing the window resets your 500-word counter to 0.",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = Color(0xFFCBD5E1),
@@ -138,6 +139,7 @@ fun PenaltySprintModal(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            // Telemetry Row: Timer & Word Count
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -218,6 +220,7 @@ fun PenaltySprintModal(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Raw Scratchpad Input
             Box(
                 modifier = Modifier
                     .weight(1f, fill = false)
@@ -255,6 +258,7 @@ fun PenaltySprintModal(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Footer Actions: Mandatory Decay Receipt & Freeze Token option
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,

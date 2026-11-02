@@ -32,6 +32,182 @@ enum class FirstDraftStage(val label: String, val badge: String) {
 }
 
 /**
+ * Genre-driven Gamified Campaign configurations that dynamically theme the mode title,
+ * the 4 sequential stages, the currency name, the 48-hour idle decay threat, and the 60s AI Bouncer persona.
+ */
+enum class CampaignGenre(
+    val icon: String,
+    val genreLabel: String,
+    val modeTitle: String,
+    val shortModeLabel: String,
+    val campaignBadge: String,
+    val currencyName: String,
+    val stage1Title: String,
+    val stage2Title: String,
+    val stage3Title: String,
+    val stage4Title: String,
+    val decayPenaltyTitle: String,
+    val decayPenaltyDescription: String,
+    val bouncerQuotePreview: String,
+    val bouncerSystemPrompt: String,
+    val bouncerFallbackPrompt: String,
+    val launchCtaLabel: String
+) {
+    HORROR(
+        icon = "🩸",
+        genreLabel = "Horror",
+        modeTitle = "🩸 SURVIVAL MODE",
+        shortModeLabel = "SURVIVAL MODE",
+        campaignBadge = "🩸 HORROR CAMPAIGN",
+        currencyName = "Pulse XP",
+        stage1Title = "First Blood (Logline)",
+        stage2Title = "The Necronomicon (Bible)",
+        stage3Title = "The Trap Map (Outline)",
+        stage4Title = "Final Girl / Final Draft",
+        decayPenaltyTitle = "🔪 THE KILLER CATCHES UP",
+        decayPenaltyDescription = "Your pulse flatlined for 48 hours without hitting your survival word quota! Type a 500-word escape sprint in 25 minutes to survive.",
+        bouncerQuotePreview = "\"Standing still in a horror movie means you die first. Somebody kicks open the door right now—who is it?\"",
+        bouncerSystemPrompt = "You are a menacing horror-movie survival narrator (like Jigsaw meets a slasher director). The writer has frozen for 60 seconds. Output a single provocative 1-sentence horror escalation or threat demanding they keep moving forward.",
+        bouncerFallbackPrompt = "🩸 SURVIVAL BOUNCER: Standing still in a horror script means you die first—kill the lights or have someone kick the door open right now!",
+        launchCtaLabel = "🩸 ENTER SURVIVAL MODE →"
+    ),
+    SCIFI(
+        icon = "🚀",
+        genreLabel = "Sci-Fi",
+        modeTitle = "🚀 PROTOCOL / HYPERDRIVE MODE",
+        shortModeLabel = "PROTOCOL MODE",
+        campaignBadge = "🚀 SCI-FI CAMPAIGN",
+        currencyName = "Credits XP",
+        stage1Title = "Ignition Sequence",
+        stage2Title = "Codex Database (Bible)",
+        stage3Title = "Sector Star Chart",
+        stage4Title = "Warp-Speed Draft",
+        decayPenaltyTitle = "⚠️ HULL BREACH / OXYGEN DEPLETED",
+        decayPenaltyDescription = "Life support went offline after 48 hours idle! Complete a 500-word emergency repair log in 25 minutes to repressurize the airlock.",
+        bouncerQuotePreview = "\"Warning: Cognitive stall detected. Trigger an EMP or breach the airlock in the next sentence.\"",
+        bouncerSystemPrompt = "You are a cold, rogue starship AI (like HAL-9000). The writer has stalled for 60 seconds. Output a single urgent 1-sentence system warning or sci-fi anomaly demanding immediate forward action.",
+        bouncerFallbackPrompt = "🚀 SHIP AI: Warning—writer cognitive stall detected. Trigger an EMP, breach the hull, or jump to warp immediately!",
+        launchCtaLabel = "🚀 INITIATE PROTOCOL MODE →"
+    ),
+    FANTASY(
+        icon = "⚔️",
+        genreLabel = "Fantasy",
+        modeTitle = "⚔️ QUEST MODE",
+        shortModeLabel = "QUEST MODE",
+        campaignBadge = "⚔️ FANTASY CAMPAIGN",
+        currencyName = "Gold / Mana XP",
+        stage1Title = "The Prophecy (Spark)",
+        stage2Title = "The Grand Grimoire",
+        stage3Title = "The Realm Map",
+        stage4Title = "The Crusade Draft",
+        decayPenaltyTitle = "🐉 CURSED BY THE DRAGON",
+        decayPenaltyDescription = "Your party camped too long without hitting the 48-hour word quota! Slay a 500-word ambush encounter in 25 minutes to lift the curse.",
+        bouncerQuotePreview = "\"Roll for initiative! Your party is staring at a sealed rune door—what bursts out of the shadows?\"",
+        bouncerSystemPrompt = "You are an intense, theatrical tabletop Dungeon Master. The writer has stalled for 60 seconds. Output a single 1-sentence dungeon encounter or magical twist demanding they roll for initiative and keep writing.",
+        bouncerFallbackPrompt = "⚔️ DUNGEON MASTER: Roll for initiative! Your heroes hesitated too long—something ancient just burst through the gates!",
+        launchCtaLabel = "⚔️ EMBARK ON QUEST MODE →"
+    ),
+    THRILLER(
+        icon = "🕵️",
+        genreLabel = "Thriller / Noir",
+        modeTitle = "🕵️ HEIST / MANHUNT MODE",
+        shortModeLabel = "HEIST MODE",
+        campaignBadge = "🕵️ THRILLER CAMPAIGN",
+        currencyName = "Bounty XP",
+        stage1Title = "The Tip-Off (Spark)",
+        stage2Title = "Case File & Suspects",
+        stage3Title = "The Wiretap Board",
+        stage4Title = "The Getaway Draft",
+        decayPenaltyTitle = "🚓 FEDS CLOSING IN",
+        decayPenaltyDescription = "You let the trail go cold for 48 hours! Burn a 500-word alibi sprint in 25 minutes to shake the tail and unlock your script.",
+        bouncerQuotePreview = "\"Clock is ticking, pal. The cops are two blocks away and your lead is holding a smoking gun—what now?\"",
+        bouncerSystemPrompt = "You are a gritty, hardboiled noir fixer and heist mastermind. The writer has stalled for 60 seconds. Output a single sharp 1-sentence double-cross or ticking-clock complication.",
+        bouncerFallbackPrompt = "🕵️ FIXER: Clock's ticking, pal—the sirens are two blocks away and your lead is holding a smoking gun. Move!",
+        launchCtaLabel = "🕵️ START HEIST MODE →"
+    ),
+    ACTION(
+        icon = "💥",
+        genreLabel = "Action",
+        modeTitle = "💥 OVERDRIVE / GAUNTLET MODE",
+        shortModeLabel = "OVERDRIVE MODE",
+        campaignBadge = "💥 ACTION CAMPAIGN",
+        currencyName = "Nitro / Ammo XP",
+        stage1Title = "Fuse Lit (Spark)",
+        stage2Title = "Tactical Loadout",
+        stage3Title = "Mission Briefing",
+        stage4Title = "Full-Throttle Draft",
+        decayPenaltyTitle = "💣 BOMB TIMER DETONATED",
+        decayPenaltyDescription = "You stopped moving for 48 hours and let the fuse run out! Complete a 500-word defusal sprint in 25 minutes to stay in the fight.",
+        bouncerQuotePreview = "\"Cut! Why is nobody exploding?! Throw someone through a plate-glass window right now!\"",
+        bouncerSystemPrompt = "You are a high-octane blockbuster action director yelling through a megaphone. The writer has stopped typing for 60 seconds. Output a single explosive 1-sentence stunt or escalation command.",
+        bouncerFallbackPrompt = "💥 DIRECTOR: Cut! Why is nobody moving?! Throw someone through a plate-glass window or cut the brakes right now!",
+        launchCtaLabel = "💥 ENGAGE OVERDRIVE MODE →"
+    ),
+    COMEDY(
+        icon = "🎤",
+        genreLabel = "Comedy",
+        modeTitle = "🎤 ROAST / TIGHT-FIVE MODE",
+        shortModeLabel = "ROAST MODE",
+        campaignBadge = "🎤 COMEDY CAMPAIGN",
+        currencyName = "Laughs XP",
+        stage1Title = "The Elevator Pitch",
+        stage2Title = "Cast Quirks & Gags",
+        stage3Title = "The Callback Board",
+        stage4Title = "Live Studio Draft",
+        decayPenaltyTitle = "🍅 HECKLED OFF STAGE",
+        decayPenaltyDescription = "Dead silence at the mic for 48 hours! Write a 500-word crowd-work sprint in 25 minutes to win the room back.",
+        bouncerQuotePreview = "\"Boo! You have been staring at that setup for 60 seconds! Make the worst possible person walk in right now!\"",
+        bouncerSystemPrompt = "You are a ruthless, hilarious comedy club heckler and sitcom showrunner. The writer has stalled for 60 seconds. Output a single punchy 1-sentence roast or chaotic comedic escalation.",
+        bouncerFallbackPrompt = "🎤 HECKLER: Boo! You've been staring at that setup for a full minute—make the worst possible person walk into the room!",
+        launchCtaLabel = "🎤 HIT THE STAGE (ROAST MODE) →"
+    ),
+    DRAMA(
+        icon = "🏆",
+        genreLabel = "Drama / Romance",
+        modeTitle = "🏆 VIRTUOSO / FORTE MODE",
+        shortModeLabel = "VIRTUOSO MODE",
+        campaignBadge = "🏆 PRESTIGE DRAMA CAMPAIGN",
+        currencyName = "Prestige XP",
+        stage1Title = "The Core Thesis",
+        stage2Title = "Character Psychology",
+        stage3Title = "The Dramatic Arc",
+        stage4Title = "The Virtuoso Draft",
+        decayPenaltyTitle = "🥀 PRODUCTION STALLED",
+        decayPenaltyDescription = "48 hours without hitting your daily pages! Write a 500-word raw emotional monologue sprint in 25 minutes to keep the greenlight.",
+        bouncerQuotePreview = "\"Where is the subtext?! Have your character confess the one secret that ruins their life right now!\"",
+        bouncerSystemPrompt = "You are an uncompromising prestige film/theatre director demanding raw emotional truth. The writer has paused for 60 seconds. Output a single piercing 1-sentence dramatic confrontation or emotional betrayal.",
+        bouncerFallbackPrompt = "🏆 DIRECTOR: Stop playing it safe—have the character confess the one secret that ruins everything right now!",
+        launchCtaLabel = "🏆 ENTER VIRTUOSO MODE →"
+    ),
+    MYSTERY(
+        icon = "🔍",
+        genreLabel = "Mystery",
+        modeTitle = "🔍 DETECTIVE / SHERLOCK MODE",
+        shortModeLabel = "DETECTIVE MODE",
+        campaignBadge = "🔍 MYSTERY CAMPAIGN",
+        currencyName = "Clues XP",
+        stage1Title = "The Crime Scene",
+        stage2Title = "Suspects & Alibis",
+        stage3Title = "The Red-String Board",
+        stage4Title = "The Deduction Draft",
+        decayPenaltyTitle = "🕰️ THE TRAIL WENT COLD",
+        decayPenaltyDescription = "48 hours without a new lead! Interrogate 500 words on the scratchpad in 25 minutes to reopen the investigation.",
+        bouncerQuotePreview = "\"The witness is lying and you know it. Drop a contradiction or a hidden clue into the dialogue immediately.\"",
+        bouncerSystemPrompt = "You are a razor-sharp master detective (like Sherlock Holmes or Benoit Blanc). The writer has paused for 60 seconds. Output a single clever 1-sentence clue, alibi contradiction, or suspect twist.",
+        bouncerFallbackPrompt = "🔍 SLEUTH: The witness is lying and you know it—drop a contradiction or reveal a hidden piece of evidence right now!",
+        launchCtaLabel = "🔍 OPEN DETECTIVE MODE →"
+    );
+
+    fun stageTitleFor(stage: FirstDraftStage): String = when (stage) {
+        FirstDraftStage.SPARK -> "$icon $stage1Title"
+        FirstDraftStage.BIBLE -> "📖 $stage2Title"
+        FirstDraftStage.OUTLINE -> "📌 $stage3Title"
+        FirstDraftStage.DRAFT -> "🔥 $stage4Title"
+        FirstDraftStage.STUDIO_UNLOCKED -> "🔓 STUDIO UNLOCKED"
+    }
+}
+
+/**
  * XP Shop items purchasable strictly with forward-momentum XP earned in DRAFT stage.
  */
 enum class XpShopItem(
@@ -238,6 +414,7 @@ data class StageGateReceiptData(
 data class FirstDraftState(
     val isFirstDraftMode: Boolean = false,
     val stage: FirstDraftStage = FirstDraftStage.STUDIO_UNLOCKED,
+    val campaignGenre: CampaignGenre = CampaignGenre.SCIFI,
     val projectTitle: String = "",
     val projectFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
     val screenplayType: ScreenplayType = ScreenplayType.FEATURE,
@@ -471,6 +648,7 @@ data class FirstDraftState(
     fun toJson(): JSONObject = JSONObject().apply {
         put("isFirstDraftMode", isFirstDraftMode)
         put("stage", stage.name)
+        put("campaignGenre", campaignGenre.name)
         put("projectTitle", projectTitle)
         put("projectFormat", projectFormat.name)
         put("screenplayType", screenplayType.name)
@@ -533,10 +711,13 @@ data class FirstDraftState(
             val format = ProjectFormat.entries.find { it.name == fmtStr } ?: ProjectFormat.SCREENPLAY
             val stStr = json.optString("screenplayType", ScreenplayType.FEATURE.name)
             val sType = ScreenplayType.entries.find { it.name == stStr } ?: ScreenplayType.FEATURE
+            val genreStr = json.optString("campaignGenre", CampaignGenre.SCIFI.name)
+            val cGenre = CampaignGenre.entries.find { it.name == genreStr } ?: CampaignGenre.SCIFI
 
             return FirstDraftState(
                 isFirstDraftMode = isFirstDraft,
                 stage = stage,
+                campaignGenre = cGenre,
                 projectTitle = json.optString("projectTitle", ""),
                 projectFormat = format,
                 screenplayType = sType,
@@ -614,7 +795,8 @@ object FirstDraftController {
         format: ProjectFormat,
         screenplayType: ScreenplayType = ScreenplayType.FEATURE,
         nowMs: Long = System.currentTimeMillis(),
-        projectTitle: String = ""
+        projectTitle: String = "",
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
     ): FirstDraftState {
         val isTv = format == ProjectFormat.TV_SERIES ||
             screenplayType == ScreenplayType.TV_HOUR_DRAMA ||
@@ -628,6 +810,7 @@ object FirstDraftController {
         return FirstDraftState(
             isFirstDraftMode = true,
             stage = FirstDraftStage.SPARK,
+            campaignGenre = campaignGenre,
             projectTitle = projectTitle,
             projectFormat = format,
             screenplayType = screenplayType,

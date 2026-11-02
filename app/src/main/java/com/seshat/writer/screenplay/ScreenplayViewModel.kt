@@ -62,6 +62,7 @@ import com.seshat.writer.templates.TemplateRegistry
 import com.seshat.writer.export.FountainSerializer
 import com.seshat.writer.bundle.SeshatBundleManager
 import com.seshat.writer.firstdraft.AccountabilityReceipt
+import com.seshat.writer.firstdraft.CampaignGenre
 import com.seshat.writer.firstdraft.FirstDraftController
 import com.seshat.writer.firstdraft.FirstDraftStage
 import com.seshat.writer.firstdraft.FirstDraftState
@@ -3134,7 +3135,8 @@ class ScreenplayViewModel : ViewModel() {
         initialWorkspaceView: InitialWorkspaceView,
         customTitle: String? = null,
         template: ProjectTemplate? = null,
-        enableSparkMode: Boolean = false
+        enableSparkMode: Boolean = false,
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
     ) {
         val resolvedTemplate = template ?: TemplateRegistry.getBlankTemplate(format, screenplayType)
         if (format == ProjectFormat.TV_SERIES) {
@@ -3149,7 +3151,8 @@ class ScreenplayViewModel : ViewModel() {
                 format = screenplayType ?: ScreenplayType.TV_HOUR_DRAMA,
                 initialWorkspaceView = initialWorkspaceView,
                 template = resolvedTemplate,
-                enableSparkMode = enableSparkMode
+                enableSparkMode = enableSparkMode,
+                campaignGenre = campaignGenre
             )
             return
         }
@@ -3256,7 +3259,8 @@ class ScreenplayViewModel : ViewModel() {
             FirstDraftController.createForNewProject(
                 format = format,
                 screenplayType = screenplayType ?: ScreenplayType.FEATURE,
-                projectTitle = defaultTitle
+                projectTitle = defaultTitle,
+                campaignGenre = campaignGenre
             )
         } else {
             FirstDraftController.createForStandardProject(
@@ -3348,7 +3352,8 @@ class ScreenplayViewModel : ViewModel() {
         format: ScreenplayType = ScreenplayType.TV_HOUR_DRAMA,
         initialWorkspaceView: InitialWorkspaceView = InitialWorkspaceView.EDITOR,
         template: ProjectTemplate? = null,
-        enableSparkMode: Boolean = false
+        enableSparkMode: Boolean = false,
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
     ) {
         var series = TvSeriesProject.createDefault(
             title = seriesTitle.ifBlank { "Untitled TV Series" },
@@ -3376,7 +3381,8 @@ class ScreenplayViewModel : ViewModel() {
             FirstDraftController.createForNewProject(
                 format = ProjectFormat.TV_SERIES,
                 screenplayType = format,
-                projectTitle = series.title
+                projectTitle = series.title,
+                campaignGenre = campaignGenre
             )
         } else {
             FirstDraftController.createForStandardProject(
@@ -3893,7 +3899,8 @@ class ScreenplayViewModel : ViewModel() {
                 state.blocks.takeLast(15).joinToString("\n") { "${it.type.name}: ${it.text}" }
             }
 
-            val systemPrompt = "Give a blunt, 1-sentence action instruction to escalate conflict immediately in this scene."
+            val genre = state.firstDraftState.campaignGenre
+            val systemPrompt = genre.bouncerSystemPrompt
             val userPrompt = last15Lines.ifBlank { "The protagonist hesitates in an empty room." }
 
             val ctx = latestAppContext
@@ -3911,7 +3918,7 @@ class ScreenplayViewModel : ViewModel() {
             } else null
 
             val finalPrompt = aiResponse?.trim()?.takeIf { it.isNotEmpty() }
-                ?: "Force the antagonist or a sudden physical obstacle through the door right now and strip the protagonist's safest option away in the next line."
+                ?: genre.bouncerFallbackPrompt
 
             _uiState.update { current ->
                 current.copy(

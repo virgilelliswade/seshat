@@ -112,14 +112,32 @@ fun FirstDraftControlStrip(
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
-            // Left: Stage Pipeline & Countdown
+            // Left: Genre Mode Badge, Stage Pipeline & Countdown
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                Surface(
+                    color = Color(0xFF280812),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, ElectrumGold)
+                ) {
+                    Text(
+                        text = state.campaignGenre.modeTitle,
+                        style = TextStyle(
+                            fontFamily = MainAppFontFamily,
+                            color = ElectrumGold,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 10.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
                 FirstDraftStage.entries.forEach { st ->
                     val isCurrent = state.stage == st
                     val isPassed = st.ordinal < state.stage.ordinal
+                    val genreStageLabel = state.campaignGenre.stageTitleFor(st)
                     Surface(
                         color = when {
                             isCurrent -> ScribeStarNeonRed
@@ -137,7 +155,7 @@ fun FirstDraftControlStrip(
                         )
                     ) {
                         Text(
-                            text = if (isPassed) "🔒 ${st.label}" else st.badge,
+                            text = if (isPassed) "🔒 ${st.label}" else if (isCurrent) genreStageLabel else st.badge,
                             style = TextStyle(
                                 fontFamily = MainAppFontFamily,
                                 color = if (isCurrent) Color.White else if (isPassed) Color(0xFF10B981) else Color(0xFF64748B),
@@ -241,7 +259,7 @@ fun FirstDraftControlStrip(
                     modifier = Modifier.clickable { onOpenXpShop() }
                 ) {
                     Text(
-                        text = "⚡ ${state.xpBalance} XP • SHOP",
+                        text = "⚡ ${state.xpBalance} ${state.campaignGenre.currencyName.uppercase(Locale.US)} • SHOP",
                         style = TextStyle(
                             fontFamily = MainAppFontFamily,
                             color = ElectrumGold,
@@ -444,7 +462,7 @@ fun SparkStageEditorView(
                 border = BorderStroke(1.dp, ScribeStarNeonRed)
             ) {
                 Text(
-                    text = "⚡ STAGE 1 OF 4: SPARK AIRLOCK • ${FirstDraftController.formatDurationHhMmSs(state.sparkActiveRemainingMs)} REMAINING",
+                    text = "${state.campaignGenre.modeTitle} • STAGE 1 OF 4: ${state.campaignGenre.stage1Title.uppercase(Locale.US)} • ${FirstDraftController.formatDurationHhMmSs(state.sparkActiveRemainingMs)}",
                     style = TextStyle(
                         fontFamily = MainAppFontFamily,
                         color = ScribeStarNeonRed,

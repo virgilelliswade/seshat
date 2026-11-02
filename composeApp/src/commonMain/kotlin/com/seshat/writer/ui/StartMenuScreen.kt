@@ -105,6 +105,7 @@ import com.seshat.writer.ui.theme.opticalPillBrush
 import com.seshat.writer.ui.theme.smokedGlassBrush
 import com.seshat.writer.templates.ProjectTemplate
 import com.seshat.writer.templates.TemplateRegistry
+import com.seshat.writer.firstdraft.CampaignGenre
 import com.seshat.writer.firstdraft.FirstDraftController
 import com.seshat.writer.firstdraft.FirstDraftStage
 import com.seshat.writer.firstdraft.FirstDraftState
@@ -646,7 +647,7 @@ fun StartMenuScreen(
                                     projectTitleInput = projectTitleInput,
                                     onTitleChange = { projectTitleInput = it },
                                     isDark = isDark,
-                                    onLaunchSpark = { format, sType ->
+                                    onLaunchSpark = { format, sType, genre ->
                                         viewModel.startNewProject(
                                             context = context,
                                             format = format,
@@ -654,7 +655,8 @@ fun StartMenuScreen(
                                             initialWorkspaceView = InitialWorkspaceView.EDITOR,
                                             customTitle = projectTitleInput,
                                             template = TemplateRegistry.getBlankTemplate(format, sType),
-                                            enableSparkMode = true
+                                            enableSparkMode = true,
+                                            campaignGenre = genre
                                         )
                                         onCloseMenu()
                                     },
@@ -986,28 +988,28 @@ private fun SparkModeHubContent(
     onBack: () -> Unit
 ) {
     StartMenuLayout(
-        headerTitle = "⚡ SPARK MODE • FIRST DRAFT ENGINE",
-        headerSubtitle = "Anti-Procrastination Arcade Mode • Strict stage airlocks, 48-hour survival quotas & forward-only drafting",
+        headerTitle = "🕹️ GAMIFIED GENRE CAMPAIGN HUB",
+        headerSubtitle = "Timed Stage Quests • 48-Hour Survival Quotas, Genre-Themed AI Bouncer & XP Loot Drops",
         showBackButton = true,
         onBack = onBack
     ) {
-        // 1. START NEW SPARK
+        // 1. START NEW GENRE CAMPAIGN
         StartMenuBigButton(
-            badgeText = "⚡",
-            title = "START NEW SPARK PROJECT",
-            subtitle = "Ignite a brand-new First Draft run • Choose Feature Screenplay, TV Pilot, or Prose Novel with strict SPARK → BIBLE → OUTLINE → DRAFT airlocks",
+            badgeText = "🎮",
+            title = "START NEW GENRE CAMPAIGN",
+            subtitle = "Pick a Genre (Survival, Protocol, Quest, Heist, Overdrive, Roast, Virtuoso, or Detective) • Complete 4 timed stages to unlock the Studio",
             badgeColor = ScribeStarNeonRed,
             onClick = onStartNewSpark
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 2. CONTINUE EXISTING SPARK
+        // 2. CONTINUE EXISTING CAMPAIGN
         if (activeSparkState != null) {
             StartMenuBigButton(
-                badgeText = "🔥",
-                title = "CONTINUE ACTIVE SPARK: ${activeProjectTitle.uppercase(Locale.US)}",
-                subtitle = "Current Stage: ${activeSparkState.stage.name} • ⚡ ${activeSparkState.xpBalance} XP • 🔥 ${activeSparkState.activeStreakDays}d Streak • Return immediately to your active Spark run",
+                badgeText = activeSparkState.campaignGenre.icon,
+                title = "CONTINUE ACTIVE CAMPAIGN: ${activeProjectTitle.uppercase(Locale.US)}",
+                subtitle = "${activeSparkState.campaignGenre.modeTitle} • Stage: ${activeSparkState.campaignGenre.stageTitleFor(activeSparkState.stage)} • ⚡ ${activeSparkState.xpBalance} ${activeSparkState.campaignGenre.currencyName} • 🔥 ${activeSparkState.activeStreakDays}d Streak",
                 badgeColor = ElectrumGold,
                 onClick = onContinueActiveSpark
             )
@@ -1016,7 +1018,7 @@ private fun SparkModeHubContent(
 
         if (savedSparkProjects.isNotEmpty()) {
             Text(
-                text = "CONTINUE EXISTING SPARK PROJECTS",
+                text = "SAVED GENRE CAMPAIGNS",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = ElectrumGold,
@@ -1032,29 +1034,25 @@ private fun SparkModeHubContent(
             savedSparkProjects.forEach { spark ->
                 val formatBadge = when {
                     spark.projectFormat == ProjectFormat.NOVEL -> "📖 NOVEL"
+                    spark.projectFormat == ProjectFormat.STAGE_PLAY -> "🎭 STAGE"
+                    spark.projectFormat == ProjectFormat.COMIC_BOOK -> "💥 COMIC"
                     spark.projectFormat == ProjectFormat.TV_SERIES && spark.screenplayType == ScreenplayType.TV_HALF_HOUR_COMEDY -> "🛋️ TV 30M"
                     spark.projectFormat == ProjectFormat.TV_SERIES -> "📺 TV 60M"
                     else -> "🎬 FEATURE"
                 }
-                val stageBadge = when (spark.stage) {
-                    FirstDraftStage.SPARK -> "⚡ SPARK (LOGLINE)"
-                    FirstDraftStage.BIBLE -> "📖 BIBLE (LORE)"
-                    FirstDraftStage.OUTLINE -> "📌 OUTLINE (BEATS)"
-                    FirstDraftStage.DRAFT -> "🔥 DRAFT (FORWARD-ONLY)"
-                    FirstDraftStage.STUDIO_UNLOCKED -> "🏆 STUDIO UNLOCKED"
-                }
+                val stageBadge = spark.campaignGenre.stageTitleFor(spark.stage)
                 val loglinePreview = spark.sparkLogline.take(90).let {
                     if (spark.sparkLogline.length > 90) "$it…" else it
                 }
                 val sub = buildString {
-                    append("$formatBadge • Stage: $stageBadge • ⚡ ${spark.xpBalance} XP • 🔥 ${spark.activeStreakDays}d Streak")
+                    append("${spark.campaignGenre.modeTitle} ($formatBadge) • Stage: $stageBadge • ⚡ ${spark.xpBalance} ${spark.campaignGenre.currencyName} • 🔥 ${spark.activeStreakDays}d Streak")
                     if (loglinePreview.isNotBlank()) {
                         append("\n\"$loglinePreview\"")
                     }
                 }
                 StartMenuBigButton(
-                    badgeText = "🔥",
-                    title = spark.projectTitle.ifBlank { "UNTITLED SPARK" }.uppercase(Locale.US),
+                    badgeText = spark.campaignGenre.icon,
+                    title = spark.projectTitle.ifBlank { "UNTITLED CAMPAIGN" }.uppercase(Locale.US),
                     subtitle = sub,
                     badgeColor = Color(0xFF10B981),
                     onClick = { onResumeSparkProject(spark) }
@@ -1063,9 +1061,9 @@ private fun SparkModeHubContent(
             }
         } else if (activeSparkState == null) {
             StartMenuBigButton(
-                badgeText = "🔥",
-                title = "CONTINUE EXISTING SPARK",
-                subtitle = "No saved Spark projects found yet • Click 'Start New Spark Project' above to ignite your first run!",
+                badgeText = "🕹️",
+                title = "NO SAVED CAMPAIGNS YET",
+                subtitle = "Click 'Start New Genre Campaign' above or pick a Gamified Campaign on the main splash screen to begin your first run!",
                 badgeColor = ElectrumGold,
                 onClick = onStartNewSpark
             )
@@ -1081,50 +1079,248 @@ private fun SparkNewSetupContent(
     projectTitleInput: String,
     onTitleChange: (String) -> Unit,
     isDark: Boolean,
-    onLaunchSpark: (ProjectFormat, ScreenplayType?) -> Unit,
+    onLaunchSpark: (ProjectFormat, ScreenplayType?, CampaignGenre) -> Unit,
     onBack: () -> Unit
 ) {
-    val sparkHeaderTitle = when {
-        isUniverseMode -> "⚡ UNIVERSE / TV SPARK"
-        selectedFormat == ProjectFormat.NOVEL -> "⚡ PROSE NOVEL SPARK"
-        selectedFormat == ProjectFormat.STAGE_PLAY -> "⚡ STAGE PLAY SPARK"
-        selectedFormat == ProjectFormat.COMIC_BOOK -> "⚡ COMIC BOOK SPARK"
-        else -> "⚡ SINGLE SCREENPLAY SPARK"
-    }
-    val sparkHeaderSubtitle = when {
-        isUniverseMode -> "60m Dual-Spark • Ep 101 Showrunner Lock • Act-Gate Progression"
-        selectedFormat == ProjectFormat.NOVEL -> "Target: 60,000 Words • 30m Premise Spark → 96h World Bible → 48h Chapter Skeleton → 1,000w/48h Quota"
-        selectedFormat == ProjectFormat.STAGE_PLAY -> "30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Act/Scene Forward-Only Lock"
-        selectedFormat == ProjectFormat.COMIC_BOOK -> "30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Page & Panel Forward-Only Lock"
-        else -> "Target: 90 Pages (~18,000 Words) • 30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Quota"
+    var selectedGenre by remember { mutableStateOf(CampaignGenre.HORROR) }
+
+    val mediumName = when {
+        isUniverseMode -> "UNIVERSE / TV SERIES CAMPAIGN"
+        selectedFormat == ProjectFormat.NOVEL -> "NOVEL CAMPAIGN (60,000W TARGET)"
+        selectedFormat == ProjectFormat.STAGE_PLAY -> "STAGE PLAY CAMPAIGN"
+        selectedFormat == ProjectFormat.COMIC_BOOK -> "COMIC BOOK CAMPAIGN"
+        else -> "SCREENPLAY CAMPAIGN (90 PAGES / ~18,000W)"
     }
 
     StartMenuLayout(
-        headerTitle = sparkHeaderTitle,
-        headerSubtitle = sparkHeaderSubtitle,
+        headerTitle = "🎮 SELECT YOUR GENRE CAMPAIGN",
+        headerSubtitle = "$mediumName • Your genre transforms the game mode, stage names, currency & AI Bouncer",
         showBackButton = true,
         onBack = onBack
     ) {
-        // Optional Project Title Input
+        // 1. 8-GENRE CAMPAIGN GRID (4 rows of 2 cards)
+        val genres = CampaignGenre.entries
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            genres.chunked(2).forEach { rowGenres ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowGenres.forEach { genre ->
+                        val isSelected = selectedGenre == genre
+                        Surface(
+                            color = if (isSelected) {
+                                Color(0xFF450E1A).copy(alpha = 0.92f)
+                            } else if (isDark) {
+                                Color(0xFF0F172A).copy(alpha = 0.80f)
+                            } else {
+                                ObsidianSurface.copy(alpha = 0.90f)
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(
+                                width = if (isSelected) 1.8.dp else 1.dp,
+                                color = if (isSelected) ElectrumGold else Color(0xFF334155)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.neonBloom(
+                                            color = ElectrumGold,
+                                            cornerRadius = 12.dp,
+                                            glowRadius = 8.dp,
+                                            strokeWidth = 1.6.dp,
+                                            outerAlpha = 0.25f,
+                                            midAlpha = 0.55f
+                                        )
+                                    } else Modifier
+                                )
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { selectedGenre = genre }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = genre.icon,
+                                    fontSize = 18.sp
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = genre.genreLabel,
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            fontFamily = MainAppFontFamily,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = if (isSelected) Color.White else Color(0xFFE2E8F0),
+                                            fontSize = 12.5.sp
+                                        ),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = genre.shortModeLabel,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = MainAppFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSelected) ElectrumGold else Color(0xFF94A3B8),
+                                            fontSize = 10.sp,
+                                            letterSpacing = 0.4.sp
+                                        ),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. LIVE CAMPAIGN BRIEFING CARD
+        Surface(
+            color = Color(0xFF0A0F1A).copy(alpha = 0.94f),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.75f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp)
+                .neonBloom(
+                    color = ScribeStarNeonRed,
+                    cornerRadius = 14.dp,
+                    glowRadius = 6.dp,
+                    strokeWidth = 1.4.dp,
+                    outerAlpha = 0.14f,
+                    midAlpha = 0.30f
+                )
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = selectedGenre.campaignBadge,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                color = ScribeStarNeonRed,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.8.sp
+                            )
+                        )
+                        Text(
+                            text = "${selectedGenre.icon} ${selectedGenre.modeTitle}",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = MainAppFontFamily,
+                                color = ElectrumGold,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp
+                            )
+                        )
+                    }
+                    Surface(
+                        color = ElectrumGold.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.55f))
+                    ) {
+                        Text(
+                            text = "⚡ ${selectedGenre.currencyName}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                color = ElectrumGold,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 10.5.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                // 4 Stages Preview
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF111827))
+                        .border(BorderStroke(1.dp, Color(0xFF1E293B)), RoundedCornerShape(10.dp))
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "4 TIMED CAMPAIGN STAGES:",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            color = Color(0xFF94A3B8),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.5.sp,
+                            letterSpacing = 0.8.sp
+                        )
+                    )
+                    Text(
+                        text = "1️⃣ ${selectedGenre.stage1Title} (30m)  →  2️⃣ ${selectedGenre.stage2Title} (48h)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            color = Color(0xFFF1F5F9),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                    Text(
+                        text = "3️⃣ ${selectedGenre.stage3Title} (24h)  →  4️⃣ ${selectedGenre.stage4Title} (Forward-Only Lock)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            color = Color(0xFFF1F5F9),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                }
+
+                // 48h Penalty & 60s AI Bouncer Preview
+                Text(
+                    text = "💀 48h Idle Penalty: ${selectedGenre.decayPenaltyTitle} — ${selectedGenre.decayPenaltyDescription}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        color = Color(0xFFFCA5A5),
+                        fontSize = 11.sp
+                    )
+                )
+                Text(
+                    text = "🤖 60s Idle AI Bouncer: ${selectedGenre.bouncerQuotePreview}",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        color = Color(0xFFCBD5E1),
+                        fontSize = 11.sp
+                    )
+                )
+            }
+        }
+
+        // 3. OPTIONAL PROJECT TITLE INPUT
         Surface(
             color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
             shape = RoundedCornerShape(14.dp),
             border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.85f)),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .neonBloom(
-                    color = ScribeStarNeonRed,
-                    cornerRadius = 14.dp,
-                    glowRadius = 6.dp,
-                    strokeWidth = 1.4.dp,
-                    outerAlpha = 0.12f,
-                    midAlpha = 0.28f
-                )
+                .padding(bottom = 14.dp)
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = "SPARK PROJECT TITLE (OPTIONAL)",
+                    text = "CAMPAIGN PROJECT TITLE (OPTIONAL)",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
                         color = ElectrumGold,
@@ -1132,7 +1328,7 @@ private fun SparkNewSetupContent(
                         letterSpacing = 1.sp
                     )
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(5.dp))
                 Box {
                     if (projectTitleInput.isEmpty()) {
                         Text(
@@ -1157,53 +1353,48 @@ private fun SparkNewSetupContent(
             }
         }
 
+        // 4. LAUNCH BUTTON(S)
         if (isUniverseMode) {
             StartMenuBigButton(
-                badgeText = "📺",
-                title = "IGNITE 1-HOUR TV DRAMA SPARK (60M PILOT)",
-                subtitle = "Target: 10,000 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Act-Gate Locks",
+                badgeText = selectedGenre.icon,
+                title = "${selectedGenre.launchCtaLabel} • 1-HOUR TV DRAMA (60M PILOT)",
+                subtitle = "${selectedGenre.modeTitle} • Target: 10,000w (Ep 101 Pilot) • 60m Dual-Spark → 72h Bible → 24h Outline → 500w/48h Quota",
                 badgeColor = Color(0xFF3B82F6),
-                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA) }
+                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, selectedGenre) }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             StartMenuBigButton(
-                badgeText = "🛋️",
-                title = "IGNITE 30-MIN TV COMEDY SPARK (30M PILOT)",
-                subtitle = "Target: 5,500 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Sitcom Act-Gates",
+                badgeText = selectedGenre.icon,
+                title = "${selectedGenre.launchCtaLabel} • 30-MIN TV COMEDY (30M PILOT)",
+                subtitle = "${selectedGenre.modeTitle} • Target: 5,500w (Ep 101 Pilot) • 60m Dual-Spark → 72h Bible → 24h Outline → 500w/48h Quota",
                 badgeColor = Color(0xFFEC4899),
-                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY) }
+                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY, selectedGenre) }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             StartMenuBigButton(
-                badgeText = "🎬",
-                title = "IGNITE CINEMATIC FEATURE UNIVERSE SPARK",
-                subtitle = "Target: 90 Pages (~18,000 Words, Installment 1) • 30m Franchise Spark → 48h Master Bible → 24h Outline → 600w / 48h Quota",
+                badgeText = selectedGenre.icon,
+                title = "${selectedGenre.launchCtaLabel} • CINEMATIC FEATURE UNIVERSE",
+                subtitle = "${selectedGenre.modeTitle} • Target: 90 Pages (~18,000w, Installment 1) • 30m Spark → 48h Bible → 24h Outline → 600w/48h Quota",
                 badgeColor = ElectrumGold,
-                onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) }
+                onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, selectedGenre) }
             )
         } else {
-            val primaryTitle = when (selectedFormat) {
-                ProjectFormat.NOVEL -> "⚡ IGNITE PROSE NOVEL SPARK (60,000W TARGET)"
-                ProjectFormat.STAGE_PLAY -> "⚡ IGNITE STAGE PLAY SPARK"
-                ProjectFormat.COMIC_BOOK -> "⚡ IGNITE COMIC BOOK SPARK"
-                else -> "⚡ IGNITE FEATURE SCREENPLAY SPARK (90P / 18,000W)"
-            }
             val primarySub = when (selectedFormat) {
-                ProjectFormat.NOVEL -> "Start 30m Premise Spark Clock → 96h World Bible → 48h Chapter Skeleton → 1,000w / 48h Quota & 3,500w Sequential Chapter Airlocks"
-                ProjectFormat.STAGE_PLAY -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Forward-Only Scene Lock"
-                ProjectFormat.COMIC_BOOK -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Page/Panel Forward-Only Lock"
-                else -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Rolling 5-Scene Fog of War"
+                ProjectFormat.NOVEL -> "${selectedGenre.modeTitle} • 60,000w Target • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (96h) → ${selectedGenre.stage3Title} (48h) → ${selectedGenre.stage4Title}"
+                ProjectFormat.STAGE_PLAY -> "${selectedGenre.modeTitle} • Stage Play • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
+                ProjectFormat.COMIC_BOOK -> "${selectedGenre.modeTitle} • Comic Issue • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
+                else -> "${selectedGenre.modeTitle} • 90-Page Feature • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
             }
             StartMenuBigButton(
-                badgeText = "⚡",
-                title = primaryTitle,
+                badgeText = selectedGenre.icon,
+                title = selectedGenre.launchCtaLabel,
                 subtitle = primarySub,
                 badgeColor = ElectrumGold,
-                onClick = { onLaunchSpark(selectedFormat, selectedScreenplayType ?: ScreenplayType.FEATURE) }
+                onClick = { onLaunchSpark(selectedFormat, selectedScreenplayType ?: ScreenplayType.FEATURE, selectedGenre) }
             )
         }
     }
@@ -1988,8 +2179,8 @@ private fun GlassStartMenuHubWide(
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "🏛️ NEW STANDARD PROJECT",
-                    subtitle = "(No Locks)",
+                    title = "🏛️ STANDARD STUDIO (FREEFORM)",
+                    subtitle = "(No Timers or Locks)",
                     isSpark = false
                 )
                 GlassFormatCard(
@@ -2029,58 +2220,58 @@ private fun GlassStartMenuHubWide(
                 )
             }
 
-            // RIGHT COLUMN: RESPECTIVE SPARK MODE PROJECTS (FIRST DRAFT ENGINE)
+            // RIGHT COLUMN: GAMIFIED GENRE CAMPAIGNS (FIRST DRAFT ENGINE)
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "⚡ NEW SPARK MODE",
-                    subtitle = "(First Draft Engine)",
+                    title = "🎮 GAMIFIED GENRE CAMPAIGNS",
+                    subtitle = "(Timed Stages, XP & Loot)",
                     isSpark = true
                 )
                 GlassFormatCard(
-                    title = "Screenplay Spark",
-                    subtitle = "30m Spark • 600w/48h Quota",
+                    title = "Screenplay Campaign",
+                    subtitle = "Gamified 90p Challenge • Earn XP & Loot",
                     iconType = 0,
                     isSparkCard = true,
-                    badgeTag = "90p",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Universe / TV Spark",
-                    subtitle = "60m Dual-Spark • Ep 101 Lock",
+                    title = "Universe / TV Campaign",
+                    subtitle = "Pilot & Franchise Mode • Act-Gate Quests",
                     iconType = 5,
                     isSparkCard = true,
-                    badgeTag = "TV/Film",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Stage Play Spark",
-                    subtitle = "30m Spark • Act/Scene Airlock",
+                    title = "Stage Play Campaign",
+                    subtitle = "Theatrical Gauntlet • Timed Scene Airlocks",
                     iconType = 3,
                     isSparkCard = true,
-                    badgeTag = "Stage",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Comic Book Spark",
-                    subtitle = "30m Spark • Page/Panel Lock",
+                    title = "Comic Book Campaign",
+                    subtitle = "Issue Boss-Run • Timed Page & Panel Locks",
                     iconType = 4,
                     isSparkCard = true,
-                    badgeTag = "Issue",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel Spark",
-                    subtitle = "30m Spark • 1,000w/48h Quota",
+                    title = "Novel Campaign",
+                    subtitle = "60,000-Word RPG • Chapter Quests & XP",
                     iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "60k w",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2176,59 +2367,59 @@ private fun GlassStartMenuHubMedium(
                 )
             }
 
-            // Right Column: Spark Mode
+            // Right Column: Gamified Genre Campaigns
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "⚡ SPARK MODE",
+                    title = "🎮 GENRE CAMPAIGNS",
                     subtitle = "",
                     isSpark = true,
                     isCompact = true
                 )
                 GlassFormatCard(
-                    title = "Screenplay Spark",
-                    subtitle = "30m Spark • 600w/48h",
+                    title = "Screenplay Campaign",
+                    subtitle = "Gamified 90p • XP & Loot",
                     iconType = 0,
                     isSparkCard = true,
-                    badgeTag = "90p",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Universe / TV Spark",
-                    subtitle = "60m Spark • Ep 101 Lock",
+                    title = "Universe / TV Campaign",
+                    subtitle = "Pilot & Franchise Quests",
                     iconType = 5,
                     isSparkCard = true,
-                    badgeTag = "TV",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Stage Play Spark",
-                    subtitle = "30m Spark • Scene Lock",
+                    title = "Stage Play Campaign",
+                    subtitle = "Theatrical Gauntlet",
                     iconType = 3,
                     isSparkCard = true,
-                    badgeTag = "Stage",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Comic Book Spark",
-                    subtitle = "30m Spark • Panel Lock",
+                    title = "Comic Book Campaign",
+                    subtitle = "Issue Boss-Run",
                     iconType = 4,
                     isSparkCard = true,
-                    badgeTag = "Issue",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel Spark",
-                    subtitle = "30m Spark • 1,000w/48h",
+                    title = "Novel Campaign",
+                    subtitle = "60,000-Word RPG",
                     iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "60k w",
+                    badgeTag = "Play →",
                     onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2281,7 +2472,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             SplashColumnHeaderPill(
-                title = "⚡ SPARK MODE",
+                title = "🎮 CAMPAIGNS",
                 subtitle = "",
                 isSpark = true,
                 isCompact = true,
@@ -2289,7 +2480,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 1: Screenplay vs Screenplay Spark
+        // Row 1: Screenplay vs Screenplay Campaign
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2302,7 +2493,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Screenplay Spark",
+                title = "Screenplay Game",
                 iconType = 0,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
@@ -2311,7 +2502,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 2: Universe vs Universe/TV Spark
+        // Row 2: Universe vs Universe/TV Campaign
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2324,7 +2515,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "TV / Film Spark",
+                title = "TV / Film Game",
                 iconType = 5,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
@@ -2333,7 +2524,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 3: Stage Play vs Stage Play Spark
+        // Row 3: Stage Play vs Stage Play Campaign
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2346,7 +2537,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Stage Spark",
+                title = "Stage Game",
                 iconType = 3,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
@@ -2355,7 +2546,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 4: Comic Book vs Comic Book Spark
+        // Row 4: Comic Book vs Comic Book Campaign
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2368,7 +2559,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Comic Spark",
+                title = "Comic Game",
                 iconType = 4,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
@@ -2377,7 +2568,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 5: Novel vs Novel Spark
+        // Row 5: Novel vs Novel Campaign
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2390,7 +2581,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Novel Spark",
+                title = "Novel Game",
                 iconType = 2,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
@@ -2470,7 +2661,7 @@ private fun ConceptBActionDock(
             )
 
             ConceptBPrimaryPill(
-                text = if (isCompact) "🔥 Continue Spark" else "🔥 Continue Existing Spark",
+                text = if (isCompact) "🕹️ Continue Campaign" else "🕹️ Continue Active Campaign",
                 onClick = onOpenSparkMode,
                 isCompact = isCompact
             )
@@ -2748,7 +2939,7 @@ private fun GlassFormatCard(
             ) {
                 if (isSparkCard) {
                     Text(
-                        text = "⚡",
+                        text = "🎮",
                         fontSize = if (isCompact) 14.sp else 17.sp
                     )
                     Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
