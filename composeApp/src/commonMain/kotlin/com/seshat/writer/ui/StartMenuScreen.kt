@@ -392,6 +392,13 @@ fun StartMenuScreen(
                                             isUniverseMode = true
                                             currentStep = StartMenuStep.UNIVERSE_SELECT
                                         },
+                                        onSelectSparkFormat = { format, type, isUniverse ->
+                                            selectedFormat = format
+                                            selectedScreenplayType = type
+                                            isUniverseMode = isUniverse
+                                            projectTitleInput = ""
+                                            currentStep = StartMenuStep.SPARK_NEW_SETUP
+                                        },
                                         onNewProject = {
                                             projectTitleInput = ""
                                             isUniverseMode = false
@@ -633,6 +640,9 @@ fun StartMenuScreen(
 
                             StartMenuStep.SPARK_NEW_SETUP -> {
                                 SparkNewSetupContent(
+                                    selectedFormat = selectedFormat,
+                                    selectedScreenplayType = selectedScreenplayType,
+                                    isUniverseMode = isUniverseMode,
                                     projectTitleInput = projectTitleInput,
                                     onTitleChange = { projectTitleInput = it },
                                     isDark = isDark,
@@ -648,7 +658,7 @@ fun StartMenuScreen(
                                         )
                                         onCloseMenu()
                                     },
-                                    onBack = { currentStep = StartMenuStep.SPARK_HUB }
+                                    onBack = { currentStep = StartMenuStep.TOP_LEVEL }
                                 )
                             }
                         }
@@ -1065,15 +1075,33 @@ private fun SparkModeHubContent(
 
 @Composable
 private fun SparkNewSetupContent(
+    selectedFormat: ProjectFormat,
+    selectedScreenplayType: ScreenplayType?,
+    isUniverseMode: Boolean,
     projectTitleInput: String,
     onTitleChange: (String) -> Unit,
     isDark: Boolean,
     onLaunchSpark: (ProjectFormat, ScreenplayType?) -> Unit,
     onBack: () -> Unit
 ) {
+    val sparkHeaderTitle = when {
+        isUniverseMode -> "⚡ UNIVERSE / TV SPARK"
+        selectedFormat == ProjectFormat.NOVEL -> "⚡ PROSE NOVEL SPARK"
+        selectedFormat == ProjectFormat.STAGE_PLAY -> "⚡ STAGE PLAY SPARK"
+        selectedFormat == ProjectFormat.COMIC_BOOK -> "⚡ COMIC BOOK SPARK"
+        else -> "⚡ SINGLE SCREENPLAY SPARK"
+    }
+    val sparkHeaderSubtitle = when {
+        isUniverseMode -> "60m Dual-Spark • Ep 101 Showrunner Lock • Act-Gate Progression"
+        selectedFormat == ProjectFormat.NOVEL -> "Target: 60,000 Words • 30m Premise Spark → 96h World Bible → 48h Chapter Skeleton → 1,000w/48h Quota"
+        selectedFormat == ProjectFormat.STAGE_PLAY -> "30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Act/Scene Forward-Only Lock"
+        selectedFormat == ProjectFormat.COMIC_BOOK -> "30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Page & Panel Forward-Only Lock"
+        else -> "Target: 90 Pages (~18,000 Words) • 30m Logline Spark → 48h Bible → 24h Outline → 600w/48h Quota"
+    }
+
     StartMenuLayout(
-        headerTitle = "⚡ NEW SPARK PROJECT",
-        headerSubtitle = "Name your project and choose your First Draft Engine ruleset",
+        headerTitle = sparkHeaderTitle,
+        headerSubtitle = sparkHeaderSubtitle,
         showBackButton = true,
         onBack = onBack
     ) {
@@ -1081,7 +1109,7 @@ private fun SparkNewSetupContent(
         Surface(
             color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.4.dp, ScribeStarNeonRed.copy(alpha = 0.70f)),
+            border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.85f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
@@ -1099,7 +1127,7 @@ private fun SparkNewSetupContent(
                     text = "SPARK PROJECT TITLE (OPTIONAL)",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        color = ScribeStarNeonRed,
+                        color = ElectrumGold,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
@@ -1122,54 +1150,62 @@ private fun SparkNewSetupContent(
                             color = if (isDark) Color.White else Color(0xFF0F172A),
                             fontWeight = FontWeight.SemiBold
                         ),
-                        cursorBrush = SolidColor(ScribeStarNeonRed),
+                        cursorBrush = SolidColor(ElectrumGold),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         }
 
-        // 1. FEATURE SCREENPLAY SPARK
-        StartMenuBigButton(
-            badgeText = "🎬",
-            title = "FEATURE SCREENPLAY SPARK",
-            subtitle = "Target: 90 Pages (~18,000 Words) • 30m Logline Spark → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Rolling Fog of War",
-            badgeColor = ElectrumGold,
-            onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) }
-        )
+        if (isUniverseMode) {
+            StartMenuBigButton(
+                badgeText = "📺",
+                title = "IGNITE 1-HOUR TV DRAMA SPARK (60M PILOT)",
+                subtitle = "Target: 10,000 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Act-Gate Locks",
+                badgeColor = Color(0xFF3B82F6),
+                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA) }
+            )
 
-        Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        // 2. TV SERIES 1-HOUR DRAMA SPARK
-        StartMenuBigButton(
-            badgeText = "📺",
-            title = "TV DRAMA SPARK (1-HOUR PILOT)",
-            subtitle = "Target: 10,000 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Act-Gate Locks",
-            badgeColor = Color(0xFF3B82F6),
-            onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA) }
-        )
+            StartMenuBigButton(
+                badgeText = "🛋️",
+                title = "IGNITE 30-MIN TV COMEDY SPARK (30M PILOT)",
+                subtitle = "Target: 5,500 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Sitcom Act-Gates",
+                badgeColor = Color(0xFFEC4899),
+                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY) }
+            )
 
-        Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        // 3. TV SERIES 30-MIN COMEDY SPARK
-        StartMenuBigButton(
-            badgeText = "🛋️",
-            title = "TV COMEDY SPARK (30-MIN PILOT)",
-            subtitle = "Target: 5,500 Words (Ep 101 Pilot) • 60m Dual-Spark → 72h Series Bible → 24h Pilot Outline → 500w / 48h Quota & Sitcom Act-Gates",
-            badgeColor = Color(0xFFEC4899),
-            onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY) }
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 4. PROSE NOVEL SPARK
-        StartMenuBigButton(
-            badgeText = "📖",
-            title = "PROSE NOVEL SPARK",
-            subtitle = "Target: 60,000 Words • 30m Premise Spark → 96h World Bible → 48h Chapter Skeleton → 1,000w / 48h Quota & 3,500w Chapter Airlocks",
-            badgeColor = Color(0xFF8B5CF6),
-            onClick = { onLaunchSpark(ProjectFormat.NOVEL, null) }
-        )
+            StartMenuBigButton(
+                badgeText = "🎬",
+                title = "IGNITE CINEMATIC FEATURE UNIVERSE SPARK",
+                subtitle = "Target: 90 Pages (~18,000 Words, Installment 1) • 30m Franchise Spark → 48h Master Bible → 24h Outline → 600w / 48h Quota",
+                badgeColor = ElectrumGold,
+                onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) }
+            )
+        } else {
+            val primaryTitle = when (selectedFormat) {
+                ProjectFormat.NOVEL -> "⚡ IGNITE PROSE NOVEL SPARK (60,000W TARGET)"
+                ProjectFormat.STAGE_PLAY -> "⚡ IGNITE STAGE PLAY SPARK"
+                ProjectFormat.COMIC_BOOK -> "⚡ IGNITE COMIC BOOK SPARK"
+                else -> "⚡ IGNITE FEATURE SCREENPLAY SPARK (90P / 18,000W)"
+            }
+            val primarySub = when (selectedFormat) {
+                ProjectFormat.NOVEL -> "Start 30m Premise Spark Clock → 96h World Bible → 48h Chapter Skeleton → 1,000w / 48h Quota & 3,500w Sequential Chapter Airlocks"
+                ProjectFormat.STAGE_PLAY -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Forward-Only Scene Lock"
+                ProjectFormat.COMIC_BOOK -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Page/Panel Forward-Only Lock"
+                else -> "Start 30m Logline Spark Clock → 48h Bible → 24h Outline → 600w / 48h Survival Quota & Rolling 5-Scene Fog of War"
+            }
+            StartMenuBigButton(
+                badgeText = "⚡",
+                title = primaryTitle,
+                subtitle = primarySub,
+                badgeColor = ElectrumGold,
+                onClick = { onLaunchSpark(selectedFormat, selectedScreenplayType ?: ScreenplayType.FEATURE) }
+            )
+        }
     }
 }
 
@@ -1787,6 +1823,7 @@ private fun GlassStartMenuHub(
     activeTitle: String,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -1825,6 +1862,7 @@ private fun GlassStartMenuHub(
                 availableWidth = availableWidth,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkFormat = onSelectSparkFormat,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -1835,6 +1873,7 @@ private fun GlassStartMenuHub(
                 availableWidth = availableWidth,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkFormat = onSelectSparkFormat,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -1845,6 +1884,7 @@ private fun GlassStartMenuHub(
                 availableWidth = availableWidth,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkFormat = onSelectSparkFormat,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -1855,10 +1895,69 @@ private fun GlassStartMenuHub(
 }
 
 @Composable
+private fun SplashColumnHeaderPill(
+    title: String,
+    subtitle: String,
+    isSpark: Boolean,
+    isCompact: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val isDark = LocalSeshatDarkTheme.current
+    val borderColor = if (isSpark) ElectrumGold.copy(alpha = 0.85f) else Color(0xFF475569)
+    val bgBrush = if (isSpark) {
+        Brush.verticalGradient(listOf(Color(0xD8450A14), Color(0xE824050D)))
+    } else {
+        if (isDark) Brush.verticalGradient(listOf(Color(0xD80F172A), Color(0xE8090D16)))
+        else Brush.verticalGradient(listOf(Color(0xF5FFFFFF), Color(0xEDF1F5F9)))
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(bgBrush)
+            .border(BorderStroke(1.2.dp, borderColor), RoundedCornerShape(16.dp))
+            .padding(horizontal = if (isCompact) 8.dp else 12.dp, vertical = if (isCompact) 5.dp else 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = MainAppFontFamily,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.8.sp,
+                    fontSize = if (isCompact) 10.sp else 11.5.sp,
+                    color = if (isSpark) ElectrumGold else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A))
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (!isCompact && subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.5.sp,
+                        color = if (isSpark) Color(0xFFFECDD3) else Color(0xFF94A3B8)
+                    ),
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun GlassStartMenuHubWide(
     availableWidth: Dp,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -1866,75 +1965,131 @@ private fun GlassStartMenuHubWide(
     modifier: Modifier = Modifier
 ) {
     // Center justified with smooth outward expansion as window expands
-    val cardWidth = (240.dp + (availableWidth - 680.dp) * 0.12f).coerceIn(240.dp, 310.dp)
-    val centerGap = (100.dp + (availableWidth - 680.dp) * 0.18f).coerceIn(100.dp, 240.dp)
+    val cardWidth = (255.dp + (availableWidth - 680.dp) * 0.14f).coerceIn(255.dp, 330.dp)
+    val centerGap = (90.dp + (availableWidth - 680.dp) * 0.16f).coerceIn(90.dp, 220.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Midsection: Strictly center-justified row with dynamic center gap framing Goddess Seshat
+        // Midsection: Left Column (All 5 Standard Projects) vs Right Column (All 5 Respective Spark Projects)
         Row(
             modifier = Modifier
                 .wrapContentWidth()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
-            // Left Column (Single Screenplay, Screenplay Universe)
+            // LEFT COLUMN: NEW STANDARD PROJECTS (FREEFORM STUDIO / NO SPARK)
             Column(
                 modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
+                SplashColumnHeaderPill(
+                    title = "🏛️ NEW STANDARD PROJECT",
+                    subtitle = "(No Locks)",
+                    isSpark = false
+                )
                 GlassFormatCard(
                     title = "Single Screenplay",
+                    subtitle = "Standard Feature • Freeform Studio",
                     iconType = 0,
                     onClick = { onSelectFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
                     title = "Screenplay Universe",
+                    subtitle = "Film Franchise or TV Series",
                     iconType = 5,
                     onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
-            }
-
-            // Right Column (Stage Play, Comic Book)
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
                 GlassFormatCard(
                     title = "Stage Play",
+                    subtitle = "Theatrical Script • Freeform Studio",
                     iconType = 3,
                     onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
                     title = "Comic Book",
+                    subtitle = "Pages & Panels • Freeform Studio",
                     iconType = 4,
                     onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Novel",
+                    subtitle = "Book Manuscript • Freeform Studio",
+                    iconType = 2,
+                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // RIGHT COLUMN: RESPECTIVE SPARK MODE PROJECTS (FIRST DRAFT ENGINE)
+            Column(
+                modifier = Modifier.width(cardWidth),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                SplashColumnHeaderPill(
+                    title = "⚡ NEW SPARK MODE",
+                    subtitle = "(First Draft Engine)",
+                    isSpark = true
+                )
+                GlassFormatCard(
+                    title = "Screenplay Spark",
+                    subtitle = "30m Spark • 600w/48h Quota",
+                    iconType = 0,
+                    isSparkCard = true,
+                    badgeTag = "90p",
+                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Universe / TV Spark",
+                    subtitle = "60m Dual-Spark • Ep 101 Lock",
+                    iconType = 5,
+                    isSparkCard = true,
+                    badgeTag = "TV/Film",
+                    onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Stage Play Spark",
+                    subtitle = "30m Spark • Act/Scene Airlock",
+                    iconType = 3,
+                    isSparkCard = true,
+                    badgeTag = "Stage",
+                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Comic Book Spark",
+                    subtitle = "30m Spark • Page/Panel Lock",
+                    iconType = 4,
+                    isSparkCard = true,
+                    badgeTag = "Issue",
+                    onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Novel Spark",
+                    subtitle = "30m Spark • 1,000w/48h Quota",
+                    iconType = 2,
+                    isSparkCard = true,
+                    badgeTag = "60k w",
+                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Center Novel button
-        GlassFormatCard(
-            title = "Novel",
-            iconType = 2,
-            onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-            modifier = Modifier.width(cardWidth)
-        )
-
-        Spacer(modifier = Modifier.height(26.dp))
-
-        // Concept B Floating Action Pill Dock (Centered)
+        // Bottom Center Dock: Open/Import, Continue Studio Project, Continue Existing Spark
         ConceptBActionDock(
             isCompact = false,
             onNewProject = onNewProject,
@@ -1950,76 +2105,137 @@ private fun GlassStartMenuHubMedium(
     availableWidth: Dp,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardWidth = ((availableWidth - 56.dp) * 0.44f).coerceIn(190.dp, 240.dp)
-    val centerGap = (24.dp + (availableWidth - 480.dp) * 0.15f).coerceIn(24.dp, 70.dp)
+    val cardWidth = ((availableWidth - 48.dp) * 0.45f).coerceIn(195.dp, 255.dp)
+    val centerGap = (20.dp + (availableWidth - 480.dp) * 0.14f).coerceIn(20.dp, 64.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             modifier = Modifier
                 .wrapContentWidth()
-                .padding(vertical = 10.dp),
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
+            // Left Column: Standard
             Column(
                 modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                SplashColumnHeaderPill(
+                    title = "🏛️ STANDARD STUDIO",
+                    subtitle = "",
+                    isSpark = false,
+                    isCompact = true
+                )
                 GlassFormatCard(
                     title = "Single Screenplay",
+                    subtitle = "Freeform Studio",
                     iconType = 0,
                     onClick = { onSelectFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
                     title = "Screenplay Universe",
+                    subtitle = "Film or TV Series",
                     iconType = 5,
                     onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
-            }
-
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
                 GlassFormatCard(
                     title = "Stage Play",
+                    subtitle = "Theatrical Script",
                     iconType = 3,
                     onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
                     title = "Comic Book",
+                    subtitle = "Pages & Panels",
                     iconType = 4,
                     onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Novel",
+                    subtitle = "Book Manuscript",
+                    iconType = 2,
+                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Right Column: Spark Mode
+            Column(
+                modifier = Modifier.width(cardWidth),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                SplashColumnHeaderPill(
+                    title = "⚡ SPARK MODE",
+                    subtitle = "",
+                    isSpark = true,
+                    isCompact = true
+                )
+                GlassFormatCard(
+                    title = "Screenplay Spark",
+                    subtitle = "30m Spark • 600w/48h",
+                    iconType = 0,
+                    isSparkCard = true,
+                    badgeTag = "90p",
+                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Universe / TV Spark",
+                    subtitle = "60m Spark • Ep 101 Lock",
+                    iconType = 5,
+                    isSparkCard = true,
+                    badgeTag = "TV",
+                    onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Stage Play Spark",
+                    subtitle = "30m Spark • Scene Lock",
+                    iconType = 3,
+                    isSparkCard = true,
+                    badgeTag = "Stage",
+                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Comic Book Spark",
+                    subtitle = "30m Spark • Panel Lock",
+                    iconType = 4,
+                    isSparkCard = true,
+                    badgeTag = "Issue",
+                    onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Novel Spark",
+                    subtitle = "30m Spark • 1,000w/48h",
+                    iconType = 2,
+                    isSparkCard = true,
+                    badgeTag = "60k w",
+                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Center Novel button
-        GlassFormatCard(
-            title = "Novel",
-            iconType = 2,
-            onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-            modifier = Modifier.width(cardWidth)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         ConceptBActionDock(
             isCompact = false,
@@ -2036,21 +2252,44 @@ private fun GlassStartMenuHubCompact(
     availableWidth: Dp,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardWidth = ((availableWidth - 36.dp) / 2).coerceIn(145.dp, 200.dp)
+    val cardWidth = ((availableWidth - 32.dp) / 2).coerceIn(142.dp, 200.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Column Headers
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            SplashColumnHeaderPill(
+                title = "🏛️ STANDARD",
+                subtitle = "",
+                isSpark = false,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            SplashColumnHeaderPill(
+                title = "⚡ SPARK MODE",
+                subtitle = "",
+                isSpark = true,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 1: Screenplay vs Screenplay Spark
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2063,13 +2302,38 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
+                title = "Screenplay Spark",
+                iconType = 0,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 2: Universe vs Universe/TV Spark
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
                 title = "Universe",
                 iconType = 5,
                 onClick = onSelectUniverse,
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
+            GlassFormatCard(
+                title = "TV / Film Spark",
+                iconType = 5,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
         }
+
+        // Row 3: Stage Play vs Stage Play Spark
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2082,22 +2346,60 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
+                title = "Stage Spark",
+                iconType = 3,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 4: Comic Book vs Comic Book Spark
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
                 title = "Comic Book",
                 iconType = 4,
                 onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
+            GlassFormatCard(
+                title = "Comic Spark",
+                iconType = 4,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
         }
-        GlassFormatCard(
-            title = "Novel",
-            iconType = 2,
-            onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-            isCompact = true,
-            modifier = Modifier.width(cardWidth)
-        )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        // Row 5: Novel vs Novel Spark
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
+                title = "Novel",
+                iconType = 2,
+                onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            GlassFormatCard(
+                title = "Novel Spark",
+                iconType = 2,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         ConceptBActionDock(
             isCompact = true,
@@ -2110,8 +2412,8 @@ private fun GlassStartMenuHubCompact(
 }
 
 /**
- * Concept B Floating Action Pill Dock.
- * Displays ⚡ Spark Mode (radiant neon red), Import Script (frosted glass), and Continue (smoky glass).
+ * Concept B Floating Action Pill Dock (Centered at Bottom).
+ * Displays 📂 Open / Import Project, ▶️ Continue Studio Project, and 🔥 Continue Existing Spark.
  */
 @Composable
 private fun ConceptBActionDock(
@@ -2150,26 +2452,27 @@ private fun ConceptBActionDock(
             .padding(horizontal = if (isCompact) 6.dp else 8.dp, vertical = if (isCompact) 5.dp else 6.dp)
     ) {
         Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ConceptBPrimaryPill(
-                text = "⚡ Spark Mode",
-                onClick = onOpenSparkMode,
-                isCompact = isCompact
-            )
-
             ConceptBGlassPill(
-                text = "Import Script",
+                text = if (isCompact) "📂 Open / Import" else "📂 Open / Import Project",
                 onClick = onOpenLibrary,
                 isCompact = isCompact
             )
 
             ConceptBGlassPill(
-                text = "Continue",
+                text = if (isCompact) "▶️ Continue Studio" else "▶️ Continue Studio Project",
                 onClick = onContinue,
                 isCompact = isCompact,
                 accentColor = Color(0xFF38BDF8)
+            )
+
+            ConceptBPrimaryPill(
+                text = if (isCompact) "🔥 Continue Spark" else "🔥 Continue Existing Spark",
+                onClick = onOpenSparkMode,
+                isCompact = isCompact
             )
         }
     }
@@ -2346,6 +2649,9 @@ private fun GlassFormatCard(
     iconType: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String = "",
+    isSparkCard: Boolean = false,
+    badgeTag: String = "",
     isCompact: Boolean = false
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -2354,23 +2660,25 @@ private fun GlassFormatCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHighlighted = isHovered || isPressed
 
+    val primaryGlowColor = if (isSparkCard) ElectrumGold else ScribeStarNeonRed
+
     val glowRadius by animateDpAsState(
-        targetValue = if (isHighlighted) 18.dp else 3.dp,
+        targetValue = if (isHighlighted) 18.dp else 4.dp,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "FormatCardGlowRadius"
     )
     val outerAlpha by animateFloatAsState(
-        targetValue = if (isHighlighted) 0.60f else 0.10f,
+        targetValue = if (isHighlighted) 0.60f else (if (isSparkCard) 0.16f else 0.10f),
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "FormatCardOuterAlpha"
     )
     val midAlpha by animateFloatAsState(
-        targetValue = if (isHighlighted) 0.90f else 0.22f,
+        targetValue = if (isHighlighted) 0.90f else (if (isSparkCard) 0.30f else 0.22f),
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "FormatCardMidAlpha"
     )
     val strokeWidth by animateDpAsState(
-        targetValue = if (isHighlighted) 2.0.dp else 1.2.dp,
+        targetValue = if (isHighlighted) 2.0.dp else 1.3.dp,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "FormatCardStrokeWidth"
     )
@@ -2386,22 +2694,25 @@ private fun GlassFormatCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .height(if (isCompact) 52.dp else 60.dp)
+            .height(if (isCompact) 48.dp else 56.dp)
             .neonBloom(
-                color = ScribeStarNeonRed,
-                cornerRadius = 18.dp,
+                color = primaryGlowColor,
+                cornerRadius = 16.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.70f
+                coreAlpha = if (isHighlighted) 1.0f else 0.75f
             )
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    if (isDark) {
+                    if (isSparkCard) {
+                        if (isHighlighted) listOf(Color(0x9058101E), Color(0xA830060F))
+                        else listOf(Color(0x65450E1A), Color(0x8024050D))
+                    } else if (isDark) {
                         if (isHighlighted) listOf(Color(0x60450E1A), Color(0x7524050D))
-                        else listOf(Color(0x351E293B), Color(0x480F172A))
+                        else listOf(Color(0x451E293B), Color(0x600F172A))
                     } else {
                         if (isHighlighted) listOf(Color(0xFFE11D48), Color(0xFFBE123C))
                         else listOf(Color(0xF0FFFFFF), Color(0xD8F8FAFC))
@@ -2411,43 +2722,98 @@ private fun GlassFormatCard(
             .border(
                 BorderStroke(
                     width = strokeWidth,
-                    color = if (isHighlighted) ScribeStarNeonRed else if (isDark) Color(0x35FFFFFF) else Color(0xFFCBD5E1)
+                    color = if (isHighlighted) primaryGlowColor
+                    else if (isSparkCard) ElectrumGold.copy(alpha = 0.72f)
+                    else if (isDark) ScribeStarNeonRed.copy(alpha = 0.55f)
+                    else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = if (isCompact) 12.dp else 18.dp),
+            .padding(horizontal = if (isCompact) 10.dp else 14.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            FormatCardIcon(
-                type = iconType,
-                color = if (isHighlighted) Color.White else ScribeStarNeonRed,
-                modifier = Modifier.size(if (isCompact) 26.dp else 32.dp)
-            )
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isSparkCard) {
+                    Text(
+                        text = "⚡",
+                        fontSize = if (isCompact) 14.sp else 17.sp
+                    )
+                    Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 10.dp))
+                } else {
+                    FormatCardIcon(
+                        type = iconType,
+                        color = if (isHighlighted) Color.White else ScribeStarNeonRed,
+                        modifier = Modifier.size(if (isCompact) 22.dp else 26.dp)
+                    )
+                    Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
+                }
 
-            Spacer(modifier = Modifier.width(if (isCompact) 10.dp else 16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSparkCard) {
+                                if (isHighlighted) Color.White else ElectrumGold
+                            } else {
+                                if (isHighlighted || isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+                            },
+                            fontSize = if (isCompact) 12.sp else 14.5.sp,
+                            letterSpacing = 0.2.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!isCompact && subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                color = if (isSparkCard) Color(0xFFFECDD3).copy(alpha = 0.85f)
+                                else if (isDark) Color(0xFF94A3B8)
+                                else Color(0xFF475569),
+                                fontSize = 11.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
 
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isHighlighted || isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
-                    fontSize = if (isCompact) 13.sp else 16.sp,
-                    letterSpacing = 0.2.sp
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (!isCompact && badgeTag.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    color = ElectrumGold.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(0.8.dp, ElectrumGold.copy(alpha = 0.55f))
+                ) {
+                    Text(
+                        text = badgeTag,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = ElectrumGold,
+                            fontSize = 10.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
         }
     }
 }
