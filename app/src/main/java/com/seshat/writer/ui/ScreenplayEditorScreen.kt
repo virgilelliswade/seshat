@@ -84,6 +84,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -1798,36 +1799,38 @@ private fun EditorCanvas(
     val screenWidthDp = configuration.screenWidthDp
     val isGooglebook = remember { DeviceEnvironment.isGooglebook(context) }
     val actions = remember(viewModel, context) { EditorCanvasActions(viewModel, context) }
+    val formattingController = rememberEditorFormattingController()
 
-    Column(
-        modifier = modifier
-            .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
-            .fillMaxSize()
-            .onPreviewKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown) {
-                    val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
-                    if (isCmdOrCtrl && keyEvent.key == Key.S) {
-                        onSaveProject()
-                        return@onPreviewKeyEvent true
-                    }
-                    if (isCmdOrCtrl && keyEvent.key == Key.K) {
-                        actions.insertTkToken()
-                        return@onPreviewKeyEvent true
-                    }
-                    if ((isCmdOrCtrl && keyEvent.key == Key.D) ||
-                        keyEvent.key == Key.F10 || keyEvent.key == Key.F5
-                    ) {
-                        actions.toggleDictation()
-                        return@onPreviewKeyEvent true
-                    }
-                    if (keyEvent.key == Key.Escape && uiState.isDictating) {
-                        actions.cancelDictation()
-                        return@onPreviewKeyEvent true
-                    }
-                    if (keyEvent.isCtrlPressed && keyEvent.key == Key.B) {
-                        actions.openStoryBible()
-                        return@onPreviewKeyEvent true
-                    }
+    CompositionLocalProvider(LocalEditorFormattingController provides formattingController) {
+        Column(
+            modifier = modifier
+                .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
+                .fillMaxSize()
+                .onPreviewKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+                        if (isCmdOrCtrl && keyEvent.key == Key.S) {
+                            onSaveProject()
+                            return@onPreviewKeyEvent true
+                        }
+                        if (isCmdOrCtrl && keyEvent.key == Key.K) {
+                            actions.insertTkToken()
+                            return@onPreviewKeyEvent true
+                        }
+                        if ((isCmdOrCtrl && keyEvent.key == Key.D) ||
+                            keyEvent.key == Key.F10 || keyEvent.key == Key.F5
+                        ) {
+                            actions.toggleDictation()
+                            return@onPreviewKeyEvent true
+                        }
+                        if (keyEvent.key == Key.Escape && uiState.isDictating) {
+                            actions.cancelDictation()
+                            return@onPreviewKeyEvent true
+                        }
+                        if (isCmdOrCtrl && keyEvent.isShiftPressed && keyEvent.key == Key.B) {
+                            actions.openStoryBible()
+                            return@onPreviewKeyEvent true
+                        }
                     if (keyEvent.isCtrlPressed && keyEvent.key == Key.O) {
                         actions.toggleCorkboard()
                         return@onPreviewKeyEvent true
@@ -2370,9 +2373,13 @@ private fun EditorCanvas(
             onTabPressed = actions::tabPressed,
             onSaveProject = onSaveProject,
             onOpenScriptDoctor = actions::openScriptDoctor,
-            onToggleTheme = actions::toggleThemeMode
+            onToggleTheme = actions::toggleThemeMode,
+            onZoomIn = actions::zoomIn,
+            onZoomOut = actions::zoomOut,
+            onResetZoom = actions::resetZoom
         )
     }
+}
 }
 
 @Composable
@@ -2715,9 +2722,14 @@ private fun BottomHud(
     onSaveProject: () -> Unit = {},
     onOpenScriptDoctor: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
+    onZoomIn: () -> Unit = {},
+    onZoomOut: () -> Unit = {},
+    onResetZoom: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
+    val formattingController = LocalEditorFormattingController.current
+    val currentFontSizePt = (14.5f * uiState.zoomLevel).toInt()
     val currentBlock = uiState.blocks.find { it.id == uiState.focusedBlockId }
         ?: uiState.blocks.firstOrNull()
     val currentType = currentBlock?.type ?: BlockType.SCENE_HEADING
@@ -3031,6 +3043,16 @@ private fun BottomHud(
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
                         )
                     }
+
+                    // Formatting Capsule: Bold, Italic, Underline, Font Size (A- / A+)
+                    EditorFormattingToolbarRow(
+                        formattingController = formattingController,
+                        currentFontSizePt = currentFontSizePt,
+                        onDecreaseFontSize = onZoomOut,
+                        onIncreaseFontSize = onZoomIn,
+                        onResetFontSize = onResetZoom,
+                        isCompact = true
+                    )
                 }
 
                 // Compact metrics
@@ -3316,6 +3338,15 @@ private fun BottomHud(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                EditorFormattingToolbarRow(
+                    formattingController = formattingController,
+                    currentFontSizePt = currentFontSizePt,
+                    onDecreaseFontSize = onZoomOut,
+                    onIncreaseFontSize = onZoomIn,
+                    onResetFontSize = onResetZoom,
+                    isCompact = false
+                )
+
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color.Transparent,
@@ -3855,7 +3886,16 @@ private fun handleBlockPreviewKeyEvent(
             Key.Zero -> { callbacks.onResetZoom(); return true }
             Key.F -> { callbacks.onOpenFind(false); return true }
             Key.H -> { callbacks.onOpenFind(true); return true }
-            Key.B -> { callbacks.onOpenStoryBible(); return true }
+            Key.B -> {
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onOpenStoryBible()
+                } else {
+                    callbacks.onToggleBold()
+                }
+                return true
+            }
+            Key.I -> { callbacks.onToggleItalic(); return true }
+            Key.U -> { callbacks.onToggleUnderline(); return true }
             Key.O -> { callbacks.onToggleCorkboard(); return true }
             Key.K -> { callbacks.onInsertTkToken(); return true }
             Key.X -> { if (!config.isEditable) return true }
@@ -4157,6 +4197,7 @@ private fun ScreenplayBlockItem(
     callbacks: BlockCallbacks,
     modifier: Modifier = Modifier
 ) {
+    val formattingController = LocalEditorFormattingController.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -4168,6 +4209,41 @@ private fun ScreenplayBlockItem(
                 text = block.text,
                 selection = TextRange(block.text.length)
             )
+        )
+    }
+
+    LaunchedEffect(config.isFocused, textFieldValue) {
+        if (config.isFocused) {
+            formattingController.registerActiveField(
+                blockId = block.id,
+                getValue = { textFieldValue },
+                setValue = { updated ->
+                    textFieldValue = updated
+                    if (updated.text != block.text) {
+                        callbacks.onTextChange(updated.text)
+                    }
+                }
+            )
+        }
+    }
+
+    val blockCallbacks = remember(callbacks, block.id, textFieldValue) {
+        callbacks.copy(
+            onToggleBold = {
+                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
+                textFieldValue = updated
+                callbacks.onTextChange(updated.text)
+            },
+            onToggleItalic = {
+                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
+                textFieldValue = updated
+                callbacks.onTextChange(updated.text)
+            },
+            onToggleUnderline = {
+                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
+                textFieldValue = updated
+                callbacks.onTextChange(updated.text)
+            }
         )
     }
 
@@ -4401,6 +4477,7 @@ private fun ScreenplayBlockItem(
                     BasicTextField(
                         value = textFieldValue,
                         readOnly = !config.isEditable,
+                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
                         onValueChange = { newValue ->
                             if (!config.isEditable) return@BasicTextField
                             if (newValue.text.contains('\n')) {
@@ -4429,7 +4506,7 @@ private fun ScreenplayBlockItem(
                                     textLayoutResult = textLayoutResult,
                                     isSingleLine = isSingleLine,
                                     config = config,
-                                    callbacks = callbacks
+                                    callbacks = blockCallbacks
                                 )
                             },
                         textStyle = TextStyle(

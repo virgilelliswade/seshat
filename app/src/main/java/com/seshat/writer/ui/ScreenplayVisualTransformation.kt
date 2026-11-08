@@ -106,6 +106,8 @@ class ScreenplayVisualTransformation(
             }
         }
 
-        return TransformedText(builder.toAnnotatedString(), OffsetMapping.Identity)
+        val intermediate = builder.toAnnotatedString()
+        val inlineResult = FountainInlineVisualTransformation().filter(intermediate)
+        return TransformedText(inlineResult.text, OffsetMapping.Identity)
     }
 }

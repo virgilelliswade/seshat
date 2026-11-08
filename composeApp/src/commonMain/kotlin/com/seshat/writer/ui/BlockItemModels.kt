@@ -68,7 +68,10 @@ data class BlockCallbacks(
     val onNavigateNextScene: () -> Unit = {},
     val onNavigatePageUp: () -> Unit = {},
     val onNavigatePageDown: () -> Unit = {},
-    val onInsertTkToken: () -> Unit = {}
+    val onInsertTkToken: () -> Unit = {},
+    val onToggleBold: () -> Unit = {},
+    val onToggleItalic: () -> Unit = {},
+    val onToggleUnderline: () -> Unit = {}
 )
 
 /**

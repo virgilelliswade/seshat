@@ -127,7 +127,11 @@ import com.seshat.writer.ui.theme.opticalPillBrush
 import com.seshat.writer.ui.theme.ambientWorkspaceBrush
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.smokedGlassBrush
+import androidx.compose.runtime.CompositionLocalProvider
+import com.seshat.writer.ui.EditorFormattingToolbarRow
 import com.seshat.writer.ui.FloatingThemeTogglePill
+import com.seshat.writer.ui.LocalEditorFormattingController
+import com.seshat.writer.ui.rememberEditorFormattingController
 
 @Composable
 fun NovelEditorPane(
@@ -170,6 +174,8 @@ fun NovelEditorPane(
     var showScrapsDialog by remember { mutableStateOf(false) }
     var showSnapshotDialog by remember { mutableStateOf(false) }
     var isTypewriterMode by remember { mutableStateOf(manuscript.isTypewriterMode) }
+    var novelFontSizeSp by remember { mutableStateOf(17f) }
+    val formattingController = rememberEditorFormattingController()
 
     LaunchedEffect(activeChapterIndex, currentChapter.id) {
         highlightedParagraphIds = emptySet()
@@ -239,11 +245,12 @@ fun NovelEditorPane(
             }?.id
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
-    ) {
+    CompositionLocalProvider(LocalEditorFormattingController provides formattingController) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
+        ) {
         // ==========================================
         // 1. TOP TOOLBAR
         // ==========================================
@@ -557,6 +564,7 @@ fun NovelEditorPane(
                                         isHighlighted = isHighlighted,
                                         isEditable = isParaEditable,
                                         isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                                        fontSizeSp = novelFontSizeSp,
                                         onInsertTkToken = { viewModel.insertTkFixLaterToken(context) },
                                         onToggleHighlight = { isShift ->
                                             toggleParagraphHighlight(paragraph.id, isShift)
@@ -771,6 +779,10 @@ fun NovelEditorPane(
             focusedParagraph = currentChapter.paragraphs.find { it.id == focusedParagraphId } ?: currentChapter.paragraphs.firstOrNull(),
             isDictating = uiState.isDictating,
             isKeyboardActive = isKeyboardActive,
+            currentFontSizePt = novelFontSizeSp.toInt(),
+            onDecreaseFontSize = { novelFontSizeSp = (novelFontSizeSp - 1.5f).coerceAtLeast(12f) },
+            onIncreaseFontSize = { novelFontSizeSp = (novelFontSizeSp + 1.5f).coerceAtMost(28f) },
+            onResetFontSize = { novelFontSizeSp = 17f },
             onToggleKeyboard = {
                 isKeyboardActive = !isKeyboardActive
                 if (isKeyboardActive) {
@@ -871,6 +883,7 @@ fun NovelEditorPane(
             onToggleTheme = { viewModel.toggleThemeMode(context) }
         )
     }
+}
 
     if (isCoverCreatorOpen) {
         NovelCoverCreatorDialog(
@@ -1774,6 +1787,10 @@ private fun NovelBottomHud(
     onTabPressed: () -> Unit = {},
     onSaveProject: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
+    currentFontSizePt: Int = 17,
+    onDecreaseFontSize: () -> Unit = {},
+    onIncreaseFontSize: () -> Unit = {},
+    onResetFontSize: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currentType = focusedParagraph?.type ?: NovelParagraphType.NARRATIVE
@@ -1793,6 +1810,10 @@ private fun NovelBottomHud(
             onTabPressed = onTabPressed,
             onSaveProject = onSaveProject,
             onToggleTheme = onToggleTheme,
+            currentFontSizePt = currentFontSizePt,
+            onDecreaseFontSize = onDecreaseFontSize,
+            onIncreaseFontSize = onIncreaseFontSize,
+            onResetFontSize = onResetFontSize,
             modifier = modifier
                 .navigationBarsPadding()
                 .imePadding()
@@ -1809,6 +1830,10 @@ private fun NovelBottomHud(
             onTabPressed = onTabPressed,
             onSaveProject = onSaveProject,
             onToggleTheme = onToggleTheme,
+            currentFontSizePt = currentFontSizePt,
+            onDecreaseFontSize = onDecreaseFontSize,
+            onIncreaseFontSize = onIncreaseFontSize,
+            onResetFontSize = onResetFontSize,
             modifier = modifier
                 .navigationBarsPadding()
                 .fillMaxWidth()
@@ -1831,6 +1856,10 @@ private fun NovelCompactBottomHud(
     onTabPressed: () -> Unit,
     onSaveProject: () -> Unit,
     onToggleTheme: () -> Unit = {},
+    currentFontSizePt: Int = 17,
+    onDecreaseFontSize: () -> Unit = {},
+    onIncreaseFontSize: () -> Unit = {},
+    onResetFontSize: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1838,7 +1867,7 @@ private fun NovelCompactBottomHud(
         modifier = modifier
             .padding(horizontal = 8.dp, vertical = 5.dp)
     ) {
-        // Tier 1: Scrollable Element Selection Pills
+        // Tier 1: Scrollable Element Selection Pills & Formatting Controls
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1847,6 +1876,16 @@ private fun NovelCompactBottomHud(
                 .horizontalScroll(rememberScrollState())
                 .padding(vertical = 2.dp)
         ) {
+            val formattingController = LocalEditorFormattingController.current
+            EditorFormattingToolbarRow(
+                formattingController = formattingController,
+                currentFontSizePt = currentFontSizePt,
+                onDecreaseFontSize = onDecreaseFontSize,
+                onIncreaseFontSize = onIncreaseFontSize,
+                onResetFontSize = onResetFontSize,
+                isCompact = true
+            )
+
             val isNarrative = currentType == NovelParagraphType.NARRATIVE
             NovelGlassPillButton(
                 text = "Narration",
@@ -1972,6 +2011,10 @@ private fun NovelDesktopBottomHud(
     onTabPressed: () -> Unit,
     onSaveProject: () -> Unit,
     onToggleTheme: () -> Unit = {},
+    currentFontSizePt: Int = 17,
+    onDecreaseFontSize: () -> Unit = {},
+    onIncreaseFontSize: () -> Unit = {},
+    onResetFontSize: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1985,6 +2028,16 @@ private fun NovelDesktopBottomHud(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val formattingController = LocalEditorFormattingController.current
+            EditorFormattingToolbarRow(
+                formattingController = formattingController,
+                currentFontSizePt = currentFontSizePt,
+                onDecreaseFontSize = onDecreaseFontSize,
+                onIncreaseFontSize = onIncreaseFontSize,
+                onResetFontSize = onResetFontSize,
+                isCompact = false
+            )
+
             val isNarrative = currentType == NovelParagraphType.NARRATIVE
             NovelGlassPillButton(
                 text = "Narration",
@@ -2063,7 +2116,7 @@ private fun NovelDesktopBottomHud(
                     )
                     Text(text = "•", color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
                     Text(
-                        text = "Garamond 12pt",
+                        text = "Garamond ${currentFontSizePt}pt",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
                             color = if (isDark) Color.White else Color(0xFF0F172A),

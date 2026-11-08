@@ -105,13 +105,21 @@ fun ShortcutsDialog(onDismiss: () -> Unit) {
                     ))
 
                     ShortcutSection("Studio & Creative Tools", listOf(
-                        "⌘B" to "Open Story Bible & World Building",
+                        "⇧⌘B" to "Open Story Bible & World Building",
                         "⇧⌘O" to "Toggle Corkboard / Index Cards",
                         "⌘J" to "AI Script Doctor & Analysis",
                         "⇧⌘R" to "Table Read (macOS Voice Synthesis)",
                         "⌘D / F10" to "Voice Dictation Mode",
                         "⌘F" to "Find in Script",
                         "⌥⌘F" to "Find & Replace"
+                    ))
+
+                    ShortcutSection("Typography & Inline Formatting", listOf(
+                        "⌘B / Ctrl+B" to "Toggle Bold (**text**)",
+                        "⌘I / Ctrl+I" to "Toggle Italic (*text*)",
+                        "⌘U / Ctrl+U" to "Toggle Underline (_text_)",
+                        "⌘ + / Ctrl +" to "Increase Font Size / Zoom In",
+                        "⌘ - / Ctrl -" to "Decrease Font Size / Zoom Out"
                     ))
 
                     ShortcutSection("MacBook Keyboard Navigation", listOf(

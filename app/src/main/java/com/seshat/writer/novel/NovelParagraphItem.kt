@@ -73,7 +73,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.seshat.writer.ui.FountainInlineVisualTransformation
+import com.seshat.writer.ui.LocalEditorFormattingController
+import com.seshat.writer.ui.TextFormattingHelper
 import com.seshat.writer.ui.theme.ElectrumGold
+import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ObsidianBlack
 import com.seshat.writer.ui.theme.ObsidianSurface
@@ -116,8 +120,11 @@ fun NovelParagraphItem(
     onInsertTkToken: () -> Unit = {},
     isCompactScreen: Boolean = false,
     isKeyboardActive: Boolean = false,
+    fontSizeSp: Float = 17f,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalSeshatDarkTheme.current
+    val formattingController = LocalEditorFormattingController.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -129,6 +136,19 @@ fun NovelParagraphItem(
                 selection = TextRange(paragraph.text.length)
             )
         )
+    }
+
+    LaunchedEffect(isFocused, textFieldValue) {
+        if (isFocused) {
+            formattingController.registerActiveField(
+                blockId = paragraph.id,
+                getValue = { textFieldValue },
+                setValue = { updated ->
+                    textFieldValue = updated
+                    onTextChange(updated.text)
+                }
+            )
+        }
     }
 
     var detectedPunctuation by remember { mutableStateOf<Char?>(null) }
@@ -270,6 +290,7 @@ fun NovelParagraphItem(
                 ) {
                     BasicTextField(
                         value = textFieldValue,
+                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
                         onValueChange = { newVal ->
                             if (newVal.text.contains('\n')) {
                                 val stripped = newVal.text.replace("\n", "").uppercase()
@@ -284,7 +305,7 @@ fun NovelParagraphItem(
                         },
                         textStyle = TextStyle(
                             fontFamily = FontFamily.Serif,
-                            fontSize = 24.sp,
+                            fontSize = (fontSizeSp * 1.4f).sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1E293B),
                             textAlign = TextAlign.Center,
@@ -302,7 +323,7 @@ fun NovelParagraphItem(
                                         text = "CHAPTER 1",
                                         style = TextStyle(
                                             fontFamily = FontFamily.Serif,
-                                            fontSize = 24.sp,
+                                            fontSize = (fontSizeSp * 1.4f).sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFFA0AEC0),
                                             textAlign = TextAlign.Center,
@@ -327,6 +348,29 @@ fun NovelParagraphItem(
                             .onFocusChanged { if (it.isFocused) onFocused() }
                             .onPreviewKeyEvent { keyEvent ->
                                 if (keyEvent.type == KeyEventType.KeyDown) {
+                                    val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
+                                    if (isCmdOrCtrl) {
+                                        when (keyEvent.key) {
+                                            Key.B -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            Key.I -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            Key.U -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                        }
+                                    }
                                     if (keyEvent.key == Key.Enter) {
                                         onEnterPressed()
                                         return@onPreviewKeyEvent true
@@ -354,7 +398,7 @@ fun NovelParagraphItem(
                         text = paragraph.text.ifBlank { "* * *" },
                         style = TextStyle(
                             fontFamily = FontFamily.Serif,
-                            fontSize = 18.sp,
+                            fontSize = (fontSizeSp * 1.05f).sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 4.sp,
                             color = Color(0xFF64748B)
@@ -380,6 +424,7 @@ fun NovelParagraphItem(
                     BasicTextField(
                         value = textFieldValue,
                         readOnly = !isEditable,
+                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
                         onValueChange = { newVal ->
                             if (!isEditable) return@BasicTextField
                             if (newVal.text.contains('\n')) {
@@ -425,8 +470,8 @@ fun NovelParagraphItem(
                         ),
                         textStyle = TextStyle(
                             fontFamily = proseFontFamily,
-                            fontSize = 17.sp,
-                            lineHeight = 27.sp,
+                            fontSize = fontSizeSp.sp,
+                            lineHeight = (fontSizeSp * 1.55f).sp,
                             color = if (!isEditable) Color(0xFF64748B) else if (isDialogue) Color(0xFF0F172A) else Color(0xFF1E293B),
                             fontWeight = FontWeight.Normal,
                             textIndent = TextIndent(firstLine = indentSp, restLine = 0.sp)
@@ -443,8 +488,8 @@ fun NovelParagraphItem(
                                         text = if (isDialogue) "“Dialogue...”" else "Begin writing...",
                                         style = TextStyle(
                                             fontFamily = proseFontFamily,
-                                            fontSize = 17.sp,
-                                            lineHeight = 27.sp,
+                                            fontSize = fontSizeSp.sp,
+                                            lineHeight = (fontSizeSp * 1.55f).sp,
                                             color = Color(0xFFA0AEC0),
                                             fontWeight = FontWeight.Normal
                                         )
@@ -460,9 +505,31 @@ fun NovelParagraphItem(
                             .onPreviewKeyEvent { keyEvent ->
                                 if (keyEvent.type == KeyEventType.KeyDown) {
                                     val isCmdOrCtrl = keyEvent.isCtrlPressed || keyEvent.isMetaPressed
-                                    if (isCmdOrCtrl && keyEvent.key == Key.K) {
-                                        onInsertTkToken()
-                                        return@onPreviewKeyEvent true
+                                    if (isCmdOrCtrl) {
+                                        when (keyEvent.key) {
+                                            Key.B -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            Key.I -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            Key.U -> {
+                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
+                                                textFieldValue = updated
+                                                onTextChange(updated.text)
+                                                return@onPreviewKeyEvent true
+                                            }
+                                            Key.K -> {
+                                                onInsertTkToken()
+                                                return@onPreviewKeyEvent true
+                                            }
+                                        }
                                     }
                                     if (!isEditable && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete || keyEvent.key == Key.Enter || (isCmdOrCtrl && keyEvent.key == Key.X))) {
                                         return@onPreviewKeyEvent true
