@@ -3,6 +3,9 @@ package com.seshat.writer.novel
 import com.seshat.writer.corkboard.CorkboardAct
 import com.seshat.writer.corkboard.CorkboardDocument
 import com.seshat.writer.library.ScriptTemplate
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.model.InlineFormatType
+import com.seshat.writer.ui.RichTextHelper
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -231,6 +234,7 @@ data class NovelParagraph(
     val id: String = UUID.randomUUID().toString(),
     val type: NovelParagraphType = NovelParagraphType.NARRATIVE,
     val text: String = "",
+    val formats: List<InlineFormatSpan> = emptyList(),
     val speaker: String? = null
 ) {
     fun wordCount(): Int {
@@ -244,6 +248,17 @@ data class NovelParagraph(
         json.put("type", type.name)
         json.put("text", text)
         if (speaker != null) json.put("speaker", speaker)
+        if (formats.isNotEmpty()) {
+            val arr = JSONArray()
+            for (f in formats) {
+                val fObj = JSONObject()
+                fObj.put("start", f.start)
+                fObj.put("end", f.end)
+                fObj.put("type", f.type.name)
+                arr.put(fObj)
+            }
+            json.put("formats", arr)
+        }
         return json
     }
 
@@ -255,10 +270,35 @@ data class NovelParagraph(
             } catch (_: Exception) {
                 NovelParagraphType.NARRATIVE
             }
+            var text = json.optString("text", "")
+            val parsedFormats = mutableListOf<InlineFormatSpan>()
+            val formatsArr = json.optJSONArray("formats")
+            if (formatsArr != null) {
+                for (i in 0 until formatsArr.length()) {
+                    val obj = formatsArr.optJSONObject(i) ?: continue
+                    val fTypeStr = obj.optString("type")
+                    val fType = try { InlineFormatType.valueOf(fTypeStr) } catch (_: Exception) { null }
+                    if (fType != null) {
+                        parsedFormats.add(
+                            InlineFormatSpan(
+                                start = obj.optInt("start"),
+                                end = obj.optInt("end"),
+                                type = fType
+                            )
+                        )
+                    }
+                }
+            } else if (text.contains('*') || text.contains('_') || text.contains("~~")) {
+                val (clean, extracted) = RichTextHelper.parseAndStripMarkdownTokens(text)
+                text = clean
+                parsedFormats.addAll(extracted)
+            }
+
             return NovelParagraph(
                 id = json.optString("id", UUID.randomUUID().toString()),
                 type = type,
-                text = json.optString("text", ""),
+                text = text,
+                formats = parsedFormats,
                 speaker = if (json.has("speaker")) json.optString("speaker") else null
             )
         }

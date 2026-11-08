@@ -62,7 +62,7 @@ class PdfDocument {
 
             // Page obj
             offsets.add(currentOffset)
-            writeString("$pageObjId 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 ${page.info.pageWidth} ${page.info.pageHeight} ] /Contents $contentObjId 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >> >> >> >>\nendobj\n")
+            writeString("$pageObjId 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 ${page.info.pageWidth} ${page.info.pageHeight} ] /Contents $contentObjId 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >> /F3 << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique >> /F4 << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique >> /F5 << /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >> /F6 << /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >> /F7 << /Type /Font /Subtype /Type1 /BaseFont /Times-Italic >> /F8 << /Type /Font /Subtype /Type1 /BaseFont /Times-BoldItalic >> >> >> >>\nendobj\n")
 
             // Contents obj
             offsets.add(currentOffset)

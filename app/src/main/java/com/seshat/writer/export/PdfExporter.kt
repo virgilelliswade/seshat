@@ -9,8 +9,10 @@ import android.graphics.pdf.PdfDocument
 import androidx.core.content.res.ResourcesCompat
 import com.seshat.writer.R
 import com.seshat.writer.model.BlockType
+import com.seshat.writer.model.InlineFormatSpan
 import com.seshat.writer.model.RevisionColor
 import com.seshat.writer.model.ScreenplayBlock
+import com.seshat.writer.ui.RichTextHelper
 import com.seshat.writer.analytics.ScriptAnalytics
 import com.seshat.writer.analytics.LocationAnalytics
 import com.seshat.writer.analytics.CastSceneMatrix
@@ -114,6 +116,18 @@ object PdfExporter {
             color = Color.BLACK
             textSize = 12f
             typeface = courierBold
+        }
+
+        val italicPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            textSize = 12f
+            typeface = Typeface.create(courierRegular, Typeface.ITALIC)
+        }
+
+        val boldItalicPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.BLACK
+            textSize = 12f
+            typeface = Typeface.create(courierBold, Typeface.BOLD_ITALIC)
         }
 
         var pageIndex = 1
@@ -251,11 +265,11 @@ object PdfExporter {
                     val rightX = MARGIN_LEFT + colWidth + 36f // 342f
 
                     for (lBlock in leftBlocks) {
-                        leftY = renderDualColumnBlock(canvas, lBlock, leftY, leftX, colWidth, textPaint, boldPaint)
+                        leftY = renderDualColumnBlock(canvas, lBlock, leftY, leftX, colWidth, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     }
 
                     for (rBlock in rightBlocks) {
-                        rightY = renderDualColumnBlock(canvas, rBlock, rightY, rightX, colWidth, textPaint, boldPaint)
+                        rightY = renderDualColumnBlock(canvas, rBlock, rightY, rightX, colWidth, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     }
 
                     if (options.printRevisionAsterisks && dualGroup.any { it.isRevised }) {
@@ -283,6 +297,8 @@ object PdfExporter {
                     startY = currentY,
                     textPaint = textPaint,
                     boldPaint = boldPaint,
+                    italicPaint = italicPaint,
+                    boldItalicPaint = boldItalicPaint,
                     showSceneNumbers = options.showSceneNumbers,
                     sceneNumber = sceneNumberMap[block.id],
                     includeNotes = options.includeNotes
@@ -419,18 +435,22 @@ object PdfExporter {
         startY: Float,
         textPaint: Paint,
         boldPaint: Paint,
+        italicPaint: Paint,
+        boldItalicPaint: Paint,
         showSceneNumbers: Boolean = false,
         sceneNumber: String? = null,
         includeNotes: Boolean = false
     ): Float {
         var currentY = startY
+        val (cleanText, effectiveFormats) = RichTextHelper.getCleanTextAndFormats(block.text, block.formats)
 
         when (block.type) {
             BlockType.SCENE_HEADING -> {
-                val headingText = if (block.isOmitted) {
+                val headingRaw = if (block.isOmitted) {
                     if (!showSceneNumbers && sceneNumber != null) "SCENE $sceneNumber - OMITTED" else "OMITTED"
                 } else block.text
-                val lines = wrapText(headingText.uppercase(Locale.US), ACTION_WIDTH, boldPaint)
+                val (cleanHeading, headingFormats) = RichTextHelper.getCleanTextAndFormats(headingRaw.uppercase(Locale.US), block.formats)
+                val lines = wrapText(cleanHeading, ACTION_WIDTH, boldPaint)
                 if (showSceneNumbers && sceneNumber != null && lines.isNotEmpty()) {
                     // Left scene number (in left margin)
                     canvas.drawText(sceneNumber, MARGIN_LEFT - 36f, currentY, boldPaint)
@@ -438,40 +458,57 @@ object PdfExporter {
                     val rightSceneWidth = boldPaint.measureText(sceneNumber)
                     canvas.drawText(sceneNumber, ACTION_X + ACTION_WIDTH - rightSceneWidth + 24f, currentY, boldPaint)
                 }
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, ACTION_X, currentY, boldPaint)
+                    val lineStart = cleanHeading.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(headingFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, ACTION_X, currentY, boldPaint, boldPaint, boldItalicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.ACTION -> {
-                val lines = wrapText(block.text, ACTION_WIDTH, textPaint)
+                val lines = wrapText(cleanText, ACTION_WIDTH, textPaint)
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, ACTION_X, currentY, textPaint)
+                    val lineStart = cleanText.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, ACTION_X, currentY, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.STAGE_ACT_SCENE -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val lines = wrapText(upper, ACTION_WIDTH, boldPaint)
+                var charCursor = 0
                 for (line in lines) {
+                    val lineStart = upper.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
                     val textW = boldPaint.measureText(line)
                     val centerX = ACTION_X + (ACTION_WIDTH - textW).coerceAtLeast(0f) / 2f
-                    canvas.drawText(line, centerX, currentY, boldPaint)
+                    drawFormattedLine(canvas, line, lineFormats, centerX, currentY, boldPaint, boldPaint, boldItalicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.STAGE_DIRECTION -> {
-                val italicPaint = Paint(textPaint).apply {
-                    typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
-                }
-                val lines = wrapText(block.text, ACTION_WIDTH - 30f, italicPaint)
+                val lines = wrapText(cleanText, ACTION_WIDTH - 30f, italicPaint)
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, ACTION_X + 30f, currentY, italicPaint)
+                    val lineStart = cleanText.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, ACTION_X + 30f, currentY, italicPaint, boldItalicPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.STAGE_CURTAIN -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val curtainPaint = Paint(boldPaint).apply {
                     textAlign = Paint.Align.RIGHT
                 }
@@ -479,7 +516,7 @@ object PdfExporter {
                 currentY += LINE_HEIGHT
             }
             BlockType.COMIC_PAGE -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val lines = wrapText(upper, ACTION_WIDTH, boldPaint)
                 for (line in lines) {
                     canvas.drawText(line, ACTION_X, currentY, boldPaint)
@@ -487,7 +524,7 @@ object PdfExporter {
                 }
             }
             BlockType.COMIC_PANEL -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val lines = wrapText(upper, ACTION_WIDTH, boldPaint)
                 for (line in lines) {
                     canvas.drawText(line, ACTION_X, currentY, boldPaint)
@@ -495,17 +532,14 @@ object PdfExporter {
                 }
             }
             BlockType.COMIC_ART_NOTE -> {
-                val lines = wrapText(block.text, ACTION_WIDTH, textPaint)
+                val lines = wrapText(cleanText, ACTION_WIDTH, textPaint)
                 for (line in lines) {
                     canvas.drawText(line, ACTION_X, currentY, textPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.COMIC_CAPTION -> {
-                val italicPaint = Paint(textPaint).apply {
-                    typeface = Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC)
-                }
-                val captionText = if (block.text.uppercase(Locale.US).startsWith("CAPTION")) block.text else "CAPTION: ${block.text}"
+                val captionText = if (cleanText.uppercase(Locale.US).startsWith("CAPTION")) cleanText else "CAPTION: $cleanText"
                 val lines = wrapText(captionText, ACTION_WIDTH - 20f, italicPaint)
                 for (line in lines) {
                     canvas.drawText(line, ACTION_X + 20f, currentY, italicPaint)
@@ -513,7 +547,7 @@ object PdfExporter {
                 }
             }
             BlockType.COMIC_SFX -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val lines = wrapText(upper, ACTION_WIDTH, boldPaint)
                 for (line in lines) {
                     canvas.drawText(line, ACTION_X + 40f, currentY, boldPaint)
@@ -521,27 +555,37 @@ object PdfExporter {
                 }
             }
             BlockType.CHARACTER -> {
-                val upperName = block.text.uppercase(Locale.US)
-                canvas.drawText(upperName, CHARACTER_X, currentY, boldPaint)
+                val upperName = cleanText.uppercase(Locale.US)
+                drawFormattedLine(canvas, upperName, effectiveFormats, CHARACTER_X, currentY, boldPaint, boldPaint, boldItalicPaint, boldItalicPaint)
                 currentY += LINE_HEIGHT
             }
             BlockType.PARENTHETICAL -> {
-                val formatted = if (block.text.startsWith("(") && block.text.endsWith(")")) block.text else "(${block.text.trim('(', ')')})"
+                val formatted = if (cleanText.startsWith("(") && cleanText.endsWith(")")) cleanText else "(${cleanText.trim('(', ')')})"
                 val lines = wrapText(formatted, PARENTHETICAL_WIDTH, textPaint)
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, PARENTHETICAL_X, currentY, textPaint)
+                    val lineStart = formatted.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, PARENTHETICAL_X, currentY, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.DIALOGUE, BlockType.COMIC_BALLOON -> {
-                val lines = wrapText(block.text, DIALOGUE_WIDTH, textPaint)
+                val lines = wrapText(cleanText, DIALOGUE_WIDTH, textPaint)
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, DIALOGUE_X, currentY, textPaint)
+                    val lineStart = cleanText.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, DIALOGUE_X, currentY, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             BlockType.TRANSITION -> {
-                val upper = block.text.uppercase(Locale.US)
+                val upper = cleanText.uppercase(Locale.US)
                 val transitionPaint = Paint(boldPaint).apply {
                     textAlign = Paint.Align.RIGHT
                 }
@@ -596,37 +640,50 @@ object PdfExporter {
         columnStartX: Float,
         columnWidth: Float,
         textPaint: Paint,
-        boldPaint: Paint
+        boldPaint: Paint,
+        italicPaint: Paint,
+        boldItalicPaint: Paint
     ): Float {
         var currentY = startY
+        val (cleanText, effectiveFormats) = RichTextHelper.getCleanTextAndFormats(block.text, block.formats)
         when (block.type) {
             BlockType.CHARACTER -> {
-                val upperName = block.text.uppercase(Locale.US)
+                val upperName = cleanText.uppercase(Locale.US)
                 val textWidth = boldPaint.measureText(upperName)
                 val centerX = columnStartX + (columnWidth - textWidth).coerceAtLeast(0f) / 2f
-                canvas.drawText(upperName, centerX, currentY, boldPaint)
+                drawFormattedLine(canvas, upperName, effectiveFormats, centerX, currentY, boldPaint, boldPaint, boldItalicPaint, boldItalicPaint)
                 currentY += LINE_HEIGHT + 2f // Micro-space so character name doesn't sit flush on dialogue
             }
             BlockType.PARENTHETICAL -> {
-                val formatted = if (block.text.startsWith("(") && block.text.endsWith(")")) block.text else "(${block.text.trim('(', ')')})"
+                val formatted = if (cleanText.startsWith("(") && cleanText.endsWith(")")) cleanText else "(${cleanText.trim('(', ')')})"
                 val lines = wrapText(formatted, columnWidth - 8f, textPaint)
+                var charCursor = 0
                 for (line in lines) {
+                    val lineStart = formatted.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
                     val textWidth = textPaint.measureText(line)
                     val centerX = columnStartX + (columnWidth - textWidth).coerceAtLeast(0f) / 2f
-                    canvas.drawText(line, centerX, currentY, textPaint)
+                    drawFormattedLine(canvas, line, lineFormats, centerX, currentY, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
                 currentY += 2f
             }
             BlockType.DIALOGUE -> {
-                val lines = wrapText(block.text, columnWidth - 4f, textPaint)
+                val lines = wrapText(cleanText, columnWidth - 4f, textPaint)
+                var charCursor = 0
                 for (line in lines) {
-                    canvas.drawText(line, columnStartX, currentY, textPaint)
+                    val lineStart = cleanText.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                    val lineEnd = lineStart + line.length
+                    charCursor = lineEnd
+                    val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                    drawFormattedLine(canvas, line, lineFormats, columnStartX, currentY, textPaint, boldPaint, italicPaint, boldItalicPaint)
                     currentY += LINE_HEIGHT
                 }
             }
             else -> {
-                val lines = wrapText(block.text, columnWidth - 4f, textPaint)
+                val lines = wrapText(cleanText, columnWidth - 4f, textPaint)
                 for (line in lines) {
                     canvas.drawText(line, columnStartX, currentY, textPaint)
                     currentY += LINE_HEIGHT
@@ -634,6 +691,44 @@ object PdfExporter {
             }
         }
         return currentY
+    }
+
+    private fun drawFormattedLine(
+        canvas: Canvas,
+        lineText: String,
+        lineFormats: List<InlineFormatSpan>,
+        startX: Float,
+        y: Float,
+        basePaint: Paint,
+        boldPaint: Paint,
+        italicPaint: Paint,
+        boldItalicPaint: Paint
+    ) {
+        if (lineText.isEmpty()) return
+        if (lineFormats.isEmpty()) {
+            canvas.drawText(lineText, startX, y, basePaint)
+            return
+        }
+
+        val runs = RichTextHelper.toFormattedRuns(lineText, lineFormats)
+        var curX = startX
+        for (run in runs) {
+            val paintToUse = when {
+                run.isBold && run.isItalic -> Paint(boldItalicPaint)
+                run.isBold -> Paint(boldPaint)
+                run.isItalic -> Paint(italicPaint)
+                else -> Paint(basePaint)
+            }
+            if (run.isUnderline) {
+                paintToUse.isUnderlineText = true
+            }
+            if (run.isStrikethrough) {
+                paintToUse.isStrikeThruText = true
+            }
+
+            canvas.drawText(run.text, curX, y, paintToUse)
+            curX += paintToUse.measureText(run.text)
+        }
     }
 
     private fun wrapText(text: String, maxWidth: Float, paint: Paint): List<String> {

@@ -1,5 +1,7 @@
 package com.seshat.writer.novel
 
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.ui.RichTextHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
@@ -322,7 +324,7 @@ object EpubCompiler {
                     NovelParagraphType.NARRATIVE, NovelParagraphType.DIALOGUE -> {
                         if (p.text.isNotBlank()) {
                             val cls = if (isFirstNarrative) " class=\"first-paragraph\"" else ""
-                            append("  <p$cls>${escapeXml(p.text)}</p>\n")
+                            append("  <p$cls>${formatHtmlParagraph(p.text, p.formats)}</p>\n")
                             isFirstNarrative = false
                         }
                     }
@@ -647,6 +649,23 @@ object EpubCompiler {
               </spine>
             </package>
         """.trimIndent()
+    }
+
+    private fun formatHtmlParagraph(text: String, formats: List<InlineFormatSpan>): String {
+        val (cleanText, cleanFormats) = RichTextHelper.getCleanTextAndFormats(text, formats)
+        if (cleanFormats.isEmpty()) return escapeXml(cleanText)
+        val runs = RichTextHelper.toFormattedRuns(cleanText, cleanFormats)
+        val sb = StringBuilder()
+        for (run in runs) {
+            var open = ""
+            var close = ""
+            if (run.isBold) { open += "<b>"; close = "</b>$close" }
+            if (run.isItalic) { open += "<i>"; close = "</i>$close" }
+            if (run.isUnderline) { open += "<u>"; close = "</u>$close" }
+            if (run.isStrikethrough) { open += "<del>"; close = "</del>$close" }
+            sb.append(open).append(escapeXml(run.text)).append(close)
+        }
+        return sb.toString()
     }
 
     private fun escapeXml(text: String): String {

@@ -3,6 +3,7 @@ package com.seshat.writer.export
 import com.seshat.writer.model.BlockType
 import com.seshat.writer.model.ScreenplayBlock
 import com.seshat.writer.titlepage.TitlePageData
+import com.seshat.writer.ui.RichTextHelper
 import java.io.File
 import java.util.Locale
 
@@ -74,10 +75,11 @@ object FountainSerializer {
                     sb.append(".$text\n\n")
                 }
                 BlockType.ACTION, BlockType.STAGE_DIRECTION, BlockType.COMIC_ART_NOTE -> {
-                    sb.append(block.text.trim()).append("\n\n")
+                    val formatted = RichTextHelper.toFountainString(block.text, block.formats).trim()
+                    sb.append(formatted).append("\n\n")
                 }
                 BlockType.COMIC_CAPTION -> {
-                    val raw = block.text.trim()
+                    val raw = RichTextHelper.toFountainString(block.text, block.formats).trim()
                     sb.append("[[$raw]]\n\n")
                 }
                 BlockType.COMIC_SFX -> {
@@ -90,12 +92,13 @@ object FountainSerializer {
                     sb.append(upper).append(suffix).append("\n")
                 }
                 BlockType.PARENTHETICAL -> {
-                    val raw = block.text.trim()
+                    val raw = RichTextHelper.toFountainString(block.text, block.formats).trim()
                     val formatted = if (raw.startsWith("(") && raw.endsWith(")")) raw else "(${raw.trim('(', ')')})"
                     sb.append(formatted).append("\n")
                 }
                 BlockType.DIALOGUE, BlockType.COMIC_BALLOON -> {
-                    sb.append(block.text.trim()).append("\n\n")
+                    val formatted = RichTextHelper.toFountainString(block.text, block.formats).trim()
+                    sb.append(formatted).append("\n\n")
                 }
                 BlockType.TRANSITION, BlockType.STAGE_CURTAIN -> {
                     val upper = block.text.trim().uppercase(Locale.US)
@@ -265,7 +268,8 @@ object FountainSerializer {
                 val prevBlock = blocks.lastOrNull()
                 val dualId = if (prevBlock?.dualSide == com.seshat.writer.model.DualDialogueSide.RIGHT) prevBlock.dualDialogueId else null
                 val dualSide = if (dualId != null) com.seshat.writer.model.DualDialogueSide.RIGHT else null
-                blocks.add(ScreenplayBlock(type = BlockType.PARENTHETICAL, text = cleanTrimmed, dualDialogueId = dualId, dualSide = dualSide, note = extractedNote))
+                val (cleanText, spans) = RichTextHelper.parseAndStripMarkdownTokens(cleanTrimmed)
+                blocks.add(ScreenplayBlock(type = BlockType.PARENTHETICAL, text = cleanText, formats = spans, dualDialogueId = dualId, dualSide = dualSide, note = extractedNote))
                 inDialogueGroup = true
                 lineIdx++
                 continue
@@ -310,13 +314,15 @@ object FountainSerializer {
                 val prevBlock = blocks.lastOrNull()
                 val dualId = if (prevBlock?.dualSide == com.seshat.writer.model.DualDialogueSide.RIGHT) prevBlock.dualDialogueId else null
                 val dualSide = if (dualId != null) com.seshat.writer.model.DualDialogueSide.RIGHT else null
-                blocks.add(ScreenplayBlock(type = BlockType.DIALOGUE, text = cleanTrimmed, dualDialogueId = dualId, dualSide = dualSide, note = extractedNote))
+                val (cleanText, spans) = RichTextHelper.parseAndStripMarkdownTokens(cleanTrimmed)
+                blocks.add(ScreenplayBlock(type = BlockType.DIALOGUE, text = cleanText, formats = spans, dualDialogueId = dualId, dualSide = dualSide, note = extractedNote))
                 lineIdx++
                 continue
             }
 
             // Otherwise, Action
-            blocks.add(ScreenplayBlock(type = BlockType.ACTION, text = cleanTrimmed, note = extractedNote))
+            val (cleanText, spans) = RichTextHelper.parseAndStripMarkdownTokens(cleanTrimmed)
+            blocks.add(ScreenplayBlock(type = BlockType.ACTION, text = cleanText, formats = spans, note = extractedNote))
             lineIdx++
         }
 

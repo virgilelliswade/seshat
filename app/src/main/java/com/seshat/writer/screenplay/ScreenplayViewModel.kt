@@ -3,8 +3,10 @@ package com.seshat.writer.screenplay
 import androidx.lifecycle.ViewModel
 import com.seshat.writer.model.BlockType
 import com.seshat.writer.model.DualDialogueSide
+import com.seshat.writer.model.InlineFormatSpan
 import com.seshat.writer.model.RevisionColor
 import com.seshat.writer.model.ScreenplayBlock
+import com.seshat.writer.ui.RichTextHelper
 import com.seshat.writer.analytics.ScreenplayAnalyticsEngine
 import com.seshat.writer.analytics.ScriptAnalytics
 import com.seshat.writer.analytics.LocationAnalytics
@@ -908,7 +910,23 @@ class ScreenplayViewModel : ViewModel() {
                     val wasModified = block.text != formatted || block.type != targetType
                     val isNowRevised = if (current.isRevisionTrackingEnabled && wasModified) true else block.isRevised
                     val revColor = if (current.isRevisionTrackingEnabled && wasModified) current.currentRevisionColor.name else block.revisionColor
-                    block.copy(type = targetType, text = formatted, isRevised = isNowRevised, revisionColor = revColor)
+                    val adjustedFormats = if (block.formats.isNotEmpty()) {
+                        RichTextHelper.adjustSpansForEdit(
+                            oldText = block.text,
+                            newText = formatted,
+                            oldFormats = block.formats,
+                            cursor = formatted.length
+                        )
+                    } else {
+                        emptyList()
+                    }
+                    block.copy(
+                        type = targetType,
+                        text = formatted,
+                        formats = adjustedFormats,
+                        isRevised = isNowRevised,
+                        revisionColor = revColor
+                    )
                 } else {
                     block
                 }
@@ -922,6 +940,15 @@ class ScreenplayViewModel : ViewModel() {
                 totalSceneCount = nextState.sceneCount
             )
             nextState.copy(firstDraftState = updatedFd)
+        }
+    }
+
+    fun updateBlockFormats(id: String, formats: List<InlineFormatSpan>) {
+        _uiState.update { current ->
+            val updatedBlocks = current.blocks.map { block ->
+                if (block.id == id) block.copy(formats = formats) else block
+            }
+            buildUpdatedState(current, updatedBlocks)
         }
     }
 
@@ -1875,16 +1902,24 @@ class ScreenplayViewModel : ViewModel() {
 
     fun loadDocument(blocks: List<ScreenplayBlock>, titlePageData: TitlePageData = TitlePageData()) {
         ScreenplayDocumentStore.setTitlePage(titlePageData)
-        val initialFocus = blocks.firstOrNull()?.id ?: ""
+        val sanitizedBlocks = blocks.map { b ->
+            val (clean, extracted) = RichTextHelper.getCleanTextAndFormats(b.text, b.formats)
+            if (clean != b.text || extracted != b.formats) {
+                b.copy(text = clean, formats = extracted)
+            } else {
+                b
+            }
+        }
+        val initialFocus = sanitizedBlocks.firstOrNull()?.id ?: ""
         _uiState.update { current ->
             buildUpdatedState(
                 current.copy(
                     title = titlePageData.title,
                     author = titlePageData.author,
-                    blocks = blocks,
+                    blocks = sanitizedBlocks,
                     focusedBlockId = initialFocus
                 ),
-                blocks,
+                sanitizedBlocks,
                 focusedBlockId = initialFocus
             )
         }

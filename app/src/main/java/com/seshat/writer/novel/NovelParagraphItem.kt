@@ -55,6 +55,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -73,9 +74,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.seshat.writer.ui.FountainInlineVisualTransformation
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.model.InlineFormatType
 import com.seshat.writer.ui.LocalEditorFormattingController
-import com.seshat.writer.ui.TextFormattingHelper
+import com.seshat.writer.ui.RichTextHelper
+import com.seshat.writer.ui.RichTextVisualTransformation
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
@@ -103,6 +106,7 @@ fun NovelParagraphItem(
     isFirstParagraphInChapter: Boolean,
     isHighlighted: Boolean = false,
     onTextChange: (String) -> Unit,
+    onFormatsChange: (List<InlineFormatSpan>) -> Unit = {},
     onTypeChange: (NovelParagraphType) -> Unit,
     onEnterPressed: () -> Unit,
     onBackspaceOnEmpty: () -> Unit,
@@ -129,23 +133,45 @@ fun NovelParagraphItem(
     val focusRequester = remember { FocusRequester() }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
+    val initialClean = remember(paragraph.id, paragraph.text) {
+        if (paragraph.formats.isEmpty() && (paragraph.text.contains('*') || paragraph.text.contains('_') || paragraph.text.contains("~~"))) {
+            RichTextHelper.parseAndStripMarkdownTokens(paragraph.text)
+        } else {
+            Pair(paragraph.text, paragraph.formats)
+        }
+    }
+    var pFormats by remember(paragraph.id) { mutableStateOf(initialClean.second) }
     var textFieldValue by remember {
         mutableStateOf(
             TextFieldValue(
-                text = paragraph.text,
-                selection = TextRange(paragraph.text.length)
+                text = initialClean.first,
+                selection = TextRange(initialClean.first.length)
             )
         )
     }
 
-    LaunchedEffect(isFocused, textFieldValue) {
+    LaunchedEffect(paragraph.id) {
+        if (initialClean.first != paragraph.text || initialClean.second != paragraph.formats) {
+            onTextChange(initialClean.first)
+            onFormatsChange(initialClean.second)
+        }
+    }
+
+    LaunchedEffect(isFocused, textFieldValue, pFormats) {
         if (isFocused) {
             formattingController.registerActiveField(
                 blockId = paragraph.id,
                 getValue = { textFieldValue },
                 setValue = { updated ->
                     textFieldValue = updated
-                    onTextChange(updated.text)
+                    if (updated.text != paragraph.text) {
+                        onTextChange(updated.text)
+                    }
+                },
+                getFormats = { pFormats },
+                setFormats = { updatedFormats ->
+                    pFormats = updatedFormats
+                    onFormatsChange(updatedFormats)
                 }
             )
         }
@@ -164,6 +190,9 @@ fun NovelParagraphItem(
                 text = paragraph.text,
                 selection = TextRange(paragraph.text.length)
             )
+        }
+        if (pFormats != paragraph.formats) {
+            pFormats = paragraph.formats
         }
     }
 
@@ -290,7 +319,7 @@ fun NovelParagraphItem(
                 ) {
                     BasicTextField(
                         value = textFieldValue,
-                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
+                        visualTransformation = remember(pFormats) { RichTextVisualTransformation(pFormats) },
                         onValueChange = { newVal ->
                             if (newVal.text.contains('\n')) {
                                 val stripped = newVal.text.replace("\n", "").uppercase()
@@ -352,22 +381,30 @@ fun NovelParagraphItem(
                                     if (isCmdOrCtrl) {
                                         when (keyEvent.key) {
                                             Key.B -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.BOLD)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
                                             }
                                             Key.I -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.ITALIC)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
                                             }
                                             Key.U -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.UNDERLINE)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
+                                            }
+                                            Key.X -> {
+                                                if (keyEvent.isShiftPressed) {
+                                                    val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.STRIKETHROUGH)
+                                                    pFormats = updated
+                                                    onFormatsChange(updated)
+                                                    return@onPreviewKeyEvent true
+                                                }
                                             }
                                         }
                                     }
@@ -424,11 +461,21 @@ fun NovelParagraphItem(
                     BasicTextField(
                         value = textFieldValue,
                         readOnly = !isEditable,
-                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
+                        visualTransformation = remember(pFormats) { RichTextVisualTransformation(pFormats) },
                         onValueChange = { newVal ->
                             if (!isEditable) return@BasicTextField
                             if (newVal.text.contains('\n')) {
                                 val stripped = newVal.text.replace("\n", "")
+                                if (pFormats.isNotEmpty()) {
+                                    val adjusted = RichTextHelper.adjustSpansForEdit(
+                                        oldText = textFieldValue.text,
+                                        newText = stripped,
+                                        oldFormats = pFormats,
+                                        cursor = newVal.selection.start
+                                    )
+                                    pFormats = adjusted
+                                    onFormatsChange(adjusted)
+                                }
                                 onTextChange(stripped)
                                 onEnterPressed()
                             } else {
@@ -451,6 +498,17 @@ fun NovelParagraphItem(
                                         processedText = "$processedText” "
                                         newSelection = TextRange(processedText.length)
                                     }
+                                }
+
+                                if (processedText != textFieldValue.text && pFormats.isNotEmpty()) {
+                                    val adjusted = RichTextHelper.adjustSpansForEdit(
+                                        oldText = textFieldValue.text,
+                                        newText = processedText,
+                                        oldFormats = pFormats,
+                                        cursor = newSelection.start
+                                    )
+                                    pFormats = adjusted
+                                    onFormatsChange(adjusted)
                                 }
 
                                 textFieldValue = newVal.copy(
@@ -508,22 +566,30 @@ fun NovelParagraphItem(
                                     if (isCmdOrCtrl) {
                                         when (keyEvent.key) {
                                             Key.B -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.BOLD)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
                                             }
                                             Key.I -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.ITALIC)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
                                             }
                                             Key.U -> {
-                                                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
-                                                textFieldValue = updated
-                                                onTextChange(updated.text)
+                                                val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.UNDERLINE)
+                                                pFormats = updated
+                                                onFormatsChange(updated)
                                                 return@onPreviewKeyEvent true
+                                            }
+                                            Key.X -> {
+                                                if (keyEvent.isShiftPressed) {
+                                                    val updated = RichTextHelper.toggleSpan(textFieldValue.text, pFormats, textFieldValue.selection, InlineFormatType.STRIKETHROUGH)
+                                                    pFormats = updated
+                                                    onFormatsChange(updated)
+                                                    return@onPreviewKeyEvent true
+                                                }
                                             }
                                             Key.K -> {
                                                 onInsertTkToken()

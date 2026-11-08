@@ -69,6 +69,7 @@ data class ScreenplayBlock(
     val id: String = UUID.randomUUID().toString(),
     val type: BlockType,
     val text: String = "",
+    val formats: List<InlineFormatSpan> = emptyList(),
     val dualDialogueId: String? = null,
     val dualSide: DualDialogueSide? = null,
     val sceneNumber: String? = null,
@@ -76,4 +77,11 @@ data class ScreenplayBlock(
     val isRevised: Boolean = false,
     val revisionColor: String? = null,
     val isOmitted: Boolean = false
-)
+) {
+    constructor(id: String, type: BlockType, text: String) : this(
+        id = id,
+        type = type,
+        text = text,
+        formats = emptyList()
+    )
+}

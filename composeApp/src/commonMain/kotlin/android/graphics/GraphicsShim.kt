@@ -93,6 +93,8 @@ class Paint(val flags: Int = 0) {
     var textAlign: Align = Align.LEFT
     var isAntiAlias: Boolean = true
     var letterSpacing: Float = 0f
+    var isUnderlineText: Boolean = false
+    var isStrikeThruText: Boolean = false
     var shader: Any? = null
 
     var pathEffect: Any? = null
@@ -257,7 +259,23 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
         val g = Color.green(paint.color) / 255f
         val b = Color.blue(paint.color) / 255f
         val pdfY = height - y
-        val fontRef = if (paint.typeface.style == Typeface.BOLD) "/F2" else "/F1"
+
+        val isSerif = paint.typeface == Typeface.SERIF
+        val fontRef = if (isSerif) {
+            when (paint.typeface.style) {
+                Typeface.BOLD -> "/F6"
+                Typeface.ITALIC -> "/F7"
+                Typeface.BOLD_ITALIC -> "/F8"
+                else -> "/F5"
+            }
+        } else {
+            when (paint.typeface.style) {
+                Typeface.BOLD -> "/F2"
+                Typeface.ITALIC -> "/F3"
+                Typeface.BOLD_ITALIC -> "/F4"
+                else -> "/F1"
+            }
+        }
         val escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
         val posX = when (paint.textAlign) {
@@ -267,10 +285,32 @@ class Canvas(val width: Float = 612f, val height: Float = 792f) {
         }
 
         content.append(String.format(java.util.Locale.US, "BT %s %.2f Tf %.3f %.3f %.3f rg 1 0 0 1 %.2f %.2f Tm (%s) Tj ET\n", fontRef, paint.textSize, r, g, b, posX, pdfY, escaped))
+
+        if (paint.isUnderlineText) {
+            val uY = y + 2f
+            drawLine(posX, uY, posX + paint.measureText(text), uY, Paint().apply {
+                color = paint.color
+                strokeWidth = (paint.textSize / 14f).coerceAtLeast(0.75f)
+            })
+        }
+        if (paint.isStrikeThruText) {
+            val sY = y - (paint.textSize * 0.35f)
+            drawLine(posX, sY, posX + paint.measureText(text), sY, Paint().apply {
+                color = paint.color
+                strokeWidth = (paint.textSize / 14f).coerceAtLeast(0.75f)
+            })
+        }
+
         withAwtGraphics { g2 ->
             g2.color = toAwtColor(paint.color)
-            val fontStyle = if (paint.typeface.style == Typeface.BOLD) java.awt.Font.BOLD else java.awt.Font.PLAIN
-            g2.font = java.awt.Font("SansSerif", fontStyle, paint.textSize.toInt().coerceAtLeast(8))
+            val fontStyle = when (paint.typeface.style) {
+                Typeface.BOLD -> java.awt.Font.BOLD
+                Typeface.ITALIC -> java.awt.Font.ITALIC
+                Typeface.BOLD_ITALIC -> java.awt.Font.BOLD or java.awt.Font.ITALIC
+                else -> java.awt.Font.PLAIN
+            }
+            val fontName = if (isSerif) "Serif" else "SansSerif"
+            g2.font = java.awt.Font(fontName, fontStyle, paint.textSize.toInt().coerceAtLeast(8))
             val fm = g2.fontMetrics
             val awtX = when (paint.textAlign) {
                 Paint.Align.RIGHT -> x - fm.stringWidth(text)

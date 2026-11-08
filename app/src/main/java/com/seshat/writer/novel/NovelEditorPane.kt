@@ -1,6 +1,7 @@
 package com.seshat.writer.novel
 
 import android.widget.Toast
+import com.seshat.writer.ui.RichTextHelper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -584,9 +585,29 @@ fun NovelEditorPane(
                                         onCoordinatesChanged = { coords ->
                                             paragraphBounds[paragraph.id] = coords.boundsInRoot()
                                         },
+                                        onFormatsChange = { updatedFormats ->
+                                            val updatedList = currentChapter.paragraphs.map {
+                                                if (it.id == paragraph.id) it.copy(formats = updatedFormats) else it
+                                            }
+                                            val updatedCh = currentChapter.copy(paragraphs = updatedList)
+                                            val updatedChapters = manuscript.chapters.mapIndexed { i, ch ->
+                                                if (i == activeChapterIndex) updatedCh else ch
+                                            }
+                                            onUpdateManuscript(manuscript.copy(chapters = updatedChapters))
+                                        },
                                         onTextChange = { newText ->
                                             val updatedList = currentChapter.paragraphs.map {
-                                                if (it.id == paragraph.id) it.copy(text = newText) else it
+                                                if (it.id == paragraph.id) {
+                                                    val adjusted = if (it.formats.isNotEmpty()) {
+                                                        RichTextHelper.adjustSpansForEdit(
+                                                            oldText = it.text,
+                                                            newText = newText,
+                                                            oldFormats = it.formats,
+                                                            cursor = newText.length
+                                                        )
+                                                    } else emptyList<com.seshat.writer.model.InlineFormatSpan>()
+                                                    it.copy(text = newText, formats = adjusted)
+                                                } else it
                                             }
                                             val updatedCh = currentChapter.copy(paragraphs = updatedList)
                                             val updatedChapters = manuscript.chapters.mapIndexed { i, ch ->

@@ -2,6 +2,7 @@ package com.seshat.writer.ui
 
 import androidx.compose.ui.layout.LayoutCoordinates
 import com.seshat.writer.model.BlockType
+import com.seshat.writer.model.InlineFormatSpan
 import com.seshat.writer.screenplay.CursorTarget
 
 /**
@@ -71,7 +72,9 @@ data class BlockCallbacks(
     val onInsertTkToken: () -> Unit = {},
     val onToggleBold: () -> Unit = {},
     val onToggleItalic: () -> Unit = {},
-    val onToggleUnderline: () -> Unit = {}
+    val onToggleUnderline: () -> Unit = {},
+    val onToggleStrikethrough: () -> Unit = {},
+    val onFormatsChange: (List<InlineFormatSpan>) -> Unit = {}
 )
 
 /**
@@ -113,6 +116,7 @@ class EditorCanvasActions(
     val context: android.content.Context
 ) {
     fun updateBlock(id: String, text: String) = viewModel.updateBlockText(id, text)
+    fun updateBlockFormats(id: String, formats: List<InlineFormatSpan>) = viewModel.updateBlockFormats(id, formats)
     fun enterPressed(id: String) = viewModel.onEnterPressed(id)
     fun tabPressed(id: String) = viewModel.onTabPressed(id)
     fun backspaceEmpty(id: String) = viewModel.onBackspaceOnEmptyBlock(id)

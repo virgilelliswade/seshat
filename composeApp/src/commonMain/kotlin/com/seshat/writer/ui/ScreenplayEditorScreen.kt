@@ -131,6 +131,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.model.BlockType
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.model.InlineFormatType
 import com.seshat.writer.model.RevisionColor
 import com.seshat.writer.model.ScreenplayBlock
 import com.seshat.writer.screenplay.CursorTarget
@@ -1355,7 +1357,8 @@ private fun buildBlockCallbacks(
         onCancelDictation = actions::cancelDictation,
         onOpenStoryBible = actions::openStoryBible,
         onToggleCorkboard = actions::toggleCorkboard,
-        onInsertTkToken = actions::insertTkToken
+        onInsertTkToken = actions::insertTkToken,
+        onFormatsChange = { formats -> actions.updateBlockFormats(blockId, formats) }
     )
 }
 
@@ -3898,7 +3901,13 @@ private fun handleBlockPreviewKeyEvent(
             Key.U -> { callbacks.onToggleUnderline(); return true }
             Key.O -> { callbacks.onToggleCorkboard(); return true }
             Key.K -> { callbacks.onInsertTkToken(); return true }
-            Key.X -> { if (!config.isEditable) return true }
+            Key.X -> {
+                if (keyEvent.isShiftPressed) {
+                    callbacks.onToggleStrikethrough()
+                    return true
+                }
+                if (!config.isEditable) return true
+            }
         }
     }
     if (!config.isEditable && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete || keyEvent.key == Key.Enter)) {
@@ -4203,16 +4212,32 @@ private fun ScreenplayBlockItem(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var blockCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+    val initialClean = remember(block.id, block.text) {
+        if (block.formats.isEmpty() && (block.text.contains('*') || block.text.contains('_') || block.text.contains("~~"))) {
+            RichTextHelper.parseAndStripMarkdownTokens(block.text)
+        } else {
+            Pair(block.text, block.formats)
+        }
+    }
+    var blockFormats by remember(block.id) { mutableStateOf(initialClean.second) }
     var textFieldValue by remember {
         mutableStateOf(
             TextFieldValue(
-                text = block.text,
-                selection = TextRange(block.text.length)
+                text = initialClean.first,
+                selection = TextRange(initialClean.first.length)
             )
         )
     }
 
-    LaunchedEffect(config.isFocused, textFieldValue) {
+    LaunchedEffect(block.id) {
+        if (initialClean.first != block.text || initialClean.second != block.formats) {
+            callbacks.onTextChange(initialClean.first)
+            callbacks.onFormatsChange(initialClean.second)
+        }
+    }
+
+    LaunchedEffect(config.isFocused, textFieldValue, blockFormats) {
         if (config.isFocused) {
             formattingController.registerActiveField(
                 blockId = block.id,
@@ -4222,27 +4247,37 @@ private fun ScreenplayBlockItem(
                     if (updated.text != block.text) {
                         callbacks.onTextChange(updated.text)
                     }
+                },
+                getFormats = { blockFormats },
+                setFormats = { updatedFormats ->
+                    blockFormats = updatedFormats
+                    callbacks.onFormatsChange(updatedFormats)
                 }
             )
         }
     }
 
-    val blockCallbacks = remember(callbacks, block.id, textFieldValue) {
+    val blockCallbacks = remember(callbacks, block.id, textFieldValue, blockFormats) {
         callbacks.copy(
             onToggleBold = {
-                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "**")
-                textFieldValue = updated
-                callbacks.onTextChange(updated.text)
+                val updated = RichTextHelper.toggleSpan(textFieldValue.text, blockFormats, textFieldValue.selection, InlineFormatType.BOLD)
+                blockFormats = updated
+                callbacks.onFormatsChange(updated)
             },
             onToggleItalic = {
-                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "*")
-                textFieldValue = updated
-                callbacks.onTextChange(updated.text)
+                val updated = RichTextHelper.toggleSpan(textFieldValue.text, blockFormats, textFieldValue.selection, InlineFormatType.ITALIC)
+                blockFormats = updated
+                callbacks.onFormatsChange(updated)
             },
             onToggleUnderline = {
-                val updated = TextFormattingHelper.toggleFormatting(textFieldValue, "_")
-                textFieldValue = updated
-                callbacks.onTextChange(updated.text)
+                val updated = RichTextHelper.toggleSpan(textFieldValue.text, blockFormats, textFieldValue.selection, InlineFormatType.UNDERLINE)
+                blockFormats = updated
+                callbacks.onFormatsChange(updated)
+            },
+            onToggleStrikethrough = {
+                val updated = RichTextHelper.toggleSpan(textFieldValue.text, blockFormats, textFieldValue.selection, InlineFormatType.STRIKETHROUGH)
+                blockFormats = updated
+                callbacks.onFormatsChange(updated)
             }
         )
     }
@@ -4259,6 +4294,9 @@ private fun ScreenplayBlockItem(
                 text = block.text,
                 selection = newSelection
             )
+        }
+        if (blockFormats != block.formats) {
+            blockFormats = block.formats
         }
     }
 
@@ -4477,16 +4515,38 @@ private fun ScreenplayBlockItem(
                     BasicTextField(
                         value = textFieldValue,
                         readOnly = !config.isEditable,
-                        visualTransformation = remember(isDark) { FountainInlineVisualTransformation(isDark = isDark) },
+                        visualTransformation = remember(blockFormats) { RichTextVisualTransformation(blockFormats) },
                         onValueChange = { newValue ->
                             if (!config.isEditable) return@BasicTextField
                             if (newValue.text.contains('\n')) {
                                 val stripped = newValue.text.replace("\n", "")
                                 if (stripped != block.text) {
+                                    val adjusted = if (blockFormats.isNotEmpty()) {
+                                        RichTextHelper.adjustSpansForEdit(
+                                            oldText = textFieldValue.text,
+                                            newText = stripped,
+                                            oldFormats = blockFormats,
+                                            cursor = newValue.selection.start
+                                        )
+                                    } else emptyList()
+                                    blockFormats = adjusted
+                                    callbacks.onFormatsChange(adjusted)
                                     callbacks.onTextChange(stripped)
                                 }
                                 callbacks.onEnter()
                             } else {
+                                val oldText = textFieldValue.text
+                                val newText = newValue.text
+                                if (newText != oldText && blockFormats.isNotEmpty()) {
+                                    val adjusted = RichTextHelper.adjustSpansForEdit(
+                                        oldText = oldText,
+                                        newText = newText,
+                                        oldFormats = blockFormats,
+                                        cursor = newValue.selection.start
+                                    )
+                                    blockFormats = adjusted
+                                    callbacks.onFormatsChange(adjusted)
+                                }
                                 textFieldValue = newValue
                                 if (newValue.text != block.text) {
                                     callbacks.onTextChange(newValue.text)

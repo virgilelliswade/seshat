@@ -1,8 +1,11 @@
 package com.seshat.writer.export
 
 import com.seshat.writer.model.BlockType
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.model.InlineFormatType
 import com.seshat.writer.model.ScreenplayBlock
 import com.seshat.writer.titlepage.TitlePageData
+import com.seshat.writer.ui.RichTextHelper
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import java.io.StringReader
@@ -43,9 +46,22 @@ object FinalDraftSerializer {
             val numberAttr = if (block.type == BlockType.SCENE_HEADING && block.sceneNumber != null) {
                 " Number=\"${escapeXml(block.sceneNumber)}\""
             } else ""
-            val escapedText = escapeXml(block.text)
+            val (cleanText, effectiveFormats) = RichTextHelper.getCleanTextAndFormats(block.text, block.formats)
             sb.append("    <Paragraph Type=\"").append(fdxType).append("\"").append(numberAttr).append(">\n")
-            sb.append("      <Text>").append(escapedText).append("</Text>\n")
+            if (effectiveFormats.isEmpty()) {
+                sb.append("      <Text>").append(escapeXml(cleanText)).append("</Text>\n")
+            } else {
+                val runs = RichTextHelper.toFormattedRuns(cleanText, effectiveFormats)
+                for (run in runs) {
+                    val styles = mutableListOf<String>()
+                    if (run.isBold) styles.add("Bold")
+                    if (run.isItalic) styles.add("Italic")
+                    if (run.isUnderline) styles.add("Underline")
+                    if (run.isStrikethrough) styles.add("Strikeout")
+                    val styleAttr = if (styles.isNotEmpty()) " Style=\"${styles.joinToString("+")}\"" else ""
+                    sb.append("      <Text$styleAttr>").append(escapeXml(run.text)).append("</Text>\n")
+                }
+            }
             if (!block.note.isNullOrBlank()) {
                 sb.append("      <ScriptAnnotation>\n")
                 sb.append("        <Paragraph>\n")
@@ -129,13 +145,26 @@ object FinalDraftSerializer {
                             val pType = p.getAttribute("Type")
                             val textBuilder = StringBuilder()
                             val noteBuilder = StringBuilder()
+                            val pFormats = mutableListOf<InlineFormatSpan>()
 
                             val pChildren = p.childNodes
                             for (cIdx in 0 until pChildren.length) {
                                 val child = pChildren.item(cIdx)
                                 if (child is Element) {
                                     when (child.tagName) {
-                                        "Text" -> textBuilder.append(child.textContent)
+                                        "Text" -> {
+                                            val content = child.textContent
+                                            val styleAttr = child.getAttribute("Style").lowercase(Locale.US)
+                                            val start = textBuilder.length
+                                            textBuilder.append(content)
+                                            val end = textBuilder.length
+                                            if (start < end && styleAttr.isNotEmpty()) {
+                                                if (styleAttr.contains("bold")) pFormats.add(InlineFormatSpan(start, end, InlineFormatType.BOLD))
+                                                if (styleAttr.contains("italic")) pFormats.add(InlineFormatSpan(start, end, InlineFormatType.ITALIC))
+                                                if (styleAttr.contains("underline")) pFormats.add(InlineFormatSpan(start, end, InlineFormatType.UNDERLINE))
+                                                if (styleAttr.contains("strikeout") || styleAttr.contains("strike")) pFormats.add(InlineFormatSpan(start, end, InlineFormatType.STRIKETHROUGH))
+                                            }
+                                        }
                                         "ScriptAnnotation" -> {
                                             val annotationText = child.textContent.trim()
                                             if (annotationText.isNotEmpty()) {
@@ -165,7 +194,8 @@ object FinalDraftSerializer {
                                     else -> BlockType.ACTION
                                 }
                                 val sceneNum = if (blockType == BlockType.SCENE_HEADING) p.getAttribute("Number").takeIf { it.isNotBlank() } else null
-                                blocks.add(ScreenplayBlock(type = blockType, text = text, sceneNumber = sceneNum, note = note))
+                                val (cleanText, cleanFormats) = RichTextHelper.getCleanTextAndFormats(text, pFormats)
+                                blocks.add(ScreenplayBlock(type = blockType, text = cleanText, formats = cleanFormats, sceneNumber = sceneNum, note = note))
                             }
                         }
                     }

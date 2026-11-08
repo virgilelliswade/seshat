@@ -123,6 +123,29 @@ fun EditorFormattingToolbarRow(
             )
         }
 
+        // [ S ] Strikethrough Button
+        Box(
+            modifier = Modifier
+                .shadow(4.dp, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .background(pillBg)
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .clickable { formattingController.toggleStrikethrough() }
+                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "S",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = MainAppFontFamily,
+                    textDecoration = TextDecoration.LineThrough,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = fontSize,
+                    color = textColor
+                )
+            )
+        }
+
         // Divider
         Box(
             modifier = Modifier

@@ -1,10 +1,13 @@
 package com.seshat.writer.novel
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import com.seshat.writer.model.InlineFormatSpan
+import com.seshat.writer.ui.RichTextHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
@@ -67,6 +70,16 @@ object NovelPdfCompiler {
                 color = Color.BLACK
                 textSize = FONT_SIZE_BODY
                 typeface = Typeface.create("serif", Typeface.BOLD)
+            }
+            val bodyItalicPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.BLACK
+                textSize = FONT_SIZE_BODY
+                typeface = Typeface.create("serif", Typeface.ITALIC)
+            }
+            val bodyBoldItalicPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.BLACK
+                textSize = FONT_SIZE_BODY
+                typeface = Typeface.create("serif", Typeface.BOLD_ITALIC)
             }
             val chapterHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
@@ -323,13 +336,19 @@ object NovelPdfCompiler {
                             currentY += LINE_HEIGHT_DOUBLE * 1.5f
                         }
                         NovelParagraphType.NARRATIVE, NovelParagraphType.DIALOGUE -> {
-                            if (p.text.isBlank()) continue
+                            val (cleanText, effectiveFormats) = RichTextHelper.getCleanTextAndFormats(p.text, p.formats)
+                            if (cleanText.isBlank()) continue
 
-                            val lines = wrapTextIntoLines(p.text, bodyPaint, USABLE_WIDTH, FIRST_LINE_INDENT)
+                            val lines = wrapTextIntoLines(cleanText, bodyPaint, USABLE_WIDTH, FIRST_LINE_INDENT)
+                            var charCursor = 0
                             for ((lineIdx, line) in lines.withIndex()) {
                                 checkNewPage(LINE_HEIGHT_DOUBLE)
                                 val x = if (lineIdx == 0) MARGIN_LEFT + FIRST_LINE_INDENT else MARGIN_LEFT
-                                canvas.drawText(line, x, currentY, bodyPaint)
+                                val lineStart = cleanText.indexOf(line, charCursor).let { if (it >= 0) it else charCursor }
+                                val lineEnd = lineStart + line.length
+                                charCursor = lineEnd
+                                val lineFormats = RichTextHelper.sliceFormatsForRange(effectiveFormats, lineStart, lineEnd)
+                                drawFormattedLine(canvas, line, lineFormats, x, currentY, bodyPaint, bodyBoldPaint, bodyItalicPaint, bodyBoldItalicPaint)
                                 currentY += LINE_HEIGHT_DOUBLE
                             }
                         }
@@ -432,5 +451,43 @@ object NovelPdfCompiler {
         }
 
         return lines
+    }
+
+    private fun drawFormattedLine(
+        canvas: Canvas,
+        lineText: String,
+        lineFormats: List<InlineFormatSpan>,
+        startX: Float,
+        y: Float,
+        basePaint: Paint,
+        boldPaint: Paint,
+        italicPaint: Paint,
+        boldItalicPaint: Paint
+    ) {
+        if (lineText.isEmpty()) return
+        if (lineFormats.isEmpty()) {
+            canvas.drawText(lineText, startX, y, basePaint)
+            return
+        }
+
+        val runs = RichTextHelper.toFormattedRuns(lineText, lineFormats)
+        var curX = startX
+        for (run in runs) {
+            val paintToUse = when {
+                run.isBold && run.isItalic -> Paint(boldItalicPaint)
+                run.isBold -> Paint(boldPaint)
+                run.isItalic -> Paint(italicPaint)
+                else -> Paint(basePaint)
+            }
+            if (run.isUnderline) {
+                paintToUse.isUnderlineText = true
+            }
+            if (run.isStrikethrough) {
+                paintToUse.isStrikeThruText = true
+            }
+
+            canvas.drawText(run.text, curX, y, paintToUse)
+            curX += paintToUse.measureText(run.text)
+        }
     }
 }
