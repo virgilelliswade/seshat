@@ -287,7 +287,8 @@ fun NovelEditorPane(
                 onToggleTypewriter = onToggleTypewriterAction,
                 onOpenScraps = { showScrapsDialog = true },
                 onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject
+                onSaveProject = onSaveProject,
+                onOpenSettings = { viewModel.openSettingsDialog() }
             )
         } else {
             DesktopNovelTopBar(
@@ -305,7 +306,8 @@ fun NovelEditorPane(
                 onToggleTypewriter = onToggleTypewriterAction,
                 onOpenScraps = { showScrapsDialog = true },
                 onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject
+                onSaveProject = onSaveProject,
+                onOpenSettings = { viewModel.openSettingsDialog() }
             )
         }
 
@@ -364,17 +366,17 @@ fun NovelEditorPane(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // SCRIVENER-STYLE LEFT BINDER (Tablet / Desktop side-by-side floating card)
+                // SCRIVENER-STYLE LEFT BINDER (Tablet / Desktop side-by-side squared card)
                 AnimatedVisibility(visible = isBinderVisible && !isCompactScreen) {
                     Box(
                         modifier = Modifier
                             .width(260.dp)
                             .fillMaxHeight()
                             .padding(start = 14.dp, top = 8.dp, bottom = 12.dp, end = 6.dp)
-                            .shadow(16.dp, RoundedCornerShape(20.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.25f))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(16.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.25f))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(opticalGlassBrush(glassOpacity = 0.88f))
-                            .border(prismaticGlassBorder(width = 1.2.dp), RoundedCornerShape(20.dp))
+                            .border(prismaticGlassBorder(width = 1.2.dp), RoundedCornerShape(0.dp))
                     ) {
                         NovelBinderPane(
                             manuscript = manuscript,
@@ -441,8 +443,8 @@ fun NovelEditorPane(
 
                     if (uiState.firstDraftState.isArcadeLocked) {
                         Surface(
-                            color = if (isChapterEditable) Color(0xFF0F172A) else Color(0xFF450A0A),
-                            shape = RoundedCornerShape(10.dp),
+                            color = if (isChapterEditable) ObsidianSurface else Color(0xFF450A0A),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (isChapterEditable) ScribeStarNeonRed.copy(alpha = 0.55f) else Color(0xFFEF4444)),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -492,12 +494,13 @@ fun NovelEditorPane(
                         }
                     )
 
-                    // Book Page Sheet (Soft cream book paper background, or Obsidian Arcade Canvas)
+                    // Book Page Sheet (Always crisp white physical writing surface, even in dark mode)
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = if (uiState.firstDraftState.isArcadeLocked) Color(0xFF0B0F19) else Color(0xFFFAFAF7)
+                            containerColor = Color.White
                         ),
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -971,6 +974,7 @@ private fun CompactNovelTopBar(
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -980,19 +984,19 @@ private fun CompactNovelTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Left: Floating Circle Drawer & Dedicated Chapter Binder Button
+        // Left: Squared Drawer & Dedicated Chapter Binder Button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, CircleShape, spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(CircleShape)
+                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), CircleShape)
+                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
                     .clickable(onClick = onOpenStudioDrawer)
                     .size(38.dp)
             ) {
@@ -1041,7 +1045,8 @@ private fun CompactNovelTopBar(
             onToggleTypewriter = onToggleTypewriter,
             onOpenScraps = onOpenScraps,
             onOpenCompiler = onOpenCompiler,
-            onSaveProject = onSaveProject
+            onSaveProject = onSaveProject,
+            onOpenSettings = onOpenSettings
         )
     }
 }
@@ -1055,7 +1060,8 @@ private fun CompactNovelTopBarTools(
     onToggleTypewriter: () -> Unit,
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
-    onSaveProject: () -> Unit
+    onSaveProject: () -> Unit,
+    onOpenSettings: () -> Unit = {}
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1077,6 +1083,10 @@ private fun CompactNovelTopBarTools(
             onClick = onSaveProject,
             isAccent = true
         )
+        NovelGlassPillButton(
+            text = "⚙️",
+            onClick = onOpenSettings
+        )
     }
 }
 
@@ -1097,6 +1107,7 @@ private fun DesktopNovelTopBar(
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -1107,19 +1118,19 @@ private fun DesktopNovelTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Left: Floating Circle Hamburger + Floating Logo+Title Chip
+        // Left: Squared Hamburger + Squared Logo+Title Chip
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, CircleShape, spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(CircleShape)
+                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), CircleShape)
+                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
                     .clickable(onClick = onOpenStudioDrawer)
                     .size(42.dp)
             ) {
@@ -1134,13 +1145,13 @@ private fun DesktopNovelTopBar(
             }
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(16.dp))
+                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -1173,15 +1184,15 @@ private fun DesktopNovelTopBar(
             }
         }
 
-        // Center: Floating Telemetry Glass Pill
+        // Center: Squared Telemetry Glass Pill
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(0.dp),
             color = Color.Transparent,
             modifier = Modifier
-                .shadow(8.dp, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
+                .shadow(8.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(opticalPillBrush())
-                .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(16.dp))
+                .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -1227,7 +1238,7 @@ private fun DesktopNovelTopBar(
             }
         }
 
-        // Right Actions: Floating Glass Pills
+        // Right Actions: Squared Pills
         DesktopNovelTopBarActions(
             scrapsCount = manuscript.scraps.size,
             isDictating = isDictating,
@@ -1242,7 +1253,8 @@ private fun DesktopNovelTopBar(
             onToggleTypewriter = onToggleTypewriter,
             onOpenScraps = onOpenScraps,
             onOpenCompiler = onOpenCompiler,
-            onSaveProject = onSaveProject
+            onSaveProject = onSaveProject,
+            onOpenSettings = onOpenSettings
         )
     }
 }
@@ -1262,7 +1274,8 @@ private fun DesktopNovelTopBarActions(
     onToggleTypewriter: () -> Unit,
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
-    onSaveProject: () -> Unit
+    onSaveProject: () -> Unit,
+    onOpenSettings: () -> Unit = {}
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1328,6 +1341,12 @@ private fun DesktopNovelTopBarActions(
             isAccent = true,
             isBig = true
         )
+        NovelGlassPillButton(
+            text = "Settings",
+            icon = "⚙️",
+            onClick = onOpenSettings,
+            isBig = true
+        )
     }
 }
 
@@ -1341,6 +1360,7 @@ private fun NovelChapterHeaderBar(
     onInsertSceneBreak: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalSeshatDarkTheme.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -1354,20 +1374,20 @@ private fun NovelChapterHeaderBar(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = if (isDark) Color.White else Color(0xFF0F172A)
                 )
             )
             Spacer(modifier = Modifier.width(8.dp))
             Surface(
-                color = Color(0x331E293B),
-                shape = RoundedCornerShape(10.dp),
+                color = ObsidianSurface,
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.35f))
             ) {
                 Text(
                     text = "${chapter.wordCount()} words",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        color = Color(0xFF94A3B8),
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
                         fontSize = 10.5.sp
                     ),
                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
@@ -1441,7 +1461,7 @@ private fun NovelGlassPillButton(
         label = "NovelBtnScale"
     )
 
-    val cornerRadius = if (isBig) 16.dp else 14.dp
+    val cornerRadius = 0.dp
     val hPadding = if (isBig) 16.dp else 12.dp
     val vPadding = if (isBig) 8.dp else 6.dp
     val textFontSize = if (isBig) 12.5.sp else 11.5.sp
@@ -1556,7 +1576,7 @@ private fun NovelChapterCardItem(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 6.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = if (isSelected) 1.2.dp else 0.9.dp,
                         outerAlpha = if (isSelected) 0.32f else 0.16f,
@@ -1565,7 +1585,7 @@ private fun NovelChapterCardItem(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 opticalPillBrush(
                     isLit = isSelected,
@@ -1579,7 +1599,7 @@ private fun NovelChapterCardItem(
                     isLit = isLit,
                     isDark = isDark
                 ),
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1991,13 +2011,13 @@ private fun NovelCompactBottomHud(
             Spacer(modifier = Modifier.width(6.dp))
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(6.dp, RoundedCornerShape(12.dp))
-                    .clip(RoundedCornerShape(12.dp))
+                    .shadow(6.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 0.8.dp, isDark = isDark), RoundedCornerShape(12.dp))
+                    .border(prismaticGlassBorder(width = 0.8.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -2113,13 +2133,13 @@ private fun NovelDesktopBottomHud(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(16.dp))
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Row(
@@ -2153,15 +2173,15 @@ private fun NovelDesktopBottomHud(
             val deviceLabel = remember { DeviceEnvironment.getDeviceNavLabel(context) }
 
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(14.dp))
-                    .clip(RoundedCornerShape(14.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
                     .border(
-                        prismaticGlassBorder(width = 1.dp, accentColor = Color(0xFF38BDF8), isDark = isDark),
-                        RoundedCornerShape(14.dp)
+                        prismaticGlassBorder(width = 1.dp, accentColor = ElectrumGold, isDark = isDark),
+                        RoundedCornerShape(0.dp)
                     )
                     .padding(horizontal = 11.dp, vertical = 7.dp)
             ) {
@@ -2170,7 +2190,7 @@ private fun NovelDesktopBottomHud(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
                         fontSize = 11.sp,
-                        color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                        color = ElectrumGold,
                         fontWeight = FontWeight.SemiBold
                     )
                 )

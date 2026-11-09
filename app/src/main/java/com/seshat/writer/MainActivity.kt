@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.SYSTEM -> isSystemDark
             }
-            SeshatTheme(darkTheme = isDark) {
+            SeshatTheme(darkTheme = isDark, studioPalette = uiState.studioPalette) {
                 ScreenplayEditorScreen(
                     viewModel = screenplayViewModel,
                     onOpenTitlePage = { openTitlePageWindow() }

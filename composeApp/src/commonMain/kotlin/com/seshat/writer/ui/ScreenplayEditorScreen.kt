@@ -642,6 +642,10 @@ fun ScreenplayEditorScreen(
             onThemeModeChanged = { newMode ->
                 viewModel.setThemeMode(context, newMode)
             },
+            currentStudioPalette = uiState.studioPalette,
+            onStudioPaletteChanged = { newPalette ->
+                viewModel.setStudioPalette(context, newPalette)
+            },
             onDismiss = {
                 viewModel.closeSettingsDialog()
                 aiConfig = AiPreferences.load(context)
@@ -822,19 +826,19 @@ private fun GlassEditorPillButton(
             .defaultMinSize(minHeight = 42.dp, minWidth = 52.dp)
             .shadow(
                 elevation = if (isLit || isPrimary) 10.dp else 6.dp,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 spotColor = if (isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
             )
             .neonBloom(
                 color = accentColor,
-                cornerRadius = 16.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isLit) 1.0f else 0.85f
             )
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 if (isPrimary) {
                     SolidColor(accentColor)
@@ -845,7 +849,7 @@ private fun GlassEditorPillButton(
             .border(
                 if (isPrimary) BorderStroke(strokeWidth, Color.Transparent)
                 else prismaticGlassBorder(width = strokeWidth, isLit = isLit, accentColor = accentColor, isDark = isDark),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1409,7 +1413,7 @@ private fun CompactScreenplayTopBar(
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left: Floating Circle Hamburger & Floating Logo+Title Chip
+        // Left: Squared Hamburger & Squared Logo+Title Chip
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1417,13 +1421,13 @@ private fun CompactScreenplayTopBar(
         ) {
             val isDark = LocalSeshatDarkTheme.current
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, CircleShape, spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(CircleShape)
+                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), CircleShape)
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .clickable(onClick = actions::openStudioDrawer)
                     .size(38.dp)
             ) {
@@ -1438,13 +1442,13 @@ private fun CompactScreenplayTopBar(
             }
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(16.dp))
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .clickable(onClick = onOpenTitlePage)
             ) {
                 Box(
@@ -1542,8 +1546,8 @@ private fun CompactScreenplayTopBar(
             }
 
             GlassEditorPillButton(
-                text = if (LocalSeshatDarkTheme.current) "🌙 Dark" else "☀️ Light",
-                onClick = actions::toggleThemeMode
+                text = "⚙️ Settings",
+                onClick = actions::openSettings
             )
         }
     }
@@ -1566,20 +1570,20 @@ private fun DesktopScreenplayTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Left: Floating Circle Hamburger + Floating Logo+Title Chip + Main Action Pills
+        // Left: Squared Hamburger + Squared Logo+Title Chip + Main Action Pills
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val isDark = LocalSeshatDarkTheme.current
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, CircleShape, spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(CircleShape)
+                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), CircleShape)
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .clickable(onClick = actions::openStudioDrawer)
                     .size(42.dp)
             ) {
@@ -1594,13 +1598,13 @@ private fun DesktopScreenplayTopBar(
             }
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(16.dp))
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                     .clickable(onClick = onOpenTitlePage)
             ) {
                 Box(
@@ -1674,7 +1678,7 @@ private fun DesktopScreenplayTopBar(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Right: View Mode, Zoom Pill, Scene #s, Notes, Find, Dictate, Zen, Theme
+        // Right: View Mode, Zoom Pill, Scene #s, Notes, Find, Dictate, Zen, Settings
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1686,16 +1690,16 @@ private fun DesktopScreenplayTopBar(
                 )
             }
 
-            // Floating Zoom Pill Capsule
+            // Squared Zoom Control
             val isDarkThemeForZoom = LocalSeshatDarkTheme.current
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
+                    .shadow(8.dp, RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isDark = isDarkThemeForZoom))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDarkThemeForZoom), RoundedCornerShape(16.dp))
+                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDarkThemeForZoom), RoundedCornerShape(0.dp))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -1776,8 +1780,8 @@ private fun DesktopScreenplayTopBar(
             )
 
             GlassEditorPillButton(
-                text = if (LocalSeshatDarkTheme.current) "🌙 Dark" else "☀️ Light",
-                onClick = actions::toggleThemeMode
+                text = "⚙️ Settings",
+                onClick = actions::openSettings
             )
         }
     }
@@ -2783,14 +2787,14 @@ private fun BottomHud(
                         modifier = Modifier
                             .shadow(
                                 elevation = if (isBlockLit) 8.dp else 4.dp,
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 spotColor = if (isBlockLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                             )
                             .then(
                                 if (isBlockLit) {
                                     Modifier.neonBloom(
                                         color = ScribeStarNeonRed,
-                                        cornerRadius = 14.dp,
+                                        cornerRadius = 0.dp,
                                         glowRadius = if (isSelected) 7.dp else 4.dp,
                                         strokeWidth = 1.4.dp,
                                         outerAlpha = if (isSelected) 0.35f else 0.20f,
@@ -2798,7 +2802,7 @@ private fun BottomHud(
                                     )
                                 } else Modifier
                             )
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(opticalPillBrush(isLit = isBlockLit, isPrimary = isSelected, isDark = isDark))
                             .border(
                                 prismaticGlassBorder(
@@ -2806,7 +2810,7 @@ private fun BottomHud(
                                     isLit = isBlockLit,
                                     isDark = isDark
                                 ),
-                                RoundedCornerShape(14.dp)
+                                RoundedCornerShape(0.dp)
                             )
                             .clickable(
                                 interactionSource = blockInteraction,
@@ -2830,27 +2834,22 @@ private fun BottomHud(
                     }
                 }
 
-                // SESHAT AI Star Medallion Button (Slide 3)
+                // SESHAT AI Star Medallion Button
                 Box(
                     modifier = Modifier
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 14.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 7.dp,
                             strokeWidth = 1.3.dp,
                             outerAlpha = 0.25f,
                             midAlpha = 0.48f
                         )
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color(0xFF2E0D14),
-                                    Color(0xFF16060A)
-                                )
-                            )
+                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
                         )
-                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                         .clickable { onOpenScriptDoctor() }
                 ) {
                     Text(
@@ -2887,15 +2886,15 @@ private fun BottomHud(
                 ) {
                     // Dictation indicator
                     Surface(
-                        color = if (uiState.isDictating) Color(0xFFD32F2F).copy(alpha = 0.25f) else Color(0xFF0E131C),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (uiState.isDictating) Color(0xFFEF5350) else Color(0xFF334155))
+                        color = if (uiState.isDictating) ScribeStarNeonRed.copy(alpha = 0.25f) else ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, if (uiState.isDictating) ScribeStarNeonRed else ObsidianSurfaceVariant)
                     ) {
                         Text(
                             text = if (uiState.isDictating) "🔴 Recording" else "🎙️ Ready",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = if (uiState.isDictating) Color(0xFFEF5350) else Color(0xFFCBD5E1),
+                                color = if (uiState.isDictating) ScribeStarNeonRed else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -2907,16 +2906,16 @@ private fun BottomHud(
 
                     // Keyboard Toggle Button
                     Surface(
-                        color = if (isKeyboardActive) ScribeStarNeonRed.copy(alpha = 0.25f) else Color(0xFF0E131C),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (isKeyboardActive) ScribeStarNeonRed else Color(0xFF334155)),
+                        color = if (isKeyboardActive) ScribeStarNeonRed.copy(alpha = 0.25f) else ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, if (isKeyboardActive) ScribeStarNeonRed else ObsidianSurfaceVariant),
                         modifier = Modifier.clickable(onClick = onToggleKeyboard)
                     ) {
                         Text(
                             text = if (isKeyboardActive) "⌨️ On" else "⌨️ Off",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = if (isKeyboardActive) ScribeStarNeonRed else Color(0xFF94A3B8),
+                                color = if (isKeyboardActive) ScribeStarNeonRed else (if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -2928,9 +2927,9 @@ private fun BottomHud(
 
                     // Tab Button (cycles / advances elements)
                     Surface(
-                        color = Color(0xFF0E131C),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        color = ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                         modifier = Modifier.clickable {
                             currentBlock?.let { onTabPressed(it.id) }
                         }
@@ -2939,7 +2938,7 @@ private fun BottomHud(
                             text = "⇥ Tab",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = Color.White,
+                                color = if (isDark) Color.White else Color(0xFF0F172A),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -2983,9 +2982,9 @@ private fun BottomHud(
                     val isHeadingCurrent = currentType == BlockType.SCENE_HEADING || currentType == BlockType.STAGE_ACT_SCENE || currentType == BlockType.COMIC_PAGE
 
                     Surface(
-                        color = if (isHeadingCurrent) Color(0xFF1E283A) else Color(0xFF0E131C),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (isHeadingCurrent) Color(0xFF38BDF8) else Color(0xFF334155)),
+                        color = if (isHeadingCurrent) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, if (isHeadingCurrent) ElectrumGold else ObsidianSurfaceVariant),
                         modifier = Modifier.clickable {
                             currentBlock?.let { onEnterPressed(it.id) }
                         }
@@ -2994,7 +2993,7 @@ private fun BottomHud(
                             text = enterLabel,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = if (isHeadingCurrent) Color(0xFF38BDF8) else Color.White,
+                                color = if (isHeadingCurrent) ElectrumGold else (if (isDark) Color.White else Color(0xFF0F172A)),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -3006,9 +3005,9 @@ private fun BottomHud(
 
                     // Del Button
                     Surface(
-                        color = Color(0xFF0E131C),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        color = ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                         modifier = Modifier.clickable {
                             currentBlock?.let { onBackspaceEmpty(it.id) }
                         }
@@ -3017,7 +3016,7 @@ private fun BottomHud(
                             text = "⌫ Del",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = Color(0xFF94A3B8),
+                                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             ),
@@ -3030,7 +3029,7 @@ private fun BottomHud(
                     // 1-Tap Save Button
                     Surface(
                         color = ScribeStarNeonRed,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.clickable { onSaveProject() }
                     ) {
                         Text(
@@ -3060,13 +3059,13 @@ private fun BottomHud(
 
                 // Compact metrics
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = Color.Transparent,
                     modifier = Modifier
-                        .shadow(6.dp, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
+                        .shadow(6.dp, RoundedCornerShape(0.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(opticalPillBrush(isDark = isDark))
-                        .border(prismaticGlassBorder(width = 0.8.dp, isDark = isDark), RoundedCornerShape(12.dp))
+                        .border(prismaticGlassBorder(width = 0.8.dp, isDark = isDark), RoundedCornerShape(0.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
@@ -3099,7 +3098,7 @@ private fun BottomHud(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            // Left side: Modern Floating Element Capsule Dock (Matching concept mockup)
+            // Left side: Modern Squared Element Dock
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -3135,14 +3134,14 @@ private fun BottomHud(
                         modifier = Modifier
                             .shadow(
                                 elevation = if (isBlockLit) 10.dp else 6.dp,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 spotColor = if (isBlockLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                             )
                             .then(
                                 if (isBlockLit) {
                                     Modifier.neonBloom(
                                         color = ScribeStarNeonRed,
-                                        cornerRadius = 16.dp,
+                                        cornerRadius = 0.dp,
                                         glowRadius = if (isSelected) 8.dp else 5.dp,
                                         strokeWidth = 1.4.dp,
                                         outerAlpha = if (isSelected) 0.35f else 0.20f,
@@ -3150,7 +3149,7 @@ private fun BottomHud(
                                     )
                                 } else Modifier
                             )
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(opticalPillBrush(isLit = isBlockLit, isPrimary = isSelected, isDark = isDark))
                             .border(
                                 prismaticGlassBorder(
@@ -3158,7 +3157,7 @@ private fun BottomHud(
                                     isLit = isBlockLit,
                                     isDark = isDark
                                 ),
-                                RoundedCornerShape(16.dp)
+                                RoundedCornerShape(0.dp)
                             )
                             .clickable(
                                 interactionSource = blockInteraction,
@@ -3182,32 +3181,27 @@ private fun BottomHud(
                     }
                 }
 
-                // SESHAT AI Star Medallion Button (Slide 3)
+                // SESHAT AI Star Medallion Button
                 Box(
                     modifier = Modifier
                         .shadow(
                             elevation = 10.dp,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(0.dp),
                             spotColor = ScribeStarNeonRed
                         )
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 16.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 7.dp,
                             strokeWidth = 1.3.dp,
                             outerAlpha = 0.25f,
                             midAlpha = 0.48f
                         )
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color(0xFF2E0D14),
-                                    Color(0xFF16060A)
-                                )
-                            )
+                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
                         )
-                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(16.dp))
+                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                         .clickable { onOpenScriptDoctor() }
                 ) {
                     Text(
@@ -3233,14 +3227,14 @@ private fun BottomHud(
                     modifier = Modifier
                         .shadow(
                             elevation = if (isTabLit) 8.dp else 5.dp,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(0.dp),
                             spotColor = if (isTabLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                         )
                         .then(
                             if (isTabLit) {
                                 Modifier.neonBloom(
                                     color = ScribeStarNeonRed,
-                                    cornerRadius = 14.dp,
+                                    cornerRadius = 0.dp,
                                     glowRadius = 5.dp,
                                     strokeWidth = 1.2.dp,
                                     outerAlpha = 0.25f,
@@ -3248,18 +3242,16 @@ private fun BottomHud(
                                 )
                             } else Modifier
                         )
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
-                            if (isTabLit) Brush.verticalGradient(listOf(Color(0x65450E1A), Color(0x7524050D)))
-                            else if (isDark) Brush.verticalGradient(listOf(Color(0x301E293B), Color(0x400F172A)))
-                            else Brush.verticalGradient(listOf(Color(0xF0FFFFFF), Color(0xE8F1F5F9)))
+                            opticalPillBrush(isDark = isDark, isHighlighted = isTabLit, highlightColor = ScribeStarNeonRed)
                         )
                         .border(
                             BorderStroke(
                                 if (isTabLit) 1.4.dp else 1.dp,
-                                if (isTabLit) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.35f) else Color(0xFFCBD5E1)
+                                if (isTabLit) ScribeStarNeonRed else if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
                             ),
-                            RoundedCornerShape(14.dp)
+                            RoundedCornerShape(0.dp)
                         )
                         .clickable(
                             interactionSource = tabInteraction,
@@ -3290,14 +3282,14 @@ private fun BottomHud(
                     modifier = Modifier
                         .shadow(
                             elevation = if (isSaveLit) 10.dp else 6.dp,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(0.dp),
                             spotColor = ScribeStarNeonRed
                         )
                         .then(
                             if (isSaveLit) {
                                 Modifier.neonBloom(
                                     color = ScribeStarNeonRed,
-                                    cornerRadius = 14.dp,
+                                    cornerRadius = 0.dp,
                                     glowRadius = 6.dp,
                                     strokeWidth = 1.3.dp,
                                     outerAlpha = 0.30f,
@@ -3305,18 +3297,16 @@ private fun BottomHud(
                                 )
                             } else Modifier
                         )
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
-                            if (isSaveLit) Brush.verticalGradient(listOf(Color(0x805C1322), Color(0x90380814)))
-                            else if (isDark) Brush.verticalGradient(listOf(Color(0x403A101A), Color(0x501C060E)))
-                            else Brush.verticalGradient(listOf(Color(0xFFFFECEF), Color(0xFFFFE4E6)))
+                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
                         )
                         .border(
                             BorderStroke(
                                 if (isSaveLit) 1.5.dp else 1.dp,
                                 ScribeStarNeonRed
                             ),
-                            RoundedCornerShape(14.dp)
+                            RoundedCornerShape(0.dp)
                         )
                         .clickable(
                             interactionSource = saveInteraction,
@@ -3328,7 +3318,7 @@ private fun BottomHud(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
                             fontWeight = FontWeight.Bold,
-                            color = if (isSaveLit || isDark) Color.White else Color(0xFF991B1B),
+                            color = Color.White,
                             fontSize = 12.sp
                         ),
                         modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp)
@@ -3336,7 +3326,7 @@ private fun BottomHud(
                 }
             }
 
-            // Right side: Floating Telemetry Glass Pill & Floating Device Environment Chip & Theme Toggle
+            // Right side: Squared Telemetry Pill & Device Environment Chip
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -3351,13 +3341,13 @@ private fun BottomHud(
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = Color.Transparent,
                     modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp))
+                        .shadow(8.dp, RoundedCornerShape(0.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(opticalPillBrush(isDark = isDark))
-                        .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(16.dp))
+                        .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Row(
@@ -3418,15 +3408,15 @@ private fun BottomHud(
                 val deviceLabel = remember { DeviceEnvironment.getDeviceNavLabel(context) }
 
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = Color.Transparent,
                     modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(14.dp))
-                        .clip(RoundedCornerShape(14.dp))
+                        .shadow(8.dp, RoundedCornerShape(0.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(opticalPillBrush(isDark = isDark))
                         .border(
-                            prismaticGlassBorder(width = 1.dp, accentColor = Color(0xFF38BDF8), isDark = isDark),
-                            RoundedCornerShape(14.dp)
+                            prismaticGlassBorder(width = 1.dp, accentColor = ElectrumGold, isDark = isDark),
+                            RoundedCornerShape(0.dp)
                         )
                         .padding(horizontal = 11.dp, vertical = 7.dp)
                 ) {
@@ -3435,7 +3425,7 @@ private fun BottomHud(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
                             fontSize = 11.sp,
-                            color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                            color = ElectrumGold,
                             fontWeight = FontWeight.SemiBold
                         )
                     )

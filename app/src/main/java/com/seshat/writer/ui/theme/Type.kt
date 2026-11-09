@@ -43,7 +43,7 @@ val PlusJakartaSansFontFamily = FontFamily(
 val RobotoFontFamily = FontFamily.SansSerif
 
 // Main application font family for all UI, headings, dialogs, buttons, and titles
-val MainAppFontFamily = RobotoFontFamily
+val MainAppFontFamily = PlusJakartaSansFontFamily
 
 val Typography = Typography(
     displayLarge = TextStyle(

@@ -185,6 +185,7 @@ class EditorCanvasActions(
     fun openWritersRoom() = viewModel.openWritersRoom()
     fun openScriptDoctor() = viewModel.openScriptDoctorDialog()
     fun toggleThemeMode() = viewModel.toggleThemeMode(context)
+    fun openSettings() = viewModel.openSettingsDialog()
     fun openCompiler() = viewModel.openNovelCompiler()
     fun insertTkToken() = viewModel.insertTkFixLaterToken(context)
 }

@@ -6,81 +6,123 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 val LocalSeshatDarkTheme = staticCompositionLocalOf { true }
+val LocalStudioPalette = staticCompositionLocalOf { StudioColorPalette.SCRIBESTAR_CRIMSON }
 
 // =========================================================================
-// SCRIBESTAR & NEON GODDESS SESHAT PALETTE
-// Directly color-matched to the neon Goddess Seshat artwork & ScribeStar Media logo
+// DYNAMIC STUDIO PALETTE & PRECISION ARCHITECTURE
+// ScribeStar Crimson default, plus Swiss Cobalt, Warm Atelier, Nocturne Emerald,
+// Astral Amethyst, and Monolith Titanium.
 // =========================================================================
 
-// Core Luminous Neon & Crimson Accents
-val ScribeStarNeonRed = Color(0xFFFF2A3D)       // Brilliant Glowing Neon Scarlet / Star Aura
-val ScribeStarCrimson = Color(0xFFC8102E)       // Deep Prestigious ScribeStar Crimson (Light Mode)
-val NeonCoralLight = Color(0xFFFF5C6E)          // Luminous Star Flare & Glow
-val RubyCoreDark = Color(0xFF8B0015)            // Deep Ruby Star Center
-val ElectricWhite = Color(0xFFFFFFFF)           // Crisp Glowing Neon White (Palm Frond, Staff, Ankh)
-val CircuitIce = Color(0xFFF1F5F9)              // Electric Ice Highlight
-val CircuitCyan = Color(0xFF38BDF8)             // Microchip Circuit Blue Accent
-val CircuitSlate = Color(0xFF1E293B)            // Circuit Slate Fill
+// Core Dynamic Brand Accents (Backed by Compose Snapshot State for universal access)
+val ScribeStarNeonRed: Color
+    get() = ActiveStudioPaletteState.value.darkAccent
 
-// Raw Dark Mode Surfaces (Midnight Obsidian & Circuit Board)
-val RawObsidianBlack = Color(0xFF070A0F)        // Deep Midnight Circuit Pitch
-val RawObsidianSurface = Color(0xFF0E131C)      // Circuit Slate Surface
-val RawObsidianSurfaceVariant = Color(0xFF18202D) // Circuit Panel Border & Divider
-val RawScreenplayTextDark = Color(0xFFFFFFFF)   // Crisp Pure White Starlight Text
-val RawScreenplayTextMuted = Color(0xFFCBD5E1)  // Luminous Soft Silver (Slate 200 - High Contrast Legibility)
+val ScribeStarCrimson: Color
+    get() = ActiveStudioPaletteState.value.lightAccent
 
-// Raw Light Mode Surfaces (Clean Slate & Carbon Reed Ink)
-val RawPapyrusLight = Color(0xFFF8FAFC)        // Clean Circuit Canvas
-val RawPapyrusDark = Color(0xFFE2E8F0)         // Soft Slate Parchment
-val RawLightBackground = Color(0xFFF8FAFC)     // Crisp Light Background
-val RawLightSurface = Color(0xFFFFFFFF)        // Pure White Card
-val RawLightSurfaceVariant = Color(0xFFE2E8F0) // Subtle Divider
-val RawScreenplayTextLight = Color(0xFF0F172A) // Deep Carbon Ink
-val RawScreenplayTextMutedLight = Color(0xFF5A6678) // Circuit Slate Muted
+val NeonCoralLight: Color
+    get() = ActiveStudioPaletteState.value.secondaryAccent
 
-// Backward-compatible tokens mapped to the ScribeStar aesthetic
-// All existing UI components across the app seamlessly adopt the ScribeStar palette
-val ElectrumGold = ScribeStarNeonRed            // ScribeStar Neon Red accent
-val LightGold = NeonCoralLight                 // ScribeStar Star Flare
-val DarkGold = RubyCoreDark                    // ScribeStar Deep Ruby
+val RubyCoreDark: Color
+    get() = ActiveStudioPaletteState.value.lightAccent.copy(alpha = 0.65f)
+
+val ElectricWhite = Color(0xFFFFFFFF)
+val CircuitIce = Color(0xFFF1F5F9)
+val CircuitCyan = Color(0xFF38BDF8)
+val CircuitSlate = Color(0xFF1E293B)
+
+// Raw Dark Mode Surfaces (Dynamic per selected Studio Palette)
+val RawObsidianBlack: Color
+    get() = ActiveStudioPaletteState.value.darkBg
+
+val RawObsidianSurface: Color
+    get() = ActiveStudioPaletteState.value.darkSurface
+
+val RawObsidianSurfaceVariant: Color
+    get() = ActiveStudioPaletteState.value.darkBorder
+
+val RawScreenplayTextDark = Color(0xFFF8FAFC)
+val RawScreenplayTextMuted = Color(0xFF94A3B8)
+
+// Raw Light Mode Surfaces (Clean Architectural Alabaster & Slate)
+val RawPapyrusLight: Color
+    get() = ActiveStudioPaletteState.value.lightBg
+
+val RawPapyrusDark: Color
+    get() = ActiveStudioPaletteState.value.lightBorder
+
+val RawLightBackground: Color
+    get() = ActiveStudioPaletteState.value.lightBg
+
+val RawLightSurface: Color
+    get() = ActiveStudioPaletteState.value.lightSurface
+
+val RawLightSurfaceVariant: Color
+    get() = ActiveStudioPaletteState.value.lightBorder
+
+val RawScreenplayTextLight = Color(0xFF0F172A)
+val RawScreenplayTextMutedLight = Color(0xFF475569)
+
+// Always-White Physical Writing Page Surface (Used in both Dark Mode and Light Mode)
+val StudioPaperWhite = Color(0xFFFFFFFF)
+val StudioPaperInk = Color(0xFF0F172A)
+val StudioPaperBorder = Color(0xFFCBD5E1)
+
+// Semantic tokens mapped to the active Studio Palette
+val ElectrumGold: Color
+    get() = if (ActiveDarkThemeState.value) ActiveStudioPaletteState.value.darkAccent else ActiveStudioPaletteState.value.lightAccent
+
+val LightGold: Color
+    get() = ActiveStudioPaletteState.value.secondaryAccent
+
+val DarkGold: Color
+    get() = ActiveStudioPaletteState.value.lightAccent
 
 val LapisLazuli = CircuitCyan
 val LapisLight = Color(0xFF7DD3FC)
 val LapisDark = Color(0xFF0284C7)
 
-val PapyrusLight = RawPapyrusLight
-val PapyrusDark = RawPapyrusDark
+val PapyrusLight: Color
+    get() = RawPapyrusLight
 
-val SluglineBlue = CircuitCyan                  // Circuit Electric Cyan
-val CharacterGold = ScribeStarNeonRed           // Neon Scarlet Character Heading
+val PapyrusDark: Color
+    get() = RawPapyrusDark
+
+val SluglineBlue: Color
+    get() = ActiveStudioPaletteState.value.secondaryAccent
+
+val CharacterGold: Color
+    get() = ActiveStudioPaletteState.value.darkAccent
+
 val TransitionPurple = Color(0xFFC084FC)
 
-// Dynamic brand accents adapting to Dark Mode vs Light Mode
+// Dynamic brand accents adapting to Dark Mode vs Light Mode & Active Palette
 val BrandAccent: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (LocalSeshatDarkTheme.current) ScribeStarNeonRed else ScribeStarCrimson
+    get() = if (LocalSeshatDarkTheme.current) LocalStudioPalette.current.darkAccent else LocalStudioPalette.current.lightAccent
 
 val BrandAccentSecondary: Color
     @Composable
     @ReadOnlyComposable
     get() = if (LocalSeshatDarkTheme.current) ElectricWhite else Color(0xFF0F172A)
 
-// Dynamic semantic colors adapting to Dark Mode vs Light Mode
+// Dynamic semantic colors adapting to Dark Mode vs Light Mode & Active Palette
 val ObsidianBlack: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (LocalSeshatDarkTheme.current) RawObsidianBlack else RawLightBackground
+    get() = if (LocalSeshatDarkTheme.current) LocalStudioPalette.current.darkBg else LocalStudioPalette.current.lightBg
 
 val ObsidianSurface: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (LocalSeshatDarkTheme.current) RawObsidianSurface else RawLightSurface
+    get() = if (LocalSeshatDarkTheme.current) LocalStudioPalette.current.darkSurface else LocalStudioPalette.current.lightSurface
 
 val ObsidianSurfaceVariant: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (LocalSeshatDarkTheme.current) RawObsidianSurfaceVariant else RawLightSurfaceVariant
+    get() = if (LocalSeshatDarkTheme.current) LocalStudioPalette.current.darkBorder else LocalStudioPalette.current.lightBorder
 
 val ScreenplayTextDark: Color
     @Composable
@@ -92,9 +134,10 @@ val ScreenplayTextMuted: Color
     @ReadOnlyComposable
     get() = if (LocalSeshatDarkTheme.current) RawScreenplayTextMuted else RawScreenplayTextMutedLight
 
-val RawLightDeskBackground = Color(0xFFCBD5E1) // Sophisticated contrast slate behind writing surfaces in Light Mode
+val RawLightDeskBackground: Color
+    get() = ActiveStudioPaletteState.value.lightDesk
 
 val DeskBackground: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (LocalSeshatDarkTheme.current) Color(0xFF05070B) else RawLightDeskBackground
+    get() = if (LocalSeshatDarkTheme.current) LocalStudioPalette.current.darkBg else LocalStudioPalette.current.lightDesk

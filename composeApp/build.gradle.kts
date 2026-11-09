@@ -58,7 +58,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)
             packageName = "Seshat"
-            packageVersion = "2.2.1"
+            packageVersion = "2.3.0"
             macOS {
                 bundleID = "com.seshat.writer"
                 dockName = "Seshat"

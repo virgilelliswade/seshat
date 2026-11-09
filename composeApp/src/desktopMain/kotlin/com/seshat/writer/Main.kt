@@ -339,7 +339,7 @@ fun main() = application {
             }
         }
 
-        SeshatTheme(darkTheme = isDark) {
+        SeshatTheme(darkTheme = isDark, studioPalette = uiState.studioPalette) {
             ScreenplayEditorScreen(
                 viewModel = viewModel,
                 onOpenTitlePage = { viewModel.openTitlePage() }

@@ -100,6 +100,7 @@ import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ObsidianSurface
+import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.RawLightSurface
 import com.seshat.writer.ui.theme.RawScreenplayTextMutedLight
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
@@ -194,6 +195,10 @@ fun StartMenuScreen(
             onThemeModeChanged = { newMode ->
                 viewModel.setThemeMode(context, newMode)
             },
+            currentStudioPalette = uiState.studioPalette,
+            onStudioPaletteChanged = { newPalette ->
+                viewModel.setStudioPalette(context, newPalette)
+            },
             onDismiss = {
                 viewModel.closeSettingsDialog()
             }
@@ -251,7 +256,7 @@ fun StartMenuScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top Bar: Theme toggle, Settings button, and return-to-script button
+            // Top Bar: Settings button and return-to-script button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -266,13 +271,7 @@ fun StartMenuScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Theme Mode Toggle (☀️ Light / 🌙 Dark)
-                    StartMenuTopBarButton(
-                        text = if (isDark) "🌙 Dark Mode" else "☀️ Light Mode",
-                        onClick = { viewModel.toggleThemeMode(context) }
-                    )
-
-                    // Centrally available Studio Settings Button
+                    // Centrally available Studio Settings Button (contains Light/Dark mode & Color Palettes)
                     StartMenuTopBarButton(
                         text = "⚙️ Settings",
                         onClick = { viewModel.openSettingsDialog() }
@@ -324,15 +323,15 @@ fun StartMenuScreen(
                     modifier = Modifier
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 20.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 6.dp,
                             strokeWidth = 1.4.dp,
                             outerAlpha = 0.22f,
                             midAlpha = 0.42f
                         )
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(if (isDark) smokedGlassBrush(glassOpacity = 0.92f) else opticalPillBrush(isDark = false))
-                        .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(20.dp))
+                        .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = "W R I T I N G   S T U D I O",
@@ -1492,24 +1491,16 @@ private fun StartMenuTopBarButton(
             }
             .neonBloom(
                 color = accentColor,
-                cornerRadius = 20.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isLit) 1.0f else 0.80f
             )
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isLit) listOf(Color(0x60450E1A), Color(0x7524050D))
-                        else listOf(Color(0x351E293B), Color(0x450F172A))
-                    } else {
-                        if (isLit) listOf(Color(0xFFE11D48), Color(0xFFBE123C))
-                        else listOf(Color(0xF5FFFFFF), Color(0xEDF8FAFC))
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = accentColor)
             )
             .border(
                 BorderStroke(
@@ -1517,7 +1508,7 @@ private fun StartMenuTopBarButton(
                     if (isDark) (if (isLit) accentColor else accentColor.copy(alpha = 0.70f))
                     else (if (isLit) accentColor else Color(0xFFCBD5E1))
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1552,7 +1543,7 @@ private fun StartMenuTopBarButton(
 }
 
 /**
- * Interactive glowing back navigation button with red mouseover bloom.
+ * Interactive glowing back navigation button with squared-off architectural frame.
  */
 @Composable
 private fun StartMenuBackButton(
@@ -1600,24 +1591,16 @@ private fun StartMenuBackButton(
             .size(42.dp)
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 21.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isLit) 1.0f else 0.80f
             )
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isLit) listOf(Color(0x60450E1A), Color(0x7524050D))
-                        else listOf(Color(0x351E293B), Color(0x450F172A))
-                    } else {
-                        if (isLit) listOf(Color(0xFFE11D48), Color(0xFFBE123C))
-                        else listOf(Color(0xF5FFFFFF), Color(0xEDF8FAFC))
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = ScribeStarNeonRed)
             )
             .border(
                 BorderStroke(
@@ -1625,7 +1608,7 @@ private fun StartMenuBackButton(
                     if (isDark) (if (isLit) ScribeStarNeonRed else ScribeStarNeonRed.copy(alpha = 0.65f))
                     else (if (isLit) ScribeStarNeonRed else Color(0xFFCBD5E1))
                 ),
-                CircleShape
+                RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1708,7 +1691,7 @@ private fun StartMenuLayout(
 }
 
 /**
- * Sleek modern glowing capsule button matching the ScribeStar start menu design.
+ * Sleek modern squared-off button matching the ScribeStar start menu design.
  */
 @Composable
 private fun StartMenuSleekCapsuleButton(
@@ -1759,31 +1742,23 @@ private fun StartMenuSleekCapsuleButton(
             .height(58.dp)
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 18.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isHighlighted) 1.0f else 0.80f
             )
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isHighlighted) listOf(Color(0x60450E1A), Color(0x7524050D))
-                        else listOf(Color(0x281E293B), Color(0x3D0F172A))
-                    } else {
-                        if (isHighlighted) listOf(Color(0xFFE11D48), Color(0xFFBE123C))
-                        else listOf(Color(0xF5FFFFFF), Color(0xEDF8FAFC))
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
             )
             .border(
                 BorderStroke(
                     strokeWidth,
                     if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.70f) else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1880,7 +1855,7 @@ private fun SleekStartIcon(type: Int, color: Color, modifier: Modifier = Modifie
 }
 
 /**
- * Modern tactile card button with ScribeStar neon styling for sub-menu selections.
+ * Modern tactile squared-off card button with ScribeStar styling for sub-menu selections.
  */
 @Composable
 private fun StartMenuBigButton(
@@ -1932,41 +1907,23 @@ private fun StartMenuBigButton(
             .fillMaxWidth()
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 18.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isHighlighted) 1.0f else 0.80f
             )
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isHighlighted) listOf(
-                            Color(0x60450E1A),
-                            Color(0x7524050D)
-                        ) else listOf(
-                            Color(0x281E293B),
-                            Color(0x3D0F172A)
-                        )
-                    } else {
-                        if (isHighlighted) listOf(
-                            Color(0xFFE11D48),
-                            Color(0xFFBE123C)
-                        ) else listOf(
-                            Color(0xF5FFFFFF),
-                            Color(0xEDF8FAFC)
-                        )
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
             )
             .border(
                 BorderStroke(
                     width = strokeWidth,
                     color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.70f) else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1983,7 +1940,7 @@ private fun StartMenuBigButton(
             // Icon Badge
             Surface(
                 color = if (isHighlighted) badgeColor.copy(alpha = 0.35f) else badgeColor.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(if (isHighlighted) 1.6.dp else 1.2.dp, if (isHighlighted) ScribeStarNeonRed else badgeColor.copy(alpha = 0.8f)),
                 modifier = Modifier.size(48.dp)
             ) {
@@ -2135,12 +2092,11 @@ private fun SplashColumnHeaderPill(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    val borderColor = if (isSpark) ElectrumGold.copy(alpha = 0.85f) else Color(0xFF475569)
+    val borderColor = if (isSpark) ElectrumGold.copy(alpha = 0.85f) else ScribeStarNeonRed.copy(alpha = 0.65f)
     val bgBrush = if (isSpark) {
-        Brush.verticalGradient(listOf(Color(0xD8450A14), Color(0xE824050D)))
+        opticalPillBrush(isDark = isDark, isHighlighted = false, highlightColor = ElectrumGold)
     } else {
-        if (isDark) Brush.verticalGradient(listOf(Color(0xD80F172A), Color(0xE8090D16)))
-        else Brush.verticalGradient(listOf(Color(0xF5FFFFFF), Color(0xEDF1F5F9)))
+        opticalPillBrush(isDark = isDark, isHighlighted = false, highlightColor = ScribeStarNeonRed)
     }
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -2153,14 +2109,14 @@ private fun SplashColumnHeaderPill(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(bgBrush)
             .border(
                 BorderStroke(
                     width = if (isPopupVisible) 1.8.dp else 1.2.dp,
                     color = if (isPopupVisible) (if (isSpark) ElectrumGold else ScribeStarNeonRed) else borderColor
                 ),
-                RoundedCornerShape(16.dp)
+                RoundedCornerShape(0.dp)
             )
             .hoverable(interactionSource = interactionSource)
             .pointerInput(Unit) {
@@ -2201,7 +2157,7 @@ private fun SplashColumnHeaderPill(
             // Subtle (i) badge indicating interactive info popup on hover or press & hold
             Surface(
                 color = if (isSpark) ElectrumGold.copy(alpha = 0.18f) else (if (isDark) Color.White.copy(alpha = 0.12f) else Color(0x180F172A)),
-                shape = CircleShape,
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(0.6.dp, if (isSpark) ElectrumGold.copy(alpha = 0.5f) else (if (isDark) Color.White.copy(alpha = 0.3f) else Color(0x300F172A)))
             ) {
                 Text(
@@ -2226,7 +2182,7 @@ private fun SplashColumnHeaderPill(
             ) {
                 Surface(
                     color = if (isDark) Color(0xF80A0E17) else Color(0xF8FFFFFF),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(
                         1.5.dp,
                         if (isSpark) ElectrumGold.copy(alpha = 0.9f) else ScribeStarNeonRed.copy(alpha = 0.85f)
@@ -2251,9 +2207,9 @@ private fun SplashColumnHeaderPill(
                         )
 
                         Surface(
-                            color = if (isSpark) Color(0x30EAB308) else Color(0x2538BDF8),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(0.8.dp, if (isSpark) ElectrumGold.copy(alpha = 0.6f) else Color(0xFF38BDF8).copy(alpha = 0.6f))
+                            color = if (isSpark) ElectrumGold.copy(alpha = 0.18f) else ScribeStarNeonRed.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(0.dp),
+                            border = BorderStroke(0.8.dp, if (isSpark) ElectrumGold.copy(alpha = 0.6f) else ScribeStarNeonRed.copy(alpha = 0.6f))
                         ) {
                             Text(
                                 text = if (isSpark) "⚡ TIMED STAGES • XP LOOT • 48H SURVIVAL" else "🔓 WRITE AT YOUR OWN PACE • ZERO TIMERS",
@@ -2774,25 +2730,24 @@ private fun ConceptBActionDock(
         modifier = modifier
             .neonBloom(
                 color = Color.Black,
-                cornerRadius = 30.dp,
+                cornerRadius = 0.dp,
                 glowRadius = 10.dp,
                 outerAlpha = 0.35f,
                 midAlpha = 0.60f
             )
-            .clip(RoundedCornerShape(30.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                if (isDark) Brush.verticalGradient(
-                    listOf(Color(0x351E293B), Color(0x450F172A))
-                ) else Brush.verticalGradient(
-                    listOf(Color(0xE5FFFFFF), Color(0xD0F1F5F9))
+                if (isDark) smokedGlassBrush(glassOpacity = 0.90f)
+                else Brush.verticalGradient(
+                    listOf(Color(0xF5FFFFFF), Color(0xE8F1F5F9))
                 )
             )
             .border(
                 BorderStroke(
                     1.2.dp,
-                    if (isDark) Color(0x35FFFFFF) else Color(0x7094A3B8)
+                    if (isDark) ObsidianSurfaceVariant else Color(0x7094A3B8)
                 ),
-                RoundedCornerShape(30.dp)
+                RoundedCornerShape(0.dp)
             )
             .padding(horizontal = if (isCompact) 6.dp else 8.dp, vertical = if (isCompact) 5.dp else 6.dp)
     ) {
@@ -2811,7 +2766,7 @@ private fun ConceptBActionDock(
                 text = if (isCompact) "▶️ Continue Studio" else "▶️ Continue Studio Project",
                 onClick = onContinue,
                 isCompact = isCompact,
-                accentColor = Color(0xFF38BDF8)
+                accentColor = ElectrumGold
             )
 
             ConceptBPrimaryPill(
@@ -2854,23 +2809,23 @@ private fun ConceptBPrimaryPill(
             }
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 24.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = 1.4.dp,
                 outerAlpha = if (isLit) 0.55f else 0.30f,
                 midAlpha = if (isLit) 0.90f else 0.65f,
                 coreAlpha = 1.0f
             )
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 Brush.verticalGradient(
-                    if (isLit) listOf(Color(0xFFFF3B50), Color(0xFFD61332))
-                    else listOf(Color(0xFFFF2A3D), Color(0xFFB91028))
+                    if (isLit) listOf(ScribeStarNeonRed, ScribeStarNeonRed.copy(alpha = 0.85f))
+                    else listOf(ScribeStarNeonRed.copy(alpha = 0.92f), ScribeStarNeonRed.copy(alpha = 0.78f))
                 )
             )
             .border(
-                BorderStroke(1.2.dp, if (isLit) Color.White else Color(0xFFFF6B81)),
-                RoundedCornerShape(24.dp)
+                BorderStroke(1.2.dp, if (isLit) Color.White else ScribeStarNeonRed),
+                RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -2932,7 +2887,7 @@ private fun ConceptBGlassPill(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = accentColor,
-                        cornerRadius = 24.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = 1.2.dp,
                         outerAlpha = 0.35f,
@@ -2940,24 +2895,16 @@ private fun ConceptBGlassPill(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isLit) listOf(Color(0x55334155), Color(0x651E293B))
-                        else listOf(Color(0x381E293B), Color(0x480F172A))
-                    } else {
-                        if (isLit) listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
-                        else listOf(Color(0xF5FFFFFF), Color(0xEDF1F5F9))
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = accentColor)
             )
             .border(
                 BorderStroke(
                     1.1.dp,
-                    if (isLit) accentColor else if (isDark) Color(0x40FFFFFF) else Color(0xFF94A3B8)
+                    if (isLit) accentColor else if (isDark) ObsidianSurfaceVariant else Color(0xFF94A3B8)
                 ),
-                RoundedCornerShape(24.dp)
+                RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -2986,7 +2933,7 @@ private fun ConceptBGlassPill(
 
 /**
  * Smoked glass card for Medium selection (Single Screenplay, Screenplay Universe, Stage Play, Comic Book, Novel).
- * Designed according to Concept B with horizontal pill card, glowing neon outline icon, and crisp Roboto typography.
+ * Designed with squared-off architectural corners and dynamic palette accents.
  */
 @Composable
 private fun GlassFormatCard(
@@ -3042,27 +2989,16 @@ private fun GlassFormatCard(
             .height(if (isCompact) 48.dp else 56.dp)
             .neonBloom(
                 color = primaryGlowColor,
-                cornerRadius = 16.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isHighlighted) 1.0f else 0.75f
             )
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isSparkCard) {
-                        if (isHighlighted) listOf(Color(0x9058101E), Color(0xA830060F))
-                        else listOf(Color(0x65450E1A), Color(0x8024050D))
-                    } else if (isDark) {
-                        if (isHighlighted) listOf(Color(0x60450E1A), Color(0x7524050D))
-                        else listOf(Color(0x451E293B), Color(0x600F172A))
-                    } else {
-                        if (isHighlighted) listOf(Color(0xFFE11D48), Color(0xFFBE123C))
-                        else listOf(Color(0xF0FFFFFF), Color(0xD8F8FAFC))
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = primaryGlowColor)
             )
             .border(
                 BorderStroke(
@@ -3072,7 +3008,7 @@ private fun GlassFormatCard(
                     else if (isDark) ScribeStarNeonRed.copy(alpha = 0.55f)
                     else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -3128,7 +3064,7 @@ private fun GlassFormatCard(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                color = if (isSparkCard) Color(0xFFFECDD3).copy(alpha = 0.85f)
+                                color = if (isHighlighted) Color.White.copy(alpha = 0.90f)
                                 else if (isDark) Color(0xFF94A3B8)
                                 else Color(0xFF475569),
                                 fontSize = 11.sp
@@ -3144,7 +3080,7 @@ private fun GlassFormatCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(
                     color = ElectrumGold.copy(alpha = 0.18f),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(0.8.dp, ElectrumGold.copy(alpha = 0.55f))
                 ) {
                     Text(
@@ -3380,41 +3316,23 @@ private fun GlassProjectCard(
             .height(105.dp)
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 14.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isHighlighted) 1.0f else 0.75f
             )
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isDark) {
-                        if (isHighlighted) listOf(
-                            Color(0x5535121E),
-                            Color(0x68200A12)
-                        ) else listOf(
-                            Color(0x281A2333),
-                            Color(0x3C0D121C)
-                        )
-                    } else {
-                        if (isHighlighted) listOf(
-                            Color(0xFFE11D48),
-                            Color(0xFFBE123C)
-                        ) else listOf(
-                            Color(0xF5FFFFFF),
-                            Color(0xEDF8FAFC)
-                        )
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
             )
             .border(
                 BorderStroke(
                     width = strokeWidth,
                     color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.65f) else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -3446,7 +3364,7 @@ private fun GlassProjectCard(
                 // Page count pill
                 Surface(
                     color = if (isDark) Color(0x33FFFFFF) else Color(0x150F172A),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(0.dp)
                 ) {
                     Text(
                         text = "${project.pageCount} pp",
@@ -3462,8 +3380,8 @@ private fun GlassProjectCard(
 
                 // Draft tag pill
                 Surface(
-                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
-                    shape = RoundedCornerShape(8.dp),
+                    color = if (isDark) ObsidianSurface else Color(0xFFF1F5F9),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.5f))
                 ) {
                     Text(
@@ -3495,7 +3413,7 @@ private fun GlassProjectCard(
 
 /**
  * Starter card displayed when no recent projects exist yet.
- * Features red border, high transparency, and red glowing bloom on hover/press.
+ * Features squared-off architectural frame and dynamic theme bloom on hover/press.
  */
 @Composable
 private fun GlassStarterCard(
@@ -3543,49 +3461,23 @@ private fun GlassStarterCard(
             .height(105.dp)
             .neonBloom(
                 color = ScribeStarNeonRed,
-                cornerRadius = 14.dp,
+                cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
                 coreAlpha = if (isHighlighted) 1.0f else 0.75f
             )
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isHighlighted) {
-                        if (isDark) {
-                            listOf(
-                                Color(0x5535121E),
-                                Color(0x68200A12)
-                            )
-                        } else {
-                            listOf(
-                                Color(0x28FF1E44),
-                                Color(0x18FFE4E6)
-                            )
-                        }
-                    } else {
-                        if (isDark) {
-                            listOf(
-                                Color(0x281A2333),
-                                Color(0x3C0D121C)
-                            )
-                        } else {
-                            listOf(
-                                Color(0xF0FFFFFF),
-                                Color(0xE8F1F5F9)
-                            )
-                        }
-                    }
-                )
+                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
             )
             .border(
                 BorderStroke(
                     width = strokeWidth,
                     color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.65f) else Color(0xFFCBD5E1)
                 ),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -3603,7 +3495,7 @@ private fun GlassStarterCard(
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (isDark) Color.White else (if (isHighlighted) Color(0xFF991B1B) else Color(0xFF0F172A)),
+                    color = if (isDark) Color.White else (if (isHighlighted) Color.White else Color(0xFF0F172A)),
                     fontSize = 13.5.sp
                 )
             )

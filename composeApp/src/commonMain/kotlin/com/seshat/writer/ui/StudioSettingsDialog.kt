@@ -60,6 +60,7 @@ import com.seshat.writer.ai.AiClient
 import com.seshat.writer.ai.AiConfig
 import com.seshat.writer.ai.AiPreferences
 import com.seshat.writer.ai.AiProvider
+import com.seshat.writer.ui.theme.ActiveStudioPaletteState
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LightGold
 import com.seshat.writer.ui.theme.ObsidianBlack
@@ -67,13 +68,18 @@ import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioColorPalette
 import com.seshat.writer.ui.theme.ThemeMode
+import com.seshat.writer.ui.theme.ThemePreferences
 import kotlinx.coroutines.launch
 
 @Composable
 fun StudioSettingsDialog(
     currentThemeMode: ThemeMode = ThemeMode.DARK,
     onThemeModeChanged: (ThemeMode) -> Unit = {},
+    currentStudioPalette: StudioColorPalette = ActiveStudioPaletteState.value,
+    onStudioPaletteChanged: (StudioColorPalette) -> Unit = {},
     onDismiss: () -> Unit,
     onConfigChanged: (AiConfig) -> Unit = {}
 ) {
@@ -81,6 +87,7 @@ fun StudioSettingsDialog(
     val scope = rememberCoroutineScope()
 
     var themeMode by remember(currentThemeMode) { mutableStateOf(currentThemeMode) }
+    var studioPalette by remember(currentStudioPalette) { mutableStateOf(currentStudioPalette) }
     var config by remember { mutableStateOf(AiPreferences.load(context)) }
     var showApiKey by remember { mutableStateOf(false) }
 
@@ -108,8 +115,8 @@ fun StudioSettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.92f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(0.dp))
+                    .border(1.dp, ScribeStarNeonRed.copy(alpha = 0.6f), RoundedCornerShape(0.dp)),
                 color = ObsidianBlack
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -124,15 +131,15 @@ fun StudioSettingsDialog(
                     ) {
                         Column {
                             Text(
-                                text = "⚙️ STUDIO SETTINGS & AI ASSISTANT",
+                                text = "⚙️ STUDIO SETTINGS, THEME & AI ASSISTANT",
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = 1.sp,
-                                    color = ElectrumGold
+                                    color = ScreenplayTextDark
                                 )
                             )
                             Text(
-                                text = "Configure AI Script Doctor, BYOK API credentials, or toggle offline mode anytime.",
+                                text = "Customize studio mode, architectural color palettes, and BYOK AI Script Doctor settings.",
                                 style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted)
                             )
                         }
@@ -157,27 +164,37 @@ fun StudioSettingsDialog(
                         // 0. STUDIO APPEARANCE & THEME CARD
                         Surface(
                             color = ObsidianSurface,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                .border(1.dp, ScribeStarNeonRed.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "🎨 STUDIO APPEARANCE & THEME",
+                                    text = "🎨 STUDIO APPEARANCE & THEME ENGINE",
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp,
-                                        color = ElectrumGold
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 1.2.sp,
+                                        color = ScribeStarNeonRed
                                     )
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Switch between deep obsidian dark mode and warm papyrus daylight writing atmosphere.",
+                                    text = "Select Dark or Light studio chrome (your physical writing page stays crisp white in all modes) and choose your architectural color palette.",
                                     style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted)
                                 )
 
                                 Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = "LIGHT / DARK WORKSPACE MODE",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = ScreenplayTextMuted
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -186,17 +203,18 @@ fun StudioSettingsDialog(
                                     for (mode in ThemeMode.values()) {
                                         val isSelected = themeMode == mode
                                         Surface(
-                                            color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isSelected) ScribeStarNeonRed.copy(alpha = 0.16f) else ObsidianBlack,
+                                            shape = RoundedCornerShape(0.dp),
                                             border = BorderStroke(
-                                                1.dp,
-                                                if (isSelected) ElectrumGold else ObsidianSurfaceVariant
+                                                if (isSelected) 1.5.dp else 1.dp,
+                                                if (isSelected) ScribeStarNeonRed else ObsidianSurfaceVariant
                                             ),
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .clip(RoundedCornerShape(8.dp))
+                                                .clip(RoundedCornerShape(0.dp))
                                                 .clickable {
                                                     themeMode = mode
+                                                    ThemePreferences.setThemeMode(context, mode)
                                                     onThemeModeChanged(mode)
                                                 }
                                         ) {
@@ -206,28 +224,141 @@ fun StudioSettingsDialog(
                                             ) {
                                                 Text(
                                                     text = mode.icon,
-                                                    fontSize = 20.sp
+                                                    fontSize = 18.sp
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
-                                                    text = mode.displayName,
+                                                    text = mode.displayName.uppercase(),
                                                     style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                        color = if (isSelected) ElectrumGold else ScreenplayTextDark
+                                                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                                        letterSpacing = 0.6.sp,
+                                                        color = if (isSelected) ScribeStarNeonRed else ScreenplayTextDark
                                                     )
                                                 )
                                                 Spacer(modifier = Modifier.height(2.dp))
                                                 Text(
                                                     text = when (mode) {
-                                                        ThemeMode.DARK -> "Obsidian & Gold"
-                                                        ThemeMode.LIGHT -> "Warm Papyrus"
-                                                        ThemeMode.SYSTEM -> "System Auto"
+                                                        ThemeMode.DARK -> "Dark Chrome + White Page"
+                                                        ThemeMode.LIGHT -> "Light Chrome + White Page"
+                                                        ThemeMode.SYSTEM -> "Follow OS Appearance"
                                                     },
                                                     style = MaterialTheme.typography.bodySmall.copy(
                                                         fontSize = 10.sp,
                                                         color = ScreenplayTextMuted
                                                     )
                                                 )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(18.dp))
+                                HorizontalDivider(color = ObsidianSurfaceVariant)
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = "STUDIO COLOR PALETTE (6 ARCHITECTURAL THEMES)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = ScreenplayTextMuted
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                val palettes = StudioColorPalette.values().toList()
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    for (rowPalettes in palettes.chunked(2)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            for (palette in rowPalettes) {
+                                                val isPaletteSelected = studioPalette == palette
+                                                val accentColor = palette.darkAccent
+                                                val secondaryColor = palette.secondaryAccent
+                                                val darkSwatch = palette.darkBg
+                                                val lightSwatch = palette.lightBg
+
+                                                Surface(
+                                                    color = if (isPaletteSelected) accentColor.copy(alpha = 0.14f) else ObsidianBlack,
+                                                    shape = RoundedCornerShape(0.dp),
+                                                    border = BorderStroke(
+                                                        if (isPaletteSelected) 1.5.dp else 1.dp,
+                                                        if (isPaletteSelected) accentColor else ObsidianSurfaceVariant
+                                                    ),
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(RoundedCornerShape(0.dp))
+                                                        .clickable {
+                                                            studioPalette = palette
+                                                            ThemePreferences.setStudioPalette(context, palette)
+                                                            onStudioPaletteChanged(palette)
+                                                        }
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(12.dp)
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.SpaceBetween
+                                                        ) {
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = palette.icon,
+                                                                    fontSize = 14.sp,
+                                                                    color = accentColor
+                                                                )
+                                                                Text(
+                                                                    text = palette.displayName.uppercase(),
+                                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                                        fontWeight = FontWeight.ExtraBold,
+                                                                        letterSpacing = 0.6.sp,
+                                                                        color = if (isPaletteSelected) accentColor else ScreenplayTextDark
+                                                                    )
+                                                                )
+                                                            }
+
+                                                            // Swatch squares
+                                                            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .size(12.dp)
+                                                                        .background(darkSwatch)
+                                                                        .border(0.5.dp, Color.White.copy(alpha = 0.3f))
+                                                                )
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .size(12.dp)
+                                                                        .background(lightSwatch)
+                                                                        .border(0.5.dp, Color.Black.copy(alpha = 0.25f))
+                                                                )
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .size(12.dp)
+                                                                        .background(accentColor)
+                                                                )
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .size(12.dp)
+                                                                        .background(secondaryColor)
+                                                                )
+                                                            }
+                                                        }
+                                                        Spacer(modifier = Modifier.height(4.dp))
+                                                        Text(
+                                                            text = palette.subtitle,
+                                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                                fontSize = 11.sp,
+                                                                color = ScreenplayTextMuted
+                                                            )
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -240,13 +371,13 @@ fun StudioSettingsDialog(
                         // 1. MASTER AI TOGGLE CARD
                         Surface(
                             color = ObsidianSurface,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .border(
                                     1.dp,
                                     if (config.isEnabled) ElectrumGold.copy(alpha = 0.5f) else ObsidianSurfaceVariant,
-                                    RoundedCornerShape(8.dp)
+                                    RoundedCornerShape(0.dp)
                                 )
                         ) {
                             Row(
@@ -291,10 +422,10 @@ fun StudioSettingsDialog(
                             // 2. PROVIDER SELECTION CARD
                             Surface(
                                 color = ObsidianSurface,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
@@ -316,10 +447,10 @@ fun StudioSettingsDialog(
                                             val isSelected = config.provider == prov
                                             Surface(
                                                 color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                                shape = RoundedCornerShape(6.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 modifier = Modifier
                                                     .weight(1f)
-                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .clip(RoundedCornerShape(0.dp))
                                                     .clickable {
                                                         updateConfig(
                                                             config.copy(
@@ -331,7 +462,7 @@ fun StudioSettingsDialog(
                                                     .border(
                                                         1.dp,
                                                         if (isSelected) ElectrumGold else ObsidianSurfaceVariant,
-                                                        RoundedCornerShape(6.dp)
+                                                        RoundedCornerShape(0.dp)
                                                     )
                                             ) {
                                                 Column(
@@ -454,14 +585,14 @@ fun StudioSettingsDialog(
                                         for (preset in presets) {
                                             Surface(
                                                 color = if (config.modelName == preset) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                                shape = RoundedCornerShape(4.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .clip(RoundedCornerShape(0.dp))
                                                     .clickable { updateConfig(config.copy(modelName = preset)) }
                                                     .border(
                                                         1.dp,
                                                         if (config.modelName == preset) ElectrumGold else ObsidianSurfaceVariant,
-                                                        RoundedCornerShape(4.dp)
+                                                        RoundedCornerShape(0.dp)
                                                     )
                                             ) {
                                                 Text(
@@ -514,9 +645,9 @@ fun StudioSettingsDialog(
                                     ) {
                                         Surface(
                                             color = ObsidianBlack,
-                                            shape = RoundedCornerShape(6.dp),
+                                            shape = RoundedCornerShape(0.dp),
                                             modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
+                                                .clip(RoundedCornerShape(0.dp))
                                                 .clickable(enabled = !isTesting) {
                                                     isTesting = true
                                                     testStatus = null
@@ -535,7 +666,7 @@ fun StudioSettingsDialog(
                                                         )
                                                     }
                                                 }
-                                                .border(1.dp, ElectrumGold, RoundedCornerShape(6.dp))
+                                                .border(1.dp, ElectrumGold, RoundedCornerShape(0.dp))
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -577,10 +708,10 @@ fun StudioSettingsDialog(
                             // 3. FEATURE TOGGLES CARD
                             Surface(
                                 color = ObsidianSurface,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Text(
@@ -644,10 +775,10 @@ fun StudioSettingsDialog(
                         // 4. PRIVACY & WGA COMPLIANCE PLEDGE
                         Surface(
                             color = ObsidianSurface.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(

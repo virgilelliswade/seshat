@@ -23,12 +23,13 @@ class TitlePageActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeMode = ThemePreferences.getThemeMode(this)
+            val studioPalette = ThemePreferences.getStudioPalette(this)
             val isDark = when (themeMode) {
                 ThemeMode.DARK -> true
                 ThemeMode.LIGHT -> false
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            SeshatTheme(darkTheme = isDark) {
+            SeshatTheme(darkTheme = isDark, studioPalette = studioPalette) {
                 TitlePageScreen(
                     viewModel = titlePageViewModel,
                     onCloseWindow = { finish() }

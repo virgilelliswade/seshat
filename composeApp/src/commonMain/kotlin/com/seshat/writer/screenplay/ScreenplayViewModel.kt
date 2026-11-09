@@ -57,6 +57,7 @@ import com.seshat.writer.novel.NovelRepository
 import com.seshat.writer.tv.TvEpisode
 import com.seshat.writer.tv.TvSeriesProject
 import com.seshat.writer.tv.TvSeriesRepository
+import com.seshat.writer.ui.theme.StudioColorPalette
 import com.seshat.writer.ui.theme.ThemeMode
 import com.seshat.writer.ui.theme.ThemePreferences
 import com.seshat.writer.templates.ProjectTemplate
@@ -189,6 +190,7 @@ data class ScreenplayUiState(
     val isShortcutsDialogOpen: Boolean = false,
     val isAboutDialogOpen: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
+    val studioPalette: StudioColorPalette = StudioColorPalette.SCRIBESTAR_CRIMSON,
     val firstDraftState: FirstDraftState = FirstDraftController.createForStandardProject(
         format = ProjectFormat.SCREENPLAY,
         screenplayType = ScreenplayType.FEATURE
@@ -2380,14 +2382,20 @@ class ScreenplayViewModel : ViewModel() {
 
     fun initTheme(context: Context) {
         val savedMode = ThemePreferences.getThemeMode(context)
-        if (_uiState.value.themeMode != savedMode) {
-            _uiState.update { it.copy(themeMode = savedMode) }
+        val savedPalette = ThemePreferences.getStudioPalette(context)
+        if (_uiState.value.themeMode != savedMode || _uiState.value.studioPalette != savedPalette) {
+            _uiState.update { it.copy(themeMode = savedMode, studioPalette = savedPalette) }
         }
     }
 
     fun setThemeMode(context: Context, mode: ThemeMode) {
         ThemePreferences.setThemeMode(context, mode)
         _uiState.update { it.copy(themeMode = mode) }
+    }
+
+    fun setStudioPalette(context: Context, palette: StudioColorPalette) {
+        ThemePreferences.setStudioPalette(context, palette)
+        _uiState.update { it.copy(studioPalette = palette) }
     }
 
     fun toggleThemeMode(context: Context) {

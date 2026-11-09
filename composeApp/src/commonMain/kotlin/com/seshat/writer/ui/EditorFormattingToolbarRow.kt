@@ -26,11 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.ObsidianSurface
+import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 
 /**
- * Compact, tactile formatting capsule providing 1-tap Bold, Italic, Underline,
- * and Font Size step controls (A- / A+) for mobile touchscreens and desktop.
+ * Compact, tactile formatting bar providing 1-tap Bold, Italic, Underline, Strikethrough,
+ * and Font Size step controls (A- / A+) with squared-off corners.
  */
 @Composable
 fun EditorFormattingToolbarRow(
@@ -43,8 +45,8 @@ fun EditorFormattingToolbarRow(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    val pillBg = if (isDark) Color(0xFF131A26) else Color(0xFFF1F5F9)
-    val pillBorder = if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
+    val pillBg = ObsidianSurface
+    val pillBorder = ObsidianSurfaceVariant
     val textColor = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A)
     val btnPaddingH = if (isCompact) 8.dp else 10.dp
     val btnPaddingV = if (isCompact) 4.dp else 6.dp
@@ -58,10 +60,10 @@ fun EditorFormattingToolbarRow(
         // [ B ] Bold Button
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { formattingController.toggleBold() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -80,10 +82,10 @@ fun EditorFormattingToolbarRow(
         // [ I ] Italic Button
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { formattingController.toggleItalic() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -103,10 +105,10 @@ fun EditorFormattingToolbarRow(
         // [ U ] Underline Button
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { formattingController.toggleUnderline() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -126,10 +128,10 @@ fun EditorFormattingToolbarRow(
         // [ S ] Strikethrough Button
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { formattingController.toggleStrikethrough() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -158,10 +160,10 @@ fun EditorFormattingToolbarRow(
         // [ A- ] Decrease Font Size
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { onDecreaseFontSize() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -180,9 +182,9 @@ fun EditorFormattingToolbarRow(
         // Font Size Badge
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isDark) ScribeStarNeonRed.copy(alpha = 0.18f) else Color(0xFFFEF2F2))
-                .border(BorderStroke(0.8.dp, ScribeStarNeonRed.copy(alpha = 0.5f)), RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(0.dp))
+                .background(ScribeStarNeonRed.copy(alpha = 0.16f))
+                .border(BorderStroke(0.8.dp, ScribeStarNeonRed.copy(alpha = 0.6f)), RoundedCornerShape(0.dp))
                 .clickable { onResetFontSize() }
                 .padding(horizontal = 6.dp, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
@@ -193,7 +195,7 @@ fun EditorFormattingToolbarRow(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = (fontSize.value - 1f).sp,
-                    color = if (isDark) ScribeStarNeonRed else Color(0xFF991B1B)
+                    color = ScribeStarNeonRed
                 )
             )
         }
@@ -201,10 +203,10 @@ fun EditorFormattingToolbarRow(
         // [ A+ ] Increase Font Size
         Box(
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
+                .shadow(4.dp, RoundedCornerShape(0.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(10.dp))
+                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
                 .clickable { onIncreaseFontSize() }
                 .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
             contentAlignment = Alignment.Center
