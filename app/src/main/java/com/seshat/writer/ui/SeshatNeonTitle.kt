@@ -30,21 +30,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.seshat.writer.ui.theme.MainAppFontFamily
-
-/**
- * Custom S E S H A T title banner matching the ScribeStar Media logo design.
- * Alternates between:
- * - Black lettering with hieroglyphic/circuit etchings and glowing white neon outline ('S', 'S', 'A')
- * - Red lettering with glowing stars and radiant scarlet neon outline ('E', 'H', 'T')
- */
+import com.seshat.writer.ui.theme.ActiveStudioPaletteState
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
+import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioColorPalette
 
 /**
  * Custom S E S H A T title banner matching the ScribeStar Media logo design.
  * Alternates between:
- * - Black lettering with hieroglyphic/circuit etchings ('S', 'S', 'A')
- * - Red lettering with glowing stars and radiant scarlet neon outline ('E', 'H', 'T')
+ * - Obsidian lettering with hieroglyphic/circuit etchings ('S', 'S', 'A')
+ * - Accent-lit lettering with glowing stars and radiant neon outline ('E', 'H', 'T')
+ * Adapts dynamically to all 7 Studio Color Palettes (including Obsidian & Ivory Black/White).
  */
 @Composable
 fun SeshatNeonTitle(
@@ -56,6 +53,8 @@ fun SeshatNeonTitle(
 ) {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val palette = ActiveStudioPaletteState.value
+    val accentColor = ScribeStarNeonRed
 
     Row(
         modifier = modifier,
@@ -63,11 +62,13 @@ fun SeshatNeonTitle(
         verticalAlignment = Alignment.CenterVertically
     ) {
         text.forEachIndexed { index, char ->
-            val isBlackHieroglyph = (index % 2 == 0) // Alternates: S(black), E(red), S(black), H(red), A(black), T(red)
+            val isBlackHieroglyph = (index % 2 == 0) // Alternates: S(black), E(accent), S(black), H(accent), A(black), T(accent)
             SeshatNeonLetter(
                 letter = char,
                 isBlackHieroglyph = isBlackHieroglyph,
                 isDark = isDark,
+                palette = palette,
+                accentColor = accentColor,
                 fontSize = fontSize,
                 seed = index * 1337 + char.code,
                 textMeasurer = textMeasurer,
@@ -82,6 +83,8 @@ private fun SeshatNeonLetter(
     letter: Char,
     isBlackHieroglyph: Boolean,
     isDark: Boolean,
+    palette: StudioColorPalette,
+    accentColor: Color,
     fontSize: TextUnit,
     seed: Int,
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
@@ -108,7 +111,7 @@ private fun SeshatNeonLetter(
         androidx.compose.material3.Text(
             text = letter.toString(),
             style = baseStyle.copy(
-                color = if (isBlackHieroglyph) Color.Black else Color(0xFFFF2A3D)
+                color = if (isBlackHieroglyph) Color.Black else accentColor
             )
         )
         return
@@ -117,6 +120,7 @@ private fun SeshatNeonLetter(
     val paddingDp = remember(fontSize) { (fontSize.value * 0.14f).dp.coerceIn(8.dp, 16.dp) }
     val letterWidthDp = with(density) { textLayout.size.width.toDp() + (paddingDp * 2) }
     val letterHeightDp = with(density) { textLayout.size.height.toDp() + (paddingDp * 2) }
+    val isMonochrome = palette == StudioColorPalette.MONOCHROME_STARK
 
     Canvas(
         modifier = Modifier
@@ -138,12 +142,20 @@ private fun SeshatNeonLetter(
             if (isBlackHieroglyph) {
                 drawBlackHieroglyphEtchings(bounds, letterOffset, seed, isDark)
             } else {
-                drawRedStarField(bounds, letterOffset, seed)
+                drawAccentStarField(bounds, letterOffset, seed, accentColor, isMonochrome, isDark)
             }
 
-            // 3. Draw exterior glowing neon outline without measuring inside DrawScope
-            val strokeWidth = 2.2.dp.toPx()
-            val glowWidth = 4.8.dp.toPx()
+            // 3. Draw exterior spatial shadow + glowing neon outline
+            val strokeWidth = 2.0.dp.toPx()
+            val glowWidth = 4.5.dp.toPx()
+
+            // Crisp architectural drop shadow behind letter outline
+            drawText(
+                textLayoutResult = textLayout,
+                color = Color.Black.copy(alpha = if (isDark) 0.70f else 0.35f),
+                topLeft = letterOffset + Offset(0f, 3.dp.toPx()),
+                drawStyle = Stroke(width = strokeWidth * 1.4f)
+            )
 
             if (isBlackHieroglyph) {
                 // Soft white neon halo
@@ -162,18 +174,23 @@ private fun SeshatNeonLetter(
                     drawStyle = Stroke(width = strokeWidth)
                 )
             } else {
-                // Soft scarlet neon glow halo
+                val outlineColor = if (isMonochrome) {
+                    if (isDark) Color(0xFFFFFFFF) else Color(0xFF0F172A)
+                } else {
+                    accentColor
+                }
+                // Soft accent neon glow halo
                 drawText(
                     textLayoutResult = textLayout,
-                    color = Color(0x66FF2A3D),
+                    color = outlineColor.copy(alpha = 0.42f),
                     topLeft = letterOffset,
                     drawStyle = Stroke(width = glowWidth)
                 )
 
-                // Crisp radiant neon scarlet outline
+                // Crisp radiant neon accent outline
                 drawText(
                     textLayoutResult = textLayout,
-                    color = Color(0xFFFF2A3D),
+                    color = outlineColor,
                     topLeft = letterOffset,
                     drawStyle = Stroke(width = strokeWidth)
                 )
@@ -362,18 +379,42 @@ private fun DrawScope.drawBlackHieroglyphEtchings(
 }
 
 /**
- * Draws the radiant scarlet red fill with scattered glowing stars
- * seen in the 'STAR' letters of the ScribeStar logo.
+ * Draws the accent-lit fill with scattered glowing stars
+ * seen in the 'E', 'H', 'T' letters of the S E S H A T logo.
+ * In MONOCHROME_STARK (Obsidian & Ivory), renders a pure ivory/platinum fill with obsidian stars.
  */
-private fun DrawScope.drawRedStarField(bounds: Size, offset: Offset, seed: Int) {
-    // Rich glowing ruby/scarlet red gradient
+private fun DrawScope.drawAccentStarField(
+    bounds: Size,
+    offset: Offset,
+    seed: Int,
+    accentColor: Color,
+    isMonochrome: Boolean,
+    isDark: Boolean
+) {
+    val fillColors = if (isMonochrome) {
+        listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFE2E8F0),
+            Color(0xFFCBD5E1)
+        )
+    } else {
+        listOf(
+            accentColor,
+            accentColor.copy(
+                red = (accentColor.red * 0.82f).coerceIn(0f, 1f),
+                green = (accentColor.green * 0.82f).coerceIn(0f, 1f),
+                blue = (accentColor.blue * 0.82f).coerceIn(0f, 1f)
+            ),
+            accentColor.copy(
+                red = (accentColor.red * 0.55f).coerceIn(0f, 1f),
+                green = (accentColor.green * 0.55f).coerceIn(0f, 1f),
+                blue = (accentColor.blue * 0.55f).coerceIn(0f, 1f)
+            )
+        )
+    }
     drawRect(
         brush = Brush.verticalGradient(
-            colors = listOf(
-                Color(0xFFFF3348),
-                Color(0xFFDC2626),
-                Color(0xFF991B1B)
-            ),
+            colors = fillColors,
             startY = offset.y,
             endY = offset.y + bounds.height
         ),
@@ -401,8 +442,8 @@ private fun DrawScope.drawRedStarField(bounds: Size, offset: Offset, seed: Int) 
         Triple(0.14f, 0.74f, 4.0f)
     )
 
-    val starGlowColor = Color(0xFFFF8595)
-    val starCoreColor = Color(0xFFFFFFFF)
+    val starGlowColor = if (isMonochrome) Color(0xFF475569) else Color.White.copy(alpha = 0.65f)
+    val starCoreColor = if (isMonochrome) Color(0xFF0F172A) else Color(0xFFFFFFFF)
 
     starPositions.forEachIndexed { idx, (relX, relY, radius) ->
         val shift = ((seed * (idx + 7)) % 11) / 55f - 0.1f
@@ -430,7 +471,7 @@ private fun DrawScope.drawRedStarField(bounds: Size, offset: Offset, seed: Int) 
         val cx = ox + w * sx
         val cy = oy + h * sy
         drawCircle(
-            color = Color.White.copy(alpha = 0.85f),
+            color = if (isMonochrome) Color(0xFF1E293B) else Color.White.copy(alpha = 0.85f),
             radius = 1.4f,
             center = Offset(cx, cy),
             blendMode = BlendMode.SrcIn

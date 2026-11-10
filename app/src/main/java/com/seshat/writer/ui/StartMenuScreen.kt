@@ -77,9 +77,15 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -114,8 +120,12 @@ import com.seshat.writer.ui.theme.iconType
 import com.seshat.writer.ui.theme.parseStudioButtonLabel
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.ambientWorkspaceBrush
+import com.seshat.writer.ui.theme.floatingGlassIsland
+import com.seshat.writer.ui.theme.opticalGlassBrush
 import com.seshat.writer.ui.theme.opticalPillBrush
+import com.seshat.writer.ui.theme.prismaticGlassBorder
 import com.seshat.writer.ui.theme.smokedGlassBrush
+import com.seshat.writer.util.PlatformBackHandler
 import com.seshat.writer.templates.ProjectTemplate
 import com.seshat.writer.templates.TemplateRegistry
 import com.seshat.writer.firstdraft.AmbientGenrePreviewCanvas
@@ -158,7 +168,8 @@ fun StartMenuScreen(
 ) {
     val context = LocalContext.current
     var areButtonsVisible by remember { mutableStateOf(true) }
-    var currentStep by remember { mutableStateOf(StartMenuStep.TOP_LEVEL) }
+    var navigationStack by remember { mutableStateOf(listOf(StartMenuStep.TOP_LEVEL)) }
+    val currentStep = navigationStack.lastOrNull() ?: StartMenuStep.TOP_LEVEL
     var selectedFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
     var selectedScreenplayType by remember { mutableStateOf<ScreenplayType?>(ScreenplayType.FEATURE) }
     var selectedTemplate by remember { mutableStateOf<ProjectTemplate?>(null) }
@@ -166,6 +177,24 @@ fun StartMenuScreen(
     var showLibraryDialog by remember { mutableStateOf(false) }
     var isUniverseMode by remember { mutableStateOf(false) }
     var pendingCampaignLaunch by remember { mutableStateOf<PendingCampaignLaunch?>(null) }
+
+    val navigateTo: (StartMenuStep) -> Unit = { step ->
+        if (navigationStack.lastOrNull() != step) {
+            navigationStack = navigationStack + step
+        }
+    }
+
+    val navigateBack: () -> Unit = {
+        if (navigationStack.size > 1) {
+            navigationStack = navigationStack.dropLast(1)
+        }
+    }
+
+    PlatformBackHandler(
+        enabled = navigationStack.size > 1 && !showLibraryDialog && !uiState.isSettingsDialogOpen && pendingCampaignLaunch == null
+    ) {
+        navigateBack()
+    }
 
     val buttonsAlpha by animateFloatAsState(
         targetValue = if (areButtonsVisible) 1f else 0f,
@@ -224,6 +253,20 @@ fun StartMenuScreen(
         modifier = modifier
             .fillMaxSize()
             .then(backgroundModifier)
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown &&
+                    event.key == Key.Escape &&
+                    navigationStack.size > 1 &&
+                    !showLibraryDialog &&
+                    !uiState.isSettingsDialogOpen &&
+                    pendingCampaignLaunch == null
+                ) {
+                    navigateBack()
+                    true
+                } else {
+                    false
+                }
+            }
             .then(
                 if (!areButtonsVisible) {
                     Modifier.clickable(
@@ -248,12 +291,31 @@ fun StartMenuScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Dynamic Scrim over Studio & Statue: Completely clear during 5s hero intro,
-        // then smoothly fades in as buttons appear so all text and cards have 100% legibility
+        // Concept C Frosted Atmospheric Scrim: Smoothly adapts to Dark/Light Mode + Active Studio Palette
+        // while keeping Goddess Seshat clearly visible beneath the floating glass islands
+        val activePalette = com.seshat.writer.ui.theme.ActiveStudioPaletteState.value
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background((if (isDark) Color.Black else Color.White).copy(alpha = scrimAlpha))
+                .background(
+                    if (isDark) {
+                        Brush.verticalGradient(
+                            listOf(
+                                activePalette.darkBg.copy(alpha = (scrimAlpha + 0.12f).coerceAtMost(0.75f)),
+                                activePalette.darkAccent.copy(alpha = 0.08f),
+                                activePalette.darkBg.copy(alpha = (scrimAlpha + 0.15f).coerceAtMost(0.78f))
+                            )
+                        )
+                    } else {
+                        Brush.verticalGradient(
+                            listOf(
+                                activePalette.lightDesk.copy(alpha = 0.72f),
+                                activePalette.lightBg.copy(alpha = 0.54f),
+                                activePalette.lightDesk.copy(alpha = 0.76f)
+                            )
+                        )
+                    }
+                )
         )
 
         // =========================================================================
@@ -327,17 +389,12 @@ fun StartMenuScreen(
 
                 Box(
                     modifier = Modifier
-                        .neonBloom(
-                            color = ScribeStarNeonRed,
-                            cornerRadius = 0.dp,
-                            glowRadius = 6.dp,
-                            strokeWidth = 1.4.dp,
-                            outerAlpha = 0.22f,
-                            midAlpha = 0.42f
+                        .floatingGlassIsland(
+                            isDark = isDark,
+                            elevation = 12.dp,
+                            accentColor = ScribeStarNeonRed,
+                            isHighlighted = true
                         )
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(if (isDark) smokedGlassBrush(glassOpacity = 0.92f) else opticalPillBrush(isDark = false))
-                        .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = "W R I T I N G   S T U D I O",
@@ -401,34 +458,34 @@ fun StartMenuScreen(
                                             if (format == ProjectFormat.NOVEL) {
                                                 projectTitleInput = ""
                                                 isUniverseMode = false
-                                                currentStep = StartMenuStep.NOVEL_SELECT
+                                                navigateTo(StartMenuStep.NOVEL_SELECT)
                                             } else {
                                                 selectedFormat = format
                                                 selectedScreenplayType = type
                                                 selectedTemplate = TemplateRegistry.getBlankTemplate(format, type)
                                                 isUniverseMode = false
-                                                currentStep = StartMenuStep.WORKSPACE_VIEW
+                                                navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                             }
                                         },
                                         onSelectUniverse = {
                                             isUniverseMode = true
-                                            currentStep = StartMenuStep.UNIVERSE_SELECT
+                                            navigateTo(StartMenuStep.UNIVERSE_SELECT)
                                         },
                                         onSelectSparkFormat = { format, type, isUniverse ->
                                             selectedFormat = format
                                             selectedScreenplayType = type
                                             isUniverseMode = isUniverse
                                             projectTitleInput = ""
-                                            currentStep = StartMenuStep.SPARK_NEW_SETUP
+                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
                                         },
                                         onNewProject = {
                                             projectTitleInput = ""
                                             isUniverseMode = false
-                                            currentStep = StartMenuStep.FORMAT_SELECT
+                                            navigateTo(StartMenuStep.FORMAT_SELECT)
                                         },
                                         onOpenSparkMode = {
                                             projectTitleInput = ""
-                                            currentStep = StartMenuStep.SPARK_HUB
+                                            navigateTo(StartMenuStep.SPARK_HUB)
                                         },
                                         onOpenLibrary = {
                                             showLibraryDialog = true
@@ -461,31 +518,31 @@ fun StartMenuScreen(
                                         selectedScreenplayType = ScreenplayType.FEATURE
                                         selectedTemplate = TemplateRegistry.BLANK_FEATURE
                                         isUniverseMode = false
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectUniverse = {
                                         isUniverseMode = true
-                                        currentStep = StartMenuStep.UNIVERSE_SELECT
+                                        navigateTo(StartMenuStep.UNIVERSE_SELECT)
                                     },
                                     onSelectStagePlay = {
                                         selectedFormat = ProjectFormat.STAGE_PLAY
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_STAGE_PLAY
                                         isUniverseMode = false
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectComicBook = {
                                         selectedFormat = ProjectFormat.COMIC_BOOK
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_COMIC_BOOK
                                         isUniverseMode = false
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectNovel = {
                                         projectTitleInput = ""
-                                        currentStep = StartMenuStep.NOVEL_SELECT
+                                        navigateTo(StartMenuStep.NOVEL_SELECT)
                                     },
-                                    onBack = { currentStep = StartMenuStep.TOP_LEVEL }
+                                    onBack = navigateBack
                                 )
                             }
 
@@ -496,16 +553,16 @@ fun StartMenuScreen(
                                         selectedScreenplayType = ScreenplayType.FEATURE
                                         selectedTemplate = TemplateRegistry.BLANK_FEATURE
                                         isUniverseMode = true
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectTelevisionUniverse = {
                                         selectedFormat = ProjectFormat.TV_SERIES
                                         selectedScreenplayType = ScreenplayType.TV_HOUR_DRAMA
                                         selectedTemplate = TemplateRegistry.BLANK_TV
                                         isUniverseMode = true
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
-                                    onBack = { currentStep = StartMenuStep.FORMAT_SELECT }
+                                    onBack = navigateBack
                                 )
                             }
 
@@ -516,16 +573,16 @@ fun StartMenuScreen(
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_NOVEL
                                         isUniverseMode = false
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectNovelSeries = {
                                         selectedFormat = ProjectFormat.NOVEL
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_NOVEL
                                         isUniverseMode = true
-                                        currentStep = StartMenuStep.WORKSPACE_VIEW
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
-                                    onBack = { currentStep = StartMenuStep.FORMAT_SELECT }
+                                    onBack = navigateBack
                                 )
                             }
 
@@ -534,7 +591,7 @@ fun StartMenuScreen(
                                     headerTitle = "TELEVISION SERIES FORMAT",
                                     headerSubtitle = "Select your show pacing, episodic deck structure, and seasonal arc",
                                     showBackButton = true,
-                                    onBack = { currentStep = if (isUniverseMode) StartMenuStep.UNIVERSE_SELECT else StartMenuStep.FORMAT_SELECT }
+                                    onBack = navigateBack
                                 ) {
                                     StartMenuBigButton(
                                         badgeText = "📺",
@@ -544,7 +601,7 @@ fun StartMenuScreen(
                                         onClick = {
                                             selectedScreenplayType = ScreenplayType.TV_HOUR_DRAMA
                                             selectedTemplate = TemplateRegistry.BLANK_TV
-                                            currentStep = StartMenuStep.WORKSPACE_VIEW
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                         }
                                     )
 
@@ -558,7 +615,7 @@ fun StartMenuScreen(
                                         onClick = {
                                             selectedScreenplayType = ScreenplayType.TV_HALF_HOUR_COMEDY
                                             selectedTemplate = TemplateRegistry.BLANK_TV
-                                            currentStep = StartMenuStep.WORKSPACE_VIEW
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                         }
                                     )
                                 }
@@ -579,15 +636,7 @@ fun StartMenuScreen(
                                     headerTitle = "CHOOSE TEMPLATE • $formatName",
                                     headerSubtitle = "Start with a clean blank page or select a structured storytelling framework",
                                     showBackButton = true,
-                                    onBack = {
-                                        if (selectedFormat == ProjectFormat.TV_SERIES) {
-                                            currentStep = StartMenuStep.SCREENPLAY_TYPE
-                                        } else if (isUniverseMode) {
-                                            currentStep = StartMenuStep.UNIVERSE_SELECT
-                                        } else {
-                                            currentStep = StartMenuStep.FORMAT_SELECT
-                                        }
-                                    }
+                                    onBack = navigateBack
                                 ) {
                                     templates.forEach { tmpl ->
                                         StartMenuBigButton(
@@ -597,7 +646,7 @@ fun StartMenuScreen(
                                             badgeColor = tmpl.badgeColor,
                                             onClick = {
                                                 selectedTemplate = tmpl
-                                                currentStep = StartMenuStep.WORKSPACE_VIEW
+                                                navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                             }
                                         )
                                         Spacer(modifier = Modifier.height(14.dp))
@@ -625,15 +674,7 @@ fun StartMenuScreen(
                                         )
                                         onCloseMenu()
                                     },
-                                    onBack = {
-                                        if (selectedFormat == ProjectFormat.NOVEL) {
-                                            currentStep = StartMenuStep.NOVEL_SELECT
-                                        } else if (isUniverseMode) {
-                                            currentStep = StartMenuStep.UNIVERSE_SELECT
-                                        } else {
-                                            currentStep = StartMenuStep.FORMAT_SELECT
-                                        }
-                                    }
+                                    onBack = navigateBack
                                 )
                             }
 
@@ -647,7 +688,7 @@ fun StartMenuScreen(
                                     savedSparkProjects = savedSparkProjects,
                                     onStartNewSpark = {
                                         projectTitleInput = ""
-                                        currentStep = StartMenuStep.SPARK_NEW_SETUP
+                                        navigateTo(StartMenuStep.SPARK_NEW_SETUP)
                                     },
                                     onContinueActiveSpark = {
                                         onCloseMenu()
@@ -656,7 +697,7 @@ fun StartMenuScreen(
                                         viewModel.resumeSparkProject(context, sparkState)
                                         onCloseMenu()
                                     },
-                                    onBack = { currentStep = StartMenuStep.TOP_LEVEL }
+                                    onBack = navigateBack
                                 )
                             }
 
@@ -676,7 +717,7 @@ fun StartMenuScreen(
                                             title = projectTitleInput
                                         )
                                     },
-                                    onBack = { currentStep = StartMenuStep.TOP_LEVEL }
+                                    onBack = navigateBack
                                 )
                             }
                         }
@@ -880,21 +921,16 @@ private fun WorkspaceViewContent(
         showBackButton = true,
         onBack = onBack
     ) {
-        // Optional Project Title Input - High Contrast
-        Surface(
-            color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
-            shape = RoundedCornerShape(0.dp),
-            border = BorderStroke(1.4.dp, ScribeStarNeonRed.copy(alpha = 0.70f)),
+        // Optional Project Title Input - Concept C Floating Glass Island with Drop Shadow
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
-                .neonBloom(
-                    color = ScribeStarNeonRed,
-                    cornerRadius = 0.dp,
-                    glowRadius = 6.dp,
-                    strokeWidth = 1.4.dp,
-                    outerAlpha = 0.12f,
-                    midAlpha = 0.28f
+                .floatingGlassIsland(
+                    isDark = isDark,
+                    elevation = 12.dp,
+                    accentColor = ScribeStarNeonRed,
+                    isHighlighted = projectTitleInput.isNotBlank()
                 )
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
@@ -1153,34 +1189,41 @@ private fun SparkNewSetupContent(
                 ) {
                     rowGenres.forEach { genre ->
                         val isSelected = selectedGenre == genre
-                        Surface(
-                            color = if (isSelected) {
-                                Color(0xFF450E1A).copy(alpha = 0.92f)
-                            } else if (isDark) {
-                                Color(0xFF0F172A).copy(alpha = 0.80f)
-                            } else {
-                                ObsidianSurface.copy(alpha = 0.90f)
-                            },
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(
-                                width = if (isSelected) 1.8.dp else 1.dp,
-                                color = if (isSelected) ElectrumGold else Color(0xFF334155)
-                            ),
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .then(
-                                    if (isSelected) {
-                                        Modifier.neonBloom(
-                                            color = ElectrumGold,
-                                            cornerRadius = 0.dp,
-                                            glowRadius = 8.dp,
-                                            strokeWidth = 1.6.dp,
-                                            outerAlpha = 0.25f,
-                                            midAlpha = 0.55f
-                                        )
-                                    } else Modifier
+                                .shadow(
+                                    elevation = if (isSelected) 12.dp else 6.dp,
+                                    shape = RoundedCornerShape(0.dp),
+                                    ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.18f),
+                                    spotColor = if (isSelected) ScribeStarNeonRed else Color.Black.copy(alpha = if (isDark) 0.80f else 0.24f)
+                                )
+                                .neonBloom(
+                                    color = if (isSelected) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
+                                    cornerRadius = 0.dp,
+                                    glowRadius = if (isSelected) 12.dp else 5.dp,
+                                    strokeWidth = if (isSelected) 1.6.dp else 1.dp,
+                                    outerAlpha = if (isSelected) 0.30f else 0.08f,
+                                    midAlpha = if (isSelected) 0.55f else 0.16f,
+                                    coreAlpha = if (isSelected) 0.90f else 0.35f
                                 )
                                 .clip(RoundedCornerShape(0.dp))
+                                .background(
+                                    if (isSelected) {
+                                        opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                                    } else {
+                                        opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.90f)
+                                    }
+                                )
+                                .border(
+                                    prismaticGlassBorder(
+                                        width = if (isSelected) 1.6.dp else 1.dp,
+                                        isLit = isSelected,
+                                        accentColor = ScribeStarNeonRed,
+                                        isDark = isDark
+                                    ),
+                                    RoundedCornerShape(0.dp)
+                                )
                                 .clickable { selectedGenre = genre }
                         ) {
                             Row(
@@ -1198,7 +1241,7 @@ private fun SparkNewSetupContent(
                                         style = MaterialTheme.typography.labelLarge.copy(
                                             fontFamily = MainAppFontFamily,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = if (isSelected) Color.White else Color(0xFFE2E8F0),
+                                            color = if (isSelected || isDark) Color.White else Color(0xFF0F172A),
                                             fontSize = 12.5.sp
                                         ),
                                         maxLines = 1,
@@ -1209,7 +1252,7 @@ private fun SparkNewSetupContent(
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = MainAppFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isSelected) ElectrumGold else Color(0xFF94A3B8),
+                                            color = if (isSelected) Color.White.copy(alpha = 0.90f) else (if (isDark) ElectrumGold else Color(0xFF475569)),
                                             fontSize = 10.sp,
                                             letterSpacing = 0.4.sp
                                         ),
@@ -1224,21 +1267,27 @@ private fun SparkNewSetupContent(
             }
         }
 
-        // 2. LIVE CAMPAIGN BRIEFING CARD (with Ambient Procedural Genre Transition Backdrop)
+        // 2. LIVE CAMPAIGN BRIEFING CARD (with Elevated Shadow & Ambient Procedural Genre Transition Backdrop)
         Surface(
             color = Color(0xFF0A0F1A).copy(alpha = 0.94f),
             shape = RoundedCornerShape(0.dp),
-            border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.75f)),
+            border = prismaticGlassBorder(width = 1.2.dp, isLit = true, isDark = true),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 14.dp)
+                .shadow(
+                    elevation = 14.dp,
+                    shape = RoundedCornerShape(0.dp),
+                    ambientColor = Color.Black.copy(alpha = if (isDark) 0.75f else 0.25f),
+                    spotColor = Color.Black.copy(alpha = if (isDark) 0.85f else 0.32f)
+                )
                 .neonBloom(
                     color = ScribeStarNeonRed,
                     cornerRadius = 0.dp,
-                    glowRadius = 6.dp,
-                    strokeWidth = 1.4.dp,
-                    outerAlpha = 0.14f,
-                    midAlpha = 0.30f
+                    glowRadius = 10.dp,
+                    strokeWidth = 1.2.dp,
+                    outerAlpha = 0.16f,
+                    midAlpha = 0.32f
                 )
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -1355,21 +1404,24 @@ private fun SparkNewSetupContent(
             }
         }
 
-        // 3. OPTIONAL PROJECT TITLE INPUT
-        Surface(
-            color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
-            shape = RoundedCornerShape(0.dp),
-            border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.85f)),
+        // 3. OPTIONAL PROJECT TITLE INPUT - Concept C Floating Glass Island with Drop Shadow
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 14.dp)
+                .floatingGlassIsland(
+                    isDark = isDark,
+                    elevation = 12.dp,
+                    accentColor = ScribeStarNeonRed,
+                    isHighlighted = projectTitleInput.isNotBlank()
+                )
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = "CAMPAIGN PROJECT TITLE (OPTIONAL)",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        color = ElectrumGold,
+                        color = ScribeStarNeonRed,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.1.sp
                     )
@@ -1495,24 +1547,32 @@ private fun StartMenuTopBarButton(
                 scaleX = scale
                 scaleY = scale
             }
+            .shadow(
+                elevation = if (isLit) 12.dp else 7.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.82f else 0.25f)
+            )
             .neonBloom(
-                color = accentColor,
+                color = if (isLit) accentColor else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isLit) 1.0f else 0.80f
+                coreAlpha = if (isLit) 0.95f else 0.45f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = accentColor)
+                if (isLit) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = accentColor)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.84f else 0.92f)
             )
             .border(
-                BorderStroke(
-                    strokeWidth,
-                    if (isDark) (if (isLit) accentColor else accentColor.copy(alpha = 0.70f))
-                    else (if (isLit) accentColor else Color(0xFFCBD5E1))
+                prismaticGlassBorder(
+                    width = strokeWidth,
+                    isLit = isLit,
+                    accentColor = accentColor,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )
@@ -1609,24 +1669,32 @@ private fun StartMenuBackButton(
                 scaleY = scale
             }
             .size(42.dp)
+            .shadow(
+                elevation = if (isLit) 12.dp else 6.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.82f else 0.25f)
+            )
             .neonBloom(
-                color = ScribeStarNeonRed,
+                color = if (isLit) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isLit) 1.0f else 0.80f
+                coreAlpha = if (isLit) 0.95f else 0.45f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = ScribeStarNeonRed)
+                if (isLit) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.84f else 0.92f)
             )
             .border(
-                BorderStroke(
-                    strokeWidth,
-                    if (isDark) (if (isLit) ScribeStarNeonRed else ScribeStarNeonRed.copy(alpha = 0.65f))
-                    else (if (isLit) ScribeStarNeonRed else Color(0xFFCBD5E1))
+                prismaticGlassBorder(
+                    width = strokeWidth,
+                    isLit = isLit,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
                 ),
                 RoundedCornerShape(0.dp)
             )
@@ -1647,8 +1715,8 @@ private fun StartMenuBackButton(
 }
 
 /**
- * Standard layout wrapper for Start Menu steps with breadcrumbs and centered content,
- * overlaid directly on top of the permanent head-to-toe Goddess Seshat background.
+ * Standard layout wrapper for Start Menu steps with a Concept C Floating Glass Island header
+ * and centered content overlaid cleanly on top of the Goddess Seshat artwork.
  */
 @Composable
 private fun StartMenuLayout(
@@ -1672,36 +1740,43 @@ private fun StartMenuLayout(
                 .padding(horizontal = 20.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with Back Navigation and Title
-            Row(
+            // Concept C Floating Glass Island Header with Back Navigation and Title
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = 14.dp)
+                    .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
             ) {
-                if (showBackButton) {
-                    StartMenuBackButton(onClick = onBack)
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (showBackButton) {
+                        StartMenuBackButton(onClick = onBack)
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = headerTitle,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.2.sp,
-                            color = if (isDark) Color.White else BrandAccent,
-                            fontSize = 18.sp
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = headerTitle,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.2.sp,
+                                color = if (isDark) Color.White else Color(0xFF0F172A),
+                                fontSize = 18.sp
+                            )
                         )
-                    )
-                    Text(
-                        text = headerSubtitle,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = if (isDark) Color(0xFFCBD5E1) else ScreenplayTextMuted,
-                            letterSpacing = 0.5.sp,
-                            fontSize = 13.sp
+                        Text(
+                            text = headerSubtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = if (isDark) Color(0xFFCBD5E1) else ScreenplayTextMuted,
+                                letterSpacing = 0.4.sp,
+                                fontSize = 12.5.sp
+                            )
                         )
-                    )
+                    }
                 }
             }
 
@@ -1760,23 +1835,32 @@ private fun StartMenuSleekCapsuleButton(
             }
             .fillMaxWidth()
             .height(58.dp)
+            .shadow(
+                elevation = if (isHighlighted) 16.dp else 9.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.85f else 0.28f)
+            )
             .neonBloom(
-                color = ScribeStarNeonRed,
+                color = if (isHighlighted) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.80f
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.84f else 0.92f)
             )
             .border(
-                BorderStroke(
-                    strokeWidth,
-                    if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.70f) else Color(0xFFCBD5E1)
+                prismaticGlassBorder(
+                    width = strokeWidth,
+                    isLit = isHighlighted,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )
@@ -1925,23 +2009,32 @@ private fun StartMenuBigButton(
                 scaleY = scale
             }
             .fillMaxWidth()
+            .shadow(
+                elevation = if (isHighlighted) 18.dp else 10.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.74f else 0.20f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.86f else 0.28f)
+            )
             .neonBloom(
-                color = ScribeStarNeonRed,
+                color = if (isHighlighted) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.80f
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.84f else 0.92f)
             )
             .border(
-                BorderStroke(
+                prismaticGlassBorder(
                     width = strokeWidth,
-                    color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.70f) else Color(0xFFCBD5E1)
+                    isLit = isHighlighted,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )
@@ -2123,12 +2216,7 @@ private fun SplashColumnHeaderPill(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    val borderColor = if (isSpark) ElectrumGold.copy(alpha = 0.85f) else ScribeStarNeonRed.copy(alpha = 0.65f)
-    val bgBrush = if (isSpark) {
-        opticalPillBrush(isDark = isDark, isHighlighted = false, highlightColor = ElectrumGold)
-    } else {
-        opticalPillBrush(isDark = isDark, isHighlighted = false, highlightColor = ScribeStarNeonRed)
-    }
+    val headerAccent = if (isSpark) ElectrumGold else ScribeStarNeonRed
 
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -2140,12 +2228,26 @@ private fun SplashColumnHeaderPill(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = if (isPopupVisible) 12.dp else 8.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.82f else 0.26f)
+            )
+            .neonBloom(
+                color = if (isPopupVisible) headerAccent else (if (isDark) Color.White else Color(0xFF64748B)),
+                cornerRadius = 0.dp,
+                glowRadius = if (isPopupVisible) 10.dp else 5.dp,
+                coreAlpha = if (isPopupVisible) 0.90f else 0.40f
+            )
             .clip(RoundedCornerShape(0.dp))
-            .background(bgBrush)
+            .background(opticalGlassBrush(glassOpacity = if (isDark) 0.86f else 0.92f))
             .border(
-                BorderStroke(
-                    width = if (isPopupVisible) 1.8.dp else 1.2.dp,
-                    color = if (isPopupVisible) (if (isSpark) ElectrumGold else ScribeStarNeonRed) else borderColor
+                prismaticGlassBorder(
+                    width = if (isPopupVisible) 1.5.dp else 1.1.dp,
+                    isLit = isPopupVisible,
+                    accentColor = headerAccent,
+                    isDark = isDark
                 ),
                 RoundedCornerShape(0.dp)
             )
@@ -2759,27 +2861,7 @@ private fun ConceptBActionDock(
     val isDark = LocalSeshatDarkTheme.current
     Box(
         modifier = modifier
-            .neonBloom(
-                color = Color.Black,
-                cornerRadius = 0.dp,
-                glowRadius = 10.dp,
-                outerAlpha = 0.35f,
-                midAlpha = 0.60f
-            )
-            .clip(RoundedCornerShape(0.dp))
-            .background(
-                if (isDark) smokedGlassBrush(glassOpacity = 0.90f)
-                else Brush.verticalGradient(
-                    listOf(Color(0xF5FFFFFF), Color(0xE8F1F5F9))
-                )
-            )
-            .border(
-                BorderStroke(
-                    1.2.dp,
-                    if (isDark) ObsidianSurfaceVariant else Color(0x7094A3B8)
-                ),
-                RoundedCornerShape(0.dp)
-            )
+            .floatingGlassIsland(isDark = isDark, elevation = 18.dp)
             .padding(horizontal = if (isCompact) 6.dp else 8.dp, vertical = if (isCompact) 5.dp else 6.dp)
     ) {
         Row(
@@ -2832,12 +2914,19 @@ private fun ConceptBPrimaryPill(
         label = "PrimaryPillGlow"
     )
 
+    val isDark = LocalSeshatDarkTheme.current
     Box(
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
+            .shadow(
+                elevation = if (isLit) 12.dp else 7.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.20f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.85f else 0.28f)
+            )
             .neonBloom(
                 color = ScribeStarNeonRed,
                 cornerRadius = 0.dp,
@@ -2849,13 +2938,14 @@ private fun ConceptBPrimaryPill(
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                Brush.verticalGradient(
-                    if (isLit) listOf(ScribeStarNeonRed, ScribeStarNeonRed.copy(alpha = 0.85f))
-                    else listOf(ScribeStarNeonRed.copy(alpha = 0.92f), ScribeStarNeonRed.copy(alpha = 0.78f))
-                )
+                opticalPillBrush(isDark = isDark, isPrimary = true, isHighlighted = isLit)
             )
             .border(
-                BorderStroke(1.2.dp, if (isLit) Color.White else ScribeStarNeonRed),
+                prismaticGlassBorder(
+                    width = if (isLit) 1.4.dp else 1.2.dp,
+                    isLit = true,
+                    isDark = isDark
+                ),
                 RoundedCornerShape(0.dp)
             )
             .clickable(
@@ -2914,26 +3004,32 @@ private fun ConceptBGlassPill(
                 scaleX = scale
                 scaleY = scale
             }
-            .then(
-                if (isLit) {
-                    Modifier.neonBloom(
-                        color = accentColor,
-                        cornerRadius = 0.dp,
-                        glowRadius = glowRadius,
-                        strokeWidth = 1.2.dp,
-                        outerAlpha = 0.35f,
-                        midAlpha = 0.70f
-                    )
-                } else Modifier
+            .shadow(
+                elevation = if (isLit) 10.dp else 5.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.68f else 0.16f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.78f else 0.24f)
+            )
+            .neonBloom(
+                color = if (isLit) accentColor else (if (isDark) Color.White else Color(0xFF64748B)),
+                cornerRadius = 0.dp,
+                glowRadius = if (isLit) glowRadius else 4.dp,
+                strokeWidth = 1.1.dp,
+                outerAlpha = if (isLit) 0.35f else 0.08f,
+                midAlpha = if (isLit) 0.70f else 0.16f,
+                coreAlpha = if (isLit) 0.90f else 0.35f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isLit, highlightColor = accentColor)
+                if (isLit) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = accentColor)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.92f)
             )
             .border(
-                BorderStroke(
-                    1.1.dp,
-                    if (isLit) accentColor else if (isDark) ObsidianSurfaceVariant else Color(0xFF94A3B8)
+                prismaticGlassBorder(
+                    width = 1.1.dp,
+                    isLit = isLit,
+                    accentColor = accentColor,
+                    isDark = isDark
                 ),
                 RoundedCornerShape(0.dp)
             )
@@ -3018,26 +3114,32 @@ private fun GlassFormatCard(
                 scaleY = scale
             }
             .height(if (isCompact) 48.dp else 56.dp)
+            .shadow(
+                elevation = if (isHighlighted) 18.dp else 10.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.78f else 0.20f),
+                spotColor = if (isHighlighted) primaryGlowColor else Color.Black.copy(alpha = if (isDark) 0.88f else 0.28f)
+            )
             .neonBloom(
-                color = primaryGlowColor,
+                color = if (isHighlighted) primaryGlowColor else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.75f
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = primaryGlowColor)
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = primaryGlowColor)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.91f)
             )
             .border(
-                BorderStroke(
+                prismaticGlassBorder(
                     width = strokeWidth,
-                    color = if (isHighlighted) primaryGlowColor
-                    else if (isSparkCard) ElectrumGold.copy(alpha = 0.72f)
-                    else if (isDark) ScribeStarNeonRed.copy(alpha = 0.55f)
-                    else Color(0xFFCBD5E1)
+                    isLit = isHighlighted,
+                    accentColor = primaryGlowColor,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )
@@ -3110,16 +3212,19 @@ private fun GlassFormatCard(
             if (!isCompact && badgeTag.isNotBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Surface(
-                    color = ElectrumGold.copy(alpha = 0.18f),
+                    color = if (isHighlighted) Color.White.copy(alpha = 0.16f) else ElectrumGold.copy(alpha = 0.18f),
                     shape = RoundedCornerShape(0.dp),
-                    border = BorderStroke(0.8.dp, ElectrumGold.copy(alpha = 0.55f))
+                    border = BorderStroke(
+                        0.8.dp,
+                        if (isHighlighted) Color.White.copy(alpha = 0.65f) else ElectrumGold.copy(alpha = 0.55f)
+                    )
                 ) {
                     Text(
                         text = badgeTag,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
                             fontWeight = FontWeight.SemiBold,
-                            color = ElectrumGold,
+                            color = if (isHighlighted) Color.White else ElectrumGold,
                             fontSize = 10.sp
                         ),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -3345,23 +3450,32 @@ private fun GlassProjectCard(
                 scaleY = scale
             }
             .height(105.dp)
+            .shadow(
+                elevation = if (isHighlighted) 16.dp else 9.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.74f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.86f else 0.28f)
+            )
             .neonBloom(
-                color = ScribeStarNeonRed,
+                color = if (isHighlighted) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.75f
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.91f)
             )
             .border(
-                BorderStroke(
+                prismaticGlassBorder(
                     width = strokeWidth,
-                    color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.65f) else Color(0xFFCBD5E1)
+                    isLit = isHighlighted,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )
@@ -3490,23 +3604,32 @@ private fun GlassStarterCard(
                 scaleY = scale
             }
             .height(105.dp)
+            .shadow(
+                elevation = if (isHighlighted) 16.dp else 9.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.74f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.86f else 0.28f)
+            )
             .neonBloom(
-                color = ScribeStarNeonRed,
+                color = if (isHighlighted) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
                 cornerRadius = 0.dp,
                 glowRadius = glowRadius,
                 strokeWidth = strokeWidth,
                 outerAlpha = outerAlpha,
                 midAlpha = midAlpha,
-                coreAlpha = if (isHighlighted) 1.0f else 0.75f
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(
-                opticalPillBrush(isDark = isDark, isHighlighted = isHighlighted, highlightColor = ScribeStarNeonRed)
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.91f)
             )
             .border(
-                BorderStroke(
+                prismaticGlassBorder(
                     width = strokeWidth,
-                    color = if (isHighlighted) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.65f) else Color(0xFFCBD5E1)
+                    isLit = isHighlighted,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
                 ),
                 shape = RoundedCornerShape(0.dp)
             )

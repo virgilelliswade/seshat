@@ -266,6 +266,7 @@ fun StudioSettingsDialog(
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
 
+                                val isDark = com.seshat.writer.ui.theme.LocalSeshatDarkTheme.current
                                 val palettes = StudioColorPalette.values().toList()
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     for (rowPalettes in palettes.chunked(2)) {
@@ -275,7 +276,7 @@ fun StudioSettingsDialog(
                                         ) {
                                             for (palette in rowPalettes) {
                                                 val isPaletteSelected = studioPalette == palette
-                                                val accentColor = palette.darkAccent
+                                                val accentColor = if (isDark) palette.darkAccent else palette.lightAccent
                                                 val secondaryColor = palette.secondaryAccent
                                                 val darkSwatch = palette.darkBg
                                                 val lightSwatch = palette.lightBg

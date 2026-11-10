@@ -3,6 +3,13 @@ package com.seshat.writer.util
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
+
+@Composable
+fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
+    BackHandler(enabled = enabled, onBack = onBack)
+}
 
 object DeviceEnvironment {
 

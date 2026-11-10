@@ -1,6 +1,12 @@
 package com.seshat.writer.util
 
 import android.content.Context
+import androidx.compose.runtime.Composable
+
+@Composable
+fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
+    // Desktop handles Escape key via Window / onPreviewKeyEvent
+}
 
 object DeviceEnvironment {
 
