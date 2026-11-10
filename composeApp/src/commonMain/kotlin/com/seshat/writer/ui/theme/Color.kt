@@ -9,14 +9,18 @@ val LocalSeshatDarkTheme = staticCompositionLocalOf { true }
 val LocalStudioPalette = staticCompositionLocalOf { StudioColorPalette.SCRIBESTAR_CRIMSON }
 
 // =========================================================================
-// DYNAMIC STUDIO PALETTE & PRECISION ARCHITECTURE
-// ScribeStar Crimson default, plus Swiss Cobalt, Warm Atelier, Nocturne Emerald,
-// Astral Amethyst, and Monolith Titanium.
+// DYNAMIC STUDIO PALETTE & HARD-CORNERED GLASS ARCHITECTURE
+// Supports ScribeStar Crimson, Obsidian & Ivory (Black & White), Swiss Cobalt,
+// Warm Atelier, Nocturne Emerald, Astral Amethyst, and Cyber Cyan in Dark & Light modes.
 // =========================================================================
 
-// Core Dynamic Brand Accents (Backed by Compose Snapshot State for universal access)
+// Core Dynamic Brand Accents (Adapts automatically to Dark Mode vs Light Mode!)
 val ScribeStarNeonRed: Color
-    get() = ActiveStudioPaletteState.value.darkAccent
+    get() = if (ActiveDarkThemeState.value) {
+        ActiveStudioPaletteState.value.darkAccent
+    } else {
+        ActiveStudioPaletteState.value.lightAccent
+    }
 
 val ScribeStarCrimson: Color
     get() = ActiveStudioPaletteState.value.lightAccent
@@ -45,7 +49,7 @@ val RawObsidianSurfaceVariant: Color
 val RawScreenplayTextDark = Color(0xFFF8FAFC)
 val RawScreenplayTextMuted = Color(0xFF94A3B8)
 
-// Raw Light Mode Surfaces (Clean Architectural Alabaster & Slate)
+// Raw Light Mode Surfaces (Clean Frosted Quartz & Architectural Slate)
 val RawPapyrusLight: Color
     get() = ActiveStudioPaletteState.value.lightBg
 
@@ -69,12 +73,12 @@ val StudioPaperWhite = Color(0xFFFFFFFF)
 val StudioPaperInk = Color(0xFF0F172A)
 val StudioPaperBorder = Color(0xFFCBD5E1)
 
-// Semantic tokens mapped to calm studio slate (90/10 neutral discipline: reserve accent for 10% active selections)
+// Semantic tokens mapped to crisp glass/slate contrast
 val ElectrumGold: Color
-    get() = if (ActiveDarkThemeState.value) Color(0xFFCBD5E1) else Color(0xFF334155)
+    get() = if (ActiveDarkThemeState.value) Color(0xFFE2E8F0) else Color(0xFF1E293B)
 
 val LightGold: Color
-    get() = if (ActiveDarkThemeState.value) Color(0xFFF1F5F9) else Color(0xFF0F172A)
+    get() = if (ActiveDarkThemeState.value) Color(0xFFF8FAFC) else Color(0xFF0F172A)
 
 val DarkGold: Color
     get() = if (ActiveDarkThemeState.value) Color(0xFF94A3B8) else Color(0xFF475569)
@@ -93,7 +97,7 @@ val SluglineBlue: Color
     get() = ActiveStudioPaletteState.value.secondaryAccent
 
 val CharacterGold: Color
-    get() = ActiveStudioPaletteState.value.darkAccent
+    get() = ScribeStarNeonRed
 
 val TransitionPurple = Color(0xFFC084FC)
 

@@ -12,8 +12,8 @@ enum class ThemeMode(val displayName: String, val icon: String) {
 
 /**
  * Curated studio color palettes for Seshat.
- * ScribeStar Crimson is the default palette, joined by Swiss Cobalt, Warm Atelier,
- * Nocturne Emerald, Astral Amethyst, and Monolith Titanium.
+ * ScribeStar Crimson is the default palette, joined by Obsidian & Ivory (Black & White),
+ * Swiss Cobalt, Warm Atelier, Nocturne Emerald, Astral Amethyst, and Monolith Titanium.
  */
 enum class StudioColorPalette(
     val displayName: String,
@@ -32,18 +32,33 @@ enum class StudioColorPalette(
 ) {
     SCRIBESTAR_CRIMSON(
         displayName = "ScribeStar Crimson",
-        subtitle = "Precision Graphite & Laser Crimson (Default)",
+        subtitle = "Smoked Obsidian Glass & Laser Crimson (Default)",
         icon = "🔴",
-        darkAccent = Color(0xFFE11D48),
+        darkAccent = Color(0xFFFF1E42),
         lightAccent = Color(0xFFBE123C),
         secondaryAccent = Color(0xFFF59E0B),
-        darkBg = Color(0xFF0B0D13),
-        darkSurface = Color(0xFF131620),
-        darkBorder = Color(0xFF232838),
+        darkBg = Color(0xFF06080D),
+        darkSurface = Color(0xFF101521),
+        darkBorder = Color(0xFF263044),
         lightBg = Color(0xFFF1F5F9),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFCBD5E1),
-        lightDesk = Color(0xFFCBD5E1)
+        lightDesk = Color(0xFFDCE4F0)
+    ),
+    MONOCHROME_STARK(
+        displayName = "Obsidian & Ivory",
+        subtitle = "Pure Black & White Monochrome Glass",
+        icon = "◐",
+        darkAccent = Color(0xFFF8FAFC),
+        lightAccent = Color(0xFF0F172A),
+        secondaryAccent = Color(0xFF94A3B8),
+        darkBg = Color(0xFF050507),
+        darkSurface = Color(0xFF111216),
+        darkBorder = Color(0xFF2E3038),
+        lightBg = Color(0xFFF8FAFC),
+        lightSurface = Color(0xFFFFFFFF),
+        lightBorder = Color(0xFFCBD5E1),
+        lightDesk = Color(0xFFE2E8F0)
     ),
     SWISS_COBALT(
         displayName = "Swiss Cobalt",
@@ -52,73 +67,73 @@ enum class StudioColorPalette(
         darkAccent = Color(0xFF3B82F6),
         lightAccent = Color(0xFF1D4ED8),
         secondaryAccent = Color(0xFF0EA5E9),
-        darkBg = Color(0xFF09090B),
-        darkSurface = Color(0xFF121216),
-        darkBorder = Color(0xFF27272A),
+        darkBg = Color(0xFF06080E),
+        darkSurface = Color(0xFF101522),
+        darkBorder = Color(0xFF242F46),
         lightBg = Color(0xFFF8FAFC),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFCBD5E1),
-        lightDesk = Color(0xFFD4D4D8)
+        lightDesk = Color(0xFFDCE4F0)
     ),
     WARM_ATELIER(
         displayName = "Warm Atelier",
-        subtitle = "Nordic Charcoal, Stone & Champagne Brass",
+        subtitle = "Smoked Onyx & Champagne Gold",
         icon = "🟡",
-        darkAccent = Color(0xFFD97706),
+        darkAccent = Color(0xFFF59E0B),
         lightAccent = Color(0xFFB45309),
         secondaryAccent = Color(0xFF10B981),
-        darkBg = Color(0xFF10100E),
-        darkSurface = Color(0xFF181815),
-        darkBorder = Color(0xFF2A2925),
+        darkBg = Color(0xFF0A0908),
+        darkSurface = Color(0xFF171512),
+        darkBorder = Color(0xFF302B24),
         lightBg = Color(0xFFF5F4F0),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFD6D3CD),
-        lightDesk = Color(0xFFD6D3CD)
+        lightDesk = Color(0xFFE5E2DC)
     ),
     NOCTURNE_EMERALD(
         displayName = "Nocturne Emerald",
-        subtitle = "Abyssal Pine & Surgical Jade",
+        subtitle = "Abyssal Matrix & Surgical Jade",
         icon = "🟢",
         darkAccent = Color(0xFF10B981),
         lightAccent = Color(0xFF047857),
         secondaryAccent = Color(0xFF14B8A6),
-        darkBg = Color(0xFF080D0B),
-        darkSurface = Color(0xFF101915),
-        darkBorder = Color(0xFF1E2F28),
+        darkBg = Color(0xFF050A08),
+        darkSurface = Color(0xFF0E1915),
+        darkBorder = Color(0xFF1F352C),
         lightBg = Color(0xFFF0FDF4),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFCBD5E1),
-        lightDesk = Color(0xFFCBD5E1)
+        lightDesk = Color(0xFFDCECE3)
     ),
     ASTRAL_VIOLET(
         displayName = "Astral Amethyst",
-        subtitle = "Deep Space Void & Electric Violet",
+        subtitle = "Deep Space Glass & Electric Violet",
         icon = "🟣",
-        darkAccent = Color(0xFF8B5CF6),
+        darkAccent = Color(0xFFA855F7),
         lightAccent = Color(0xFF6D28D9),
         secondaryAccent = Color(0xFFEC4899),
-        darkBg = Color(0xFF0A0912),
-        darkSurface = Color(0xFF131120),
-        darkBorder = Color(0xFF25203B),
+        darkBg = Color(0xFF08060E),
+        darkSurface = Color(0xFF141022),
+        darkBorder = Color(0xFF2B2244),
         lightBg = Color(0xFFF5F3FF),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFDDD6FE),
-        lightDesk = Color(0xFFCBD5E1)
+        lightDesk = Color(0xFFE4E0F5)
     ),
     MONOLITH_TITANIUM(
-        displayName = "Monolith Titanium",
+        displayName = "Cyber Cyan",
         subtitle = "Anodized Gunmetal & Ice Cyan",
         icon = "⚪",
-        darkAccent = Color(0xFF38BDF8),
+        darkAccent = Color(0xFF06B6D4),
         lightAccent = Color(0xFF0284C7),
         secondaryAccent = Color(0xFF94A3B8),
-        darkBg = Color(0xFF090B0E),
-        darkSurface = Color(0xFF12161C),
-        darkBorder = Color(0xFF212832),
+        darkBg = Color(0xFF05080C),
+        darkSurface = Color(0xFF0F1620),
+        darkBorder = Color(0xFF213042),
         lightBg = Color(0xFFF1F5F9),
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFCBD5E1),
-        lightDesk = Color(0xFFCBD5E1)
+        lightDesk = Color(0xFFDCE6F0)
     )
 }
 

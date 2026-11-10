@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +64,7 @@ fun EditorFormattingToolbarRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .shadow(4.dp, RoundedCornerShape(0.dp))
                 .clip(RoundedCornerShape(0.dp))
                 .background(stripBg)
                 .border(BorderStroke(1.dp, stripBorder), RoundedCornerShape(0.dp))
@@ -153,6 +155,7 @@ fun EditorFormattingToolbarRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .shadow(4.dp, RoundedCornerShape(0.dp))
                 .clip(RoundedCornerShape(0.dp))
                 .background(stripBg)
                 .border(BorderStroke(1.dp, stripBorder), RoundedCornerShape(0.dp))

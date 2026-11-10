@@ -119,6 +119,21 @@ enum class StudioColorPalette(
         lightSurface = Color(0xFFFFFFFF),
         lightBorder = Color(0xFFCBD5E1),
         lightDesk = Color(0xFFCBD5E1)
+    ),
+    MONOCHROME_STARK(
+        displayName = "Obsidian & Ivory",
+        subtitle = "Pure Black & White Monochrome Glass",
+        icon = "⚫",
+        darkAccent = Color(0xFFF8FAFC),
+        lightAccent = Color(0xFF0F172A),
+        secondaryAccent = Color(0xFF94A3B8),
+        darkBg = Color(0xFF050507),
+        darkSurface = Color(0xFF111216),
+        darkBorder = Color(0xFF2E3038),
+        lightBg = Color(0xFFF8FAFC),
+        lightSurface = Color(0xFFFFFFFF),
+        lightBorder = Color(0xFFCBD5E1),
+        lightDesk = Color(0xFFE2E8F0)
     )
 }
 

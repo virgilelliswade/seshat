@@ -13,6 +13,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
@@ -58,8 +61,11 @@ fun ScreenplayMarginRulerBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 2.dp)
+            .shadow(6.dp, RoundedCornerShape(0.dp))
             .height(24.dp)
-            .background(rulerBg),
+            .background(rulerBg)
+            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp)),
         contentAlignment = Alignment.BottomCenter
     ) {
         Box(

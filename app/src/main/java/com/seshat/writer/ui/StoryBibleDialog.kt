@@ -136,6 +136,7 @@ import com.seshat.writer.ui.theme.ScreenplayTextMuted
 import com.seshat.writer.ui.theme.DeskBackground
 import com.seshat.writer.ui.theme.StudioIconType
 import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.floatingGlassIsland
 import com.seshat.writer.ui.theme.parseStudioButtonLabel
 
 private data class SeriesHubDescriptor(
@@ -342,14 +343,19 @@ fun StoryBibleDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(DeskBackground)
+                .background(ambientWorkspaceBrush(isDark))
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .imePadding()
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Docked Edge-to-Edge Studio Top Bar
-                Column(modifier = Modifier.fillMaxWidth().background(ObsidianSurface)) {
+                // Concept C: Floating Glass Island Top Bar with Drop Shadow
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -593,29 +599,28 @@ private fun GlassCardItem(
     Box(
         modifier = modifier
             .hoverable(interactionSource = interactionSource)
-            .then(
-                if (isHovered) {
-                    Modifier.neonBloom(
-                        color = ScribeStarNeonRed,
-                        cornerRadius = 0.dp,
-                        glowRadius = 4.dp,
-                        strokeWidth = 1.2.dp,
-                        outerAlpha = if (isDark) 0.25f else 0.15f,
-                        midAlpha = if (isDark) 0.45f else 0.30f
-                    )
-                } else Modifier
-            )
             .shadow(
-                elevation = if (isHovered) 6.dp else 2.dp,
+                elevation = if (isHovered) 16.dp else 10.dp,
                 shape = RoundedCornerShape(0.dp),
-                spotColor = if (isDark) (if (isHovered) ScribeStarNeonRed else Color.Black) else Color(0x2564748B)
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.65f else 0.18f),
+                spotColor = if (isDark) (if (isHovered) ScribeStarNeonRed else Color.Black.copy(alpha = 0.78f)) else Color(0x330F172A)
+            )
+            .neonBloom(
+                color = if (isHovered) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
+                cornerRadius = 0.dp,
+                glowRadius = if (isHovered) 10.dp else 6.dp,
+                strokeWidth = if (isHovered) 1.5.dp else 1.dp,
+                outerAlpha = if (isHovered) (if (isDark) 0.25f else 0.15f) else 0.08f,
+                midAlpha = if (isHovered) (if (isDark) 0.45f else 0.30f) else 0.15f,
+                coreAlpha = if (isHovered) 0.90f else 0.40f
             )
             .clip(RoundedCornerShape(0.dp))
             .background(smokedGlassBrush())
             .border(
-                BorderStroke(
-                    if (isHovered) 1.5.dp else 1.dp,
-                    if (isHovered) ScribeStarNeonRed else if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+                prismaticGlassBorder(
+                    width = if (isHovered) 1.5.dp else 1.dp,
+                    isLit = isHovered,
+                    isDark = isDark
                 ),
                 RoundedCornerShape(0.dp)
             )
@@ -636,17 +641,9 @@ private fun GlassActionButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
     val isDark = LocalSeshatDarkTheme.current
+    val isLit = isPrimary || isHovered || isPressed
     val (autoIcon, cleanLabel) = remember(text) { parseStudioButtonLabel(text) }
 
-    val bgColor = when {
-        isPrimary -> ScribeStarNeonRed
-        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
-        else -> ObsidianBlack
-    }
-    val borderColor = when {
-        isPrimary -> ScribeStarNeonRed
-        else -> ObsidianSurfaceVariant
-    }
     val contentColor = when {
         isPrimary -> Color.White
         isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
@@ -657,9 +654,32 @@ private fun GlassActionButton(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .defaultMinSize(minHeight = 32.dp)
+            .hoverable(interactionSource = interactionSource)
+            .shadow(
+                elevation = if (isLit) 8.dp else 4.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.65f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.75f else 0.25f)
+            )
+            .neonBloom(
+                color = if (isLit) ScribeStarNeonRed else (if (isDark) Color.White else Color(0xFF64748B)),
+                cornerRadius = 0.dp,
+                glowRadius = if (isLit) 8.dp else 4.dp,
+                strokeWidth = 1.dp,
+                outerAlpha = if (isLit) 0.22f else 0.08f,
+                midAlpha = if (isLit) 0.42f else 0.16f,
+                coreAlpha = if (isLit) 0.85f else 0.35f
+            )
             .clip(RoundedCornerShape(0.dp))
-            .background(bgColor)
-            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
+            .background(opticalPillBrush(isLit = isLit, isPrimary = isPrimary, isDark = isDark))
+            .border(
+                prismaticGlassBorder(
+                    width = 1.dp,
+                    isLit = isLit,
+                    isDark = isDark
+                ),
+                RoundedCornerShape(0.dp)
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

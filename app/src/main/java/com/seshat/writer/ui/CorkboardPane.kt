@@ -85,6 +85,11 @@ import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.StudioIconType
 import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.ambientWorkspaceBrush
+import com.seshat.writer.ui.theme.floatingGlassIsland
+import com.seshat.writer.ui.theme.neonBloom
+import com.seshat.writer.ui.theme.opticalPillBrush
+import com.seshat.writer.ui.theme.prismaticGlassBorder
 
 private val CARD_PALETTE = listOf(
     "#F59E0B", // Electrum Gold
@@ -125,20 +130,22 @@ fun CorkboardPane(
         )
     }
 
+    val isDark = LocalSeshatDarkTheme.current
     Column(
         modifier = modifier
             .navigationBarsPadding()
-            .background(DeskBackground)
+            .background(ambientWorkspaceBrush(isDark))
             .fillMaxHeight()
     ) {
         // ==========================================
-        // 1. TOP HEADER & ACT CONTROLS
+        // 1. TOP HEADER & ACT CONTROLS (CONCEPT C FLOATING GLASS ISLAND)
         // ==========================================
         if (isCompactScreen) {
-            Surface(
-                color = ObsidianSurface,
-                shadowElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -353,10 +360,11 @@ fun CorkboardPane(
                 }
             }
         } else {
-            Surface(
-                color = ObsidianSurface,
-                shadowElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 4.dp)
+                    .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -525,11 +533,14 @@ fun CorkboardPane(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
+                                .shadow(5.dp, RoundedCornerShape(0.dp))
                                 .clip(RoundedCornerShape(0.dp))
+                                .background(opticalPillBrush(isDark = isDark))
+                                .border(prismaticGlassBorder(isDark = isDark), RoundedCornerShape(0.dp))
                                 .clickable(enabled = !isAnyAiLoading) {
                                     viewModel.summarizeAllSceneCardsWithAi(context)
                                 }
-                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             if (isAnyAiLoading) {
                                 CircularProgressIndicator(
@@ -539,14 +550,14 @@ fun CorkboardPane(
                                 )
                                 Text(
                                     text = "Summarizing...",
-                                    style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted, fontSize = 11.sp)
+                                    style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextDark, fontSize = 11.sp)
                                 )
                             } else {
-                                StudioMonoIcon(type = StudioIconType.SPARKLE, tint = ScreenplayTextMuted, size = 13.dp)
+                                StudioMonoIcon(type = StudioIconType.SPARKLE, tint = ScribeStarNeonRed, size = 13.dp)
                                 Text(
                                     text = "AI Summarize",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = ScreenplayTextMuted,
+                                        color = ScreenplayTextDark,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 11.sp
                                     )
@@ -558,15 +569,18 @@ fun CorkboardPane(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
+                                .shadow(5.dp, RoundedCornerShape(0.dp))
                                 .clip(RoundedCornerShape(0.dp))
+                                .background(opticalPillBrush(isDark = isDark))
+                                .border(prismaticGlassBorder(isDark = isDark), RoundedCornerShape(0.dp))
                                 .clickable { showTemplateDialog = true }
-                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            StudioMonoIcon(type = StudioIconType.LIST, tint = ScreenplayTextMuted, size = 13.dp)
+                            StudioMonoIcon(type = StudioIconType.LIST, tint = ScreenplayTextDark, size = 13.dp)
                             Text(
                                 text = "Templates ▾",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ScreenplayTextMuted,
+                                    color = ScreenplayTextDark,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 11.sp
                                 )
@@ -577,37 +591,43 @@ fun CorkboardPane(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
+                                .shadow(5.dp, RoundedCornerShape(0.dp))
                                 .clip(RoundedCornerShape(0.dp))
+                                .background(opticalPillBrush(isDark = isDark))
+                                .border(prismaticGlassBorder(isDark = isDark), RoundedCornerShape(0.dp))
                                 .clickable { viewModel.toggleCorkboardSideBySide() }
-                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            StudioMonoIcon(type = StudioIconType.PAGE, tint = ScreenplayTextMuted, size = 13.dp)
+                            StudioMonoIcon(type = StudioIconType.PAGE, tint = ScreenplayTextDark, size = 13.dp)
                             Text(
                                 text = if (isSideBySide) "Full Board" else "Side-by-Side",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ScreenplayTextMuted,
+                                    color = ScreenplayTextDark,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 11.sp
                                 )
                             )
                         }
 
-                        Surface(
-                            color = ScribeStarNeonRed,
-                            shape = RoundedCornerShape(0.dp),
-                            modifier = Modifier.clickable { onSaveProject() }
+                        Box(
+                            modifier = Modifier
+                                .shadow(6.dp, RoundedCornerShape(0.dp))
+                                .clip(RoundedCornerShape(0.dp))
+                                .background(opticalPillBrush(isPrimary = true, isDark = isDark))
+                                .border(prismaticGlassBorder(isLit = true, isDark = isDark), RoundedCornerShape(0.dp))
+                                .clickable { onSaveProject() }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)
                             ) {
                                 StudioMonoIcon(type = StudioIconType.SAVE, tint = Color.White, size = 13.dp)
                                 Text(
                                     text = "Save",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = Color.White,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         fontSize = 11.sp
                                     )
                                 )
@@ -801,16 +821,15 @@ private fun ActColumn(
     onSummarizeWithAi: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        color = ObsidianSurface,
-        shape = RoundedCornerShape(0.dp),
-        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+    val isDark = LocalSeshatDarkTheme.current
+    Box(
         modifier = modifier
+            .floatingGlassIsland(isDark = isDark, elevation = 16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp)
+                .padding(10.dp)
         ) {
             // Act Header with Editable Title, Scene Count, and + Add Beat Button
             var isEditingTitle by remember { mutableStateOf(false) }
@@ -819,9 +838,10 @@ private fun ActColumn(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .shadow(4.dp, RoundedCornerShape(0.dp))
                     .background(ObsidianBlack, RoundedCornerShape(0.dp))
-                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .border(prismaticGlassBorder(isDark = isDark), RoundedCornerShape(0.dp))
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1053,15 +1073,22 @@ private fun CorkboardSceneCard(
     var isColorPaletteOpen by remember { mutableStateOf(false) }
     var isActDropdownOpen by remember { mutableStateOf(false) }
 
-    // Scrivener / Arc Studio-grade physical white index card (#FFFFFF in both dark and light mode)
+    // Scrivener / Arc Studio-grade physical white index card (#FFFFFF in both dark and light mode) casting a floating drop shadow
     Card(
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = Color.White
         ),
         shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 3.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = 0.45f),
+                spotColor = Color.Black.copy(alpha = 0.55f)
+            )
     ) {
         Column(modifier = Modifier.fillMaxWidth().background(Color.White)) {
             // 3px top color rule across top edge

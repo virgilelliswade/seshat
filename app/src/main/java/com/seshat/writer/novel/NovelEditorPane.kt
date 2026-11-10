@@ -123,6 +123,7 @@ import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.ScreenplayFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.floatingGlassIsland
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.opticalGlassBrush
 import com.seshat.writer.ui.theme.prismaticGlassBorder
@@ -372,56 +373,55 @@ fun NovelEditorPane(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // SCRIVENER-STYLE LEFT BINDER (Tablet / Desktop side-by-side docked flush)
+                // SCRIVENER-STYLE LEFT BINDER (Concept C Floating Glass Island)
                 AnimatedVisibility(visible = isBinderVisible && !isCompactScreen) {
-                    Row(modifier = Modifier.fillMaxHeight()) {
-                        Box(
-                            modifier = Modifier
-                                .width(260.dp)
-                                .fillMaxHeight()
-                                .background(ObsidianSurface)
-                        ) {
-                            NovelBinderPane(
-                                manuscript = manuscript,
-                                selectedChapterIndex = activeChapterIndex,
-                                onSelectChapter = onSelectChapter,
-                                onAddChapter = {
-                                    val newNum = manuscript.chapters.size + 1
-                                    val newChapter = NovelChapter(
-                                        chapterNumber = newNum,
-                                        title = "Chapter $newNum",
-                                        actIndex = 0,
-                                        paragraphs = NovelChapter.defaultParagraphs(newNum)
-                                    )
-                                    val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
-                                    onUpdateManuscript(updated)
-                                    onSelectChapter(manuscript.chapters.size)
-                                },
-                                onMoveChapterUp = { idx ->
-                                    if (idx > 0) {
-                                        val list = manuscript.chapters.toMutableList()
-                                        val temp = list[idx]
-                                        list[idx] = list[idx - 1]
-                                        list[idx - 1] = temp
-                                        onUpdateManuscript(manuscript.copy(chapters = list))
-                                        onSelectChapter(idx - 1)
-                                    }
-                                },
-                                onMoveChapterDown = { idx ->
-                                    if (idx < manuscript.chapters.lastIndex) {
-                                        val list = manuscript.chapters.toMutableList()
-                                        val temp = list[idx]
-                                        list[idx] = list[idx + 1]
-                                        list[idx + 1] = temp
-                                        onUpdateManuscript(manuscript.copy(chapters = list))
-                                        onSelectChapter(idx + 1)
-                                    }
-                                },
-                                onCloseBinder = { isBinderVisible = false },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        VerticalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
+                    val isDarkBinder = LocalSeshatDarkTheme.current
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 10.dp, top = 4.dp, bottom = 10.dp, end = 2.dp)
+                            .width(260.dp)
+                            .fillMaxHeight()
+                            .floatingGlassIsland(isDark = isDarkBinder, elevation = 16.dp)
+                    ) {
+                        NovelBinderPane(
+                            manuscript = manuscript,
+                            selectedChapterIndex = activeChapterIndex,
+                            onSelectChapter = onSelectChapter,
+                            onAddChapter = {
+                                val newNum = manuscript.chapters.size + 1
+                                val newChapter = NovelChapter(
+                                    chapterNumber = newNum,
+                                    title = "Chapter $newNum",
+                                    actIndex = 0,
+                                    paragraphs = NovelChapter.defaultParagraphs(newNum)
+                                )
+                                val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
+                                onUpdateManuscript(updated)
+                                onSelectChapter(manuscript.chapters.size)
+                            },
+                            onMoveChapterUp = { idx ->
+                                if (idx > 0) {
+                                    val list = manuscript.chapters.toMutableList()
+                                    val temp = list[idx]
+                                    list[idx] = list[idx - 1]
+                                    list[idx - 1] = temp
+                                    onUpdateManuscript(manuscript.copy(chapters = list))
+                                    onSelectChapter(idx - 1)
+                                }
+                            },
+                            onMoveChapterDown = { idx ->
+                                if (idx < manuscript.chapters.lastIndex) {
+                                    val list = manuscript.chapters.toMutableList()
+                                    val temp = list[idx]
+                                    list[idx] = list[idx + 1]
+                                    list[idx + 1] = temp
+                                    onUpdateManuscript(manuscript.copy(chapters = list))
+                                    onSelectChapter(idx + 1)
+                                }
+                            },
+                            onCloseBinder = { isBinderVisible = false },
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
 
@@ -991,7 +991,12 @@ private fun CompactNovelTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1122,7 +1127,12 @@ private fun DesktopNovelTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1361,30 +1371,18 @@ private fun NovelGlassPillButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
     val isDark = LocalSeshatDarkTheme.current
+    val isLit = isPrimary || isAccent || isHighlight || isHovered || isPressed
     val combinedText = if (icon != null && !text.startsWith(icon)) "$icon $text" else text
     val (autoIcon, cleanLabel) = remember(combinedText) { parseStudioButtonLabel(combinedText) }
 
-    val bgColor = when {
-        isPrimary || isAccent -> ScribeStarNeonRed
-        isHighlight -> ScribeStarNeonRed.copy(alpha = if (isDark) 0.14f else 0.10f)
-        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
-        else -> Color.Transparent
-    }
-    val borderColor = when {
-        isPrimary || isAccent -> ScribeStarNeonRed
-        isHighlight -> ScribeStarNeonRed.copy(alpha = 0.55f)
-        isHovered || isPressed -> ObsidianSurfaceVariant
-        else -> Color.Transparent
-    }
     val contentColor = when {
-        isPrimary || isAccent -> Color.White
-        isHighlight -> if (isDark) Color.White else ScribeStarNeonRed
+        isPrimary || isAccent || isHighlight -> if (isDark) Color(0xFFF8FAFC) else Color.White
         isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
-        else -> if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
+        else -> if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
     }
     val iconTint = when {
-        isPrimary || isAccent -> Color.White
-        isHighlight -> ScribeStarNeonRed
+        isPrimary || isAccent || isHighlight -> if (isDark) ScribeStarNeonRed else Color.White
+        isHovered || isPressed -> ScribeStarNeonRed
         else -> contentColor
     }
 
@@ -1392,9 +1390,36 @@ private fun NovelGlassPillButton(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .defaultMinSize(minHeight = 32.dp)
+            .shadow(
+                elevation = if (isLit) 8.dp else 4.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.65f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.75f else 0.24f)
+            )
+            .neonBloom(
+                color = ScribeStarNeonRed,
+                cornerRadius = 0.dp,
+                glowRadius = if (isLit) 10.dp else 4.dp,
+                coreAlpha = if (isLit) 0.90f else 0.40f
+            )
             .clip(RoundedCornerShape(0.dp))
-            .background(bgColor)
-            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
+            .background(
+                opticalPillBrush(
+                    isLit = isLit,
+                    isPrimary = isPrimary || isAccent,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
+                )
+            )
+            .border(
+                prismaticGlassBorder(
+                    width = 1.dp,
+                    isLit = isLit,
+                    accentColor = ScribeStarNeonRed,
+                    isDark = isDark
+                ),
+                RoundedCornerShape(0.dp)
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

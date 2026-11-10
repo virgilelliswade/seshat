@@ -164,6 +164,7 @@ import com.seshat.writer.ui.theme.StudioIconType
 import com.seshat.writer.ui.theme.StudioMonoIcon
 import com.seshat.writer.ui.theme.parseStudioButtonLabel
 import com.seshat.writer.ui.theme.neonBloom
+import com.seshat.writer.ui.theme.floatingGlassIsland
 import com.seshat.writer.ui.theme.opticalGlassBrush
 import com.seshat.writer.ui.theme.prismaticGlassBorder
 import com.seshat.writer.ui.theme.opticalPillBrush
@@ -348,54 +349,53 @@ fun ScreenplayEditorScreen(
                     )
                 }
 
-                // Adaptive Left Sidebar (Tablet / Desktop side-by-side — docked flush edge-to-edge)
+                // Adaptive Left Sidebar (Concept C Floating Glass Island with 10dp spatial reveal)
                 AnimatedVisibility(
                     visible = uiState.isSidebarExpanded && !uiState.isZenMode && !isCompactScreen
                 ) {
-                    Row(modifier = Modifier.fillMaxHeight()) {
-                        Box(
-                            modifier = Modifier
-                                .width(268.dp)
-                                .fillMaxHeight()
-                                .background(ObsidianSurface)
-                        ) {
-                            if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
-                                TvEpisodeBinderPane(
-                                    viewModel = viewModel,
-                                    uiState = uiState,
-                                    seriesProject = uiState.tvSeriesProject!!,
-                                    onCloseBinder = { viewModel.toggleSidebar() },
-                                    onOpenStoryBible = { viewModel.openStoryBible(context) },
-                                    onOpenWritersRoom = { viewModel.openWritersRoom() },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                SidebarPane(
-                                    uiState = uiState,
-                                    onSceneClick = { viewModel.selectScene(it) },
-                                    onCloseSidebar = { viewModel.toggleSidebar() },
-                                    onOpenTitlePage = onOpenTitlePage,
-                                    onOpenFileExport = { showExportDialog = true },
-                                    onOpenReports = { viewModel.openReportsDialog() },
-                                    onOpenRevisions = { viewModel.openRevisionDialog() },
-                                    onOpenLibrary = { viewModel.openScriptLibrary() },
-                                    onOpenDraftDiff = { viewModel.openDraftDiff() },
-                                    onToggleReorderMode = { viewModel.toggleReorderMode() },
-                                    onMoveSceneUp = { idx -> viewModel.moveSceneUp(idx) },
-                                    onMoveSceneDown = { idx -> viewModel.moveSceneDown(idx) },
-                                    onToggleOmitScene = { blockId -> viewModel.toggleSceneOmitted(blockId) },
-                                    onOpenSettings = { viewModel.openSettingsDialog() },
-                                    onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
-                                    onOpenTableRead = { viewModel.openTableRead(context) },
-                                    onOpenStoryBible = { viewModel.openStoryBible(context) },
-                                    onOpenCorkboard = { viewModel.openCorkboard(context) },
-                                    onOpenStartMenu = { viewModel.openStartMenu() },
-                                    onOpenCompiler = { viewModel.openNovelCompiler() },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+                    val isDarkSidebar = LocalSeshatDarkTheme.current
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 2.dp)
+                            .width(268.dp)
+                            .fillMaxHeight()
+                            .floatingGlassIsland(isDark = isDarkSidebar, elevation = 16.dp)
+                    ) {
+                        if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
+                            TvEpisodeBinderPane(
+                                viewModel = viewModel,
+                                uiState = uiState,
+                                seriesProject = uiState.tvSeriesProject!!,
+                                onCloseBinder = { viewModel.toggleSidebar() },
+                                onOpenStoryBible = { viewModel.openStoryBible(context) },
+                                onOpenWritersRoom = { viewModel.openWritersRoom() },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            SidebarPane(
+                                uiState = uiState,
+                                onSceneClick = { viewModel.selectScene(it) },
+                                onCloseSidebar = { viewModel.toggleSidebar() },
+                                onOpenTitlePage = onOpenTitlePage,
+                                onOpenFileExport = { showExportDialog = true },
+                                onOpenReports = { viewModel.openReportsDialog() },
+                                onOpenRevisions = { viewModel.openRevisionDialog() },
+                                onOpenLibrary = { viewModel.openScriptLibrary() },
+                                onOpenDraftDiff = { viewModel.openDraftDiff() },
+                                onToggleReorderMode = { viewModel.toggleReorderMode() },
+                                onMoveSceneUp = { idx -> viewModel.moveSceneUp(idx) },
+                                onMoveSceneDown = { idx -> viewModel.moveSceneDown(idx) },
+                                onToggleOmitScene = { blockId -> viewModel.toggleSceneOmitted(blockId) },
+                                onOpenSettings = { viewModel.openSettingsDialog() },
+                                onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
+                                onOpenTableRead = { viewModel.openTableRead(context) },
+                                onOpenStoryBible = { viewModel.openStoryBible(context) },
+                                onOpenCorkboard = { viewModel.openCorkboard(context) },
+                                onOpenStartMenu = { viewModel.openStartMenu() },
+                                onOpenCompiler = { viewModel.openNovelCompiler() },
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
-                        VerticalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
                     }
                 }
 
@@ -761,10 +761,7 @@ fun ScreenplayEditorScreen(
     }
 }
 /**
- * Borderless Ghost Studio Toolbar Button with Monochrome Vector Line Icon.
- * At rest: 0px border, transparent background, calm #94A3B8 text.
- * Hovered: subtle surface fill, primary text.
- * Highlighted / Primary: 2px bottom accent indicator or crisp accent fill.
+ * Concept C Hard-Cornered Optical Glass Button with Monochrome Vector Line Icon & Elevated Drop Shadow.
  */
 @Composable
 private fun GlassEditorPillButton(
@@ -780,29 +777,18 @@ private fun GlassEditorPillButton(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
     val isDark = LocalSeshatDarkTheme.current
+    val isLit = isPrimary || isHighlight || isHovered || isPressed
     val (autoIcon, cleanLabel) = remember(text) { parseStudioButtonLabel(text) }
 
-    val bgColor = when {
-        isPrimary -> accentColor
-        isHighlight -> accentColor.copy(alpha = if (isDark) 0.14f else 0.10f)
-        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
-        else -> Color.Transparent
-    }
-    val borderColor = when {
-        isPrimary -> accentColor
-        isHighlight -> accentColor.copy(alpha = 0.55f)
-        isHovered || isPressed -> ObsidianSurfaceVariant
-        else -> Color.Transparent
-    }
     val contentColor = when {
-        isPrimary -> Color.White
-        isHighlight -> if (isDark) Color.White else accentColor
+        isPrimary || isHighlight -> if (isDark) Color(0xFFF8FAFC) else Color.White
         isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
-        else -> if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
+        else -> if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
     }
     val iconTint = when {
-        isPrimary -> Color.White
-        isHighlight -> accentColor
+        isPrimary -> if (isDark) accentColor else Color.White
+        isHighlight -> if (isDark) accentColor else Color.White
+        isHovered || isPressed -> accentColor
         else -> contentColor
     }
 
@@ -810,9 +796,36 @@ private fun GlassEditorPillButton(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .defaultMinSize(minHeight = 32.dp)
+            .shadow(
+                elevation = if (isLit) 8.dp else 4.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.65f else 0.18f),
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.75f else 0.24f)
+            )
+            .neonBloom(
+                color = accentColor,
+                cornerRadius = 0.dp,
+                glowRadius = if (isLit) 10.dp else 4.dp,
+                coreAlpha = if (isLit) 0.90f else 0.40f
+            )
             .clip(RoundedCornerShape(0.dp))
-            .background(bgColor)
-            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
+            .background(
+                opticalPillBrush(
+                    isLit = isLit,
+                    isPrimary = isPrimary,
+                    accentColor = accentColor,
+                    isDark = isDark
+                )
+            )
+            .border(
+                prismaticGlassBorder(
+                    width = 1.dp,
+                    isLit = isLit,
+                    accentColor = accentColor,
+                    isDark = isDark
+                ),
+                RoundedCornerShape(0.dp)
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -1376,7 +1389,13 @@ private fun CompactScreenplayTopBar(
     onSaveProject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
+    val isDark = LocalSeshatDarkTheme.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1520,7 +1539,12 @@ private fun DesktopScreenplayTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2691,7 +2715,8 @@ private fun BottomHud(
                 .navigationBarsPadding()
                 .imePadding()
                 .fillMaxWidth()
-                .background(ObsidianSurface)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
         ) {
             HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp)) {
@@ -2914,7 +2939,8 @@ private fun BottomHud(
             modifier = modifier
                 .navigationBarsPadding()
                 .fillMaxWidth()
-                .background(ObsidianSurface)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .floatingGlassIsland(isDark = isDark, elevation = 14.dp)
         ) {
             HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
             Row(

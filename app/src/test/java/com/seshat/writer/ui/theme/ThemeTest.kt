@@ -32,13 +32,14 @@ class ThemeTest {
     @Test
     fun testStudioColorPaletteValues() {
         val palettes = StudioColorPalette.values()
-        assertEquals(6, palettes.size)
+        assertEquals(7, palettes.size)
         assertEquals("ScribeStar Crimson", StudioColorPalette.SCRIBESTAR_CRIMSON.displayName)
         assertEquals("Swiss Cobalt", StudioColorPalette.SWISS_COBALT.displayName)
         assertEquals("Warm Atelier", StudioColorPalette.WARM_ATELIER.displayName)
         assertEquals("Nocturne Emerald", StudioColorPalette.NOCTURNE_EMERALD.displayName)
         assertEquals("Astral Amethyst", StudioColorPalette.ASTRAL_VIOLET.displayName)
         assertEquals("Monolith Titanium", StudioColorPalette.MONOLITH_TITANIUM.displayName)
+        assertEquals("Obsidian & Ivory", StudioColorPalette.MONOCHROME_STARK.displayName)
     }
 
     @Test

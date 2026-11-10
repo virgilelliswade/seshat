@@ -257,10 +257,10 @@ fun StudioSettingsDialog(
                                 Spacer(modifier = Modifier.height(14.dp))
 
                                 Text(
-                                    text = "STUDIO COLOR PALETTE (6 ARCHITECTURAL THEMES)",
+                                    text = "STUDIO COLOR PALETTE (7 ARCHITECTURAL THEMES)",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        letterSpacing = 0.4.sp,
                                         color = ScreenplayTextMuted
                                     )
                                 )
