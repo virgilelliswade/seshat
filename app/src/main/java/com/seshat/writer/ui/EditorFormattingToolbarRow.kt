@@ -27,7 +27,7 @@ import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ObsidianBlack
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
-import com.seshat.writer.ui.theme.ScreenplayFontFamily
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 
 /**
  * Joined Segmented Studio Formatting Strip:
@@ -187,8 +187,8 @@ fun EditorFormattingToolbarRow(
                 Text(
                     text = "${currentFontSizePt}pt",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = ScreenplayFontFamily,
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = StudioMonoFontFamily,
+                        fontWeight = FontWeight.Medium,
                         fontSize = (fontSize.value - 0.5f).sp,
                         color = mutedTextColor
                     )

@@ -120,6 +120,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.ScreenplayFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.neonBloom
@@ -1593,7 +1594,7 @@ private fun NovelBinderPane(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
+                        letterSpacing = 0.1.sp,
                         color = Color.White
                     )
                 )
@@ -2185,7 +2186,7 @@ fun NovelFindReplaceDialog(
                         style = MaterialTheme.typography.titleMedium.copy(
                             color = ElectrumGold,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                     IconButton(onClick = onDismiss) {
@@ -2382,7 +2383,7 @@ fun NovelSprintTrackerDialog(
                         style = MaterialTheme.typography.titleMedium.copy(
                             color = ElectrumGold,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                     IconButton(onClick = onDismiss) {
@@ -2397,7 +2398,7 @@ fun NovelSprintTrackerDialog(
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = ScreenplayTextMuted,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
 
@@ -2497,7 +2498,7 @@ fun NovelSprintTrackerDialog(
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = ScreenplayTextMuted,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
 
@@ -2522,7 +2523,7 @@ fun NovelSprintTrackerDialog(
                             style = MaterialTheme.typography.displaySmall.copy(
                                 color = if (isTimerRunning) ElectrumGold else Color.White,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 2.sp
+                                letterSpacing = 0.2.sp
                             )
                         )
 
@@ -2690,7 +2691,7 @@ fun ChapterSnapshotDialog(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = ElectrumGold,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.1.sp
                             )
                         )
                         Text(
@@ -2738,7 +2739,7 @@ fun ChapterSnapshotDialog(
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = ScreenplayTextMuted,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
 
@@ -2874,7 +2875,7 @@ fun NovelScrapsGraveyardDialog(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = ElectrumGold,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
+                                letterSpacing = 0.1.sp
                             )
                         )
                         Text(

@@ -22,9 +22,9 @@ import com.seshat.writer.model.BlockType
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
-import com.seshat.writer.ui.theme.ScreenplayCourierFontFamily
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 
 /**
  * Final Draft 13 / Scrivener 3 style docked top margin ruler bar.
@@ -135,9 +135,9 @@ fun ScreenplayMarginRulerBar(
                     val isActiveStop = kotlin.math.abs(stopInch - leftStopInches) < 0.15f
                     Text(
                         text = labelText,
-                        fontFamily = ScreenplayCourierFontFamily,
-                        fontSize = 9.sp,
-                        fontWeight = if (isActiveStop) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = StudioMonoFontFamily,
+                        fontSize = 9.5.sp,
+                        fontWeight = if (isActiveStop) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (isActiveStop) accentColor else ScreenplayTextMuted
                     )
                 }

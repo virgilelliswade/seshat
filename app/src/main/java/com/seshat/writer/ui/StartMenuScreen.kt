@@ -99,6 +99,7 @@ import com.seshat.writer.ui.theme.CircuitCyan
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.RawLightSurface
@@ -342,8 +343,8 @@ fun StartMenuScreen(
                         text = "W R I T I N G   S T U D I O",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 4.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.2.sp,
                             color = if (isDark) Color.White else Color(0xFF0F172A),
                             fontSize = 11.5.sp
                         ),
@@ -367,7 +368,7 @@ fun StartMenuScreen(
                         text = "Tap anywhere to begin",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = (if (isDark) Color.White else Color(0xFF0F172A)).copy(alpha = 0.85f),
-                            letterSpacing = 1.5.sp,
+                            letterSpacing = 0.2.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 12.sp
                         ),
@@ -913,7 +914,7 @@ private fun WorkspaceViewContent(
                         fontFamily = MainAppFontFamily,
                         color = ScribeStarNeonRed,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -1061,8 +1062,8 @@ private fun SparkModeHubContent(
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = ElectrumGold,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.2.sp,
                     fontSize = 11.5.sp
                 ),
                 modifier = Modifier
@@ -1196,7 +1197,7 @@ private fun SparkNewSetupContent(
                                         text = genre.genreLabel,
                                         style = MaterialTheme.typography.labelLarge.copy(
                                             fontFamily = MainAppFontFamily,
-                                            fontWeight = FontWeight.ExtraBold,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = if (isSelected) Color.White else Color(0xFFE2E8F0),
                                             fontSize = 12.5.sp
                                         ),
@@ -1260,7 +1261,7 @@ private fun SparkNewSetupContent(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
                                 color = ScribeStarNeonRed,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 10.sp,
                                 letterSpacing = 0.8.sp
                             )
@@ -1270,7 +1271,7 @@ private fun SparkNewSetupContent(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = MainAppFontFamily,
                                 color = ElectrumGold,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 15.sp
                             )
                         )
@@ -1285,7 +1286,7 @@ private fun SparkNewSetupContent(
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
                                 color = ElectrumGold,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 10.5.sp
                             ),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -1370,7 +1371,7 @@ private fun SparkNewSetupContent(
                         fontFamily = MainAppFontFamily,
                         color = ElectrumGold,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
                 Spacer(modifier = Modifier.height(5.dp))
@@ -1543,7 +1544,7 @@ private fun StartMenuTopBarButton(
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
                         color = textColor,
-                        fontWeight = if (isLit) FontWeight.ExtraBold else FontWeight.Bold,
+                        fontWeight = if (isLit) FontWeight.SemiBold else FontWeight.Bold,
                         fontSize = 12.sp
                     )
                 )
@@ -1688,7 +1689,7 @@ private fun StartMenuLayout(
                         text = headerTitle,
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp,
+                            letterSpacing = 0.2.sp,
                             color = if (isDark) Color.White else BrandAccent,
                             fontSize = 18.sp
                         )
@@ -1796,8 +1797,8 @@ private fun StartMenuSleekCapsuleButton(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.8.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.2.sp,
                     color = if (isDark) Color.White else (if (isHighlighted) Color.White else Color(0xFF0F172A)),
                     fontSize = 15.sp
                 )
@@ -1990,8 +1991,8 @@ private fun StartMenuBigButton(
                     text = parsedTitle.cleanLabel.ifEmpty { title },
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = MainAppFontFamily,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.2.sp,
                         color = if (isDark) Color.White else (if (isHighlighted) Color.White else Color(0xFF0F172A)),
                         fontSize = 15.sp
                     )
@@ -2175,7 +2176,7 @@ private fun SplashColumnHeaderPill(
                 text = title,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.8.sp,
                     fontSize = if (isCompact) 10.sp else 11.5.sp,
                     color = if (isSpark) ElectrumGold else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A))
@@ -2230,7 +2231,7 @@ private fun SplashColumnHeaderPill(
                             text = if (isSpark) "🎮 GAMIFIED GENRE CAMPAIGNS" else "🏛️ STANDARD STUDIO (FREEFORM)",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.Black,
+                                fontWeight = FontWeight.Bold,
                                 fontSize = 12.5.sp,
                                 color = if (isSpark) ElectrumGold else (if (isDark) Color.White else Color(0xFF0F172A))
                             )
@@ -2245,7 +2246,7 @@ private fun SplashColumnHeaderPill(
                                 text = if (isSpark) "⚡ TIMED STAGES • XP LOOT • 48H SURVIVAL" else "🔓 WRITE AT YOUR OWN PACE • ZERO TIMERS",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = MainAppFontFamily,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontWeight = FontWeight.SemiBold,
                                     fontSize = 9.5.sp,
                                     color = if (isSpark) ElectrumGold else Color(0xFF38BDF8),
                                     letterSpacing = 0.5.sp
@@ -3117,7 +3118,7 @@ private fun GlassFormatCard(
                         text = badgeTag,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             color = ElectrumGold,
                             fontSize = 10.sp
                         ),
@@ -3379,7 +3380,7 @@ private fun GlassProjectCard(
                 text = project.title,
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (isDark) Color.White else (if (isHighlighted) Color.White else Color(0xFF0F172A)),
                     fontSize = 13.5.sp
                 ),
@@ -3524,7 +3525,7 @@ private fun GlassStarterCard(
                 text = "Start Your First Project",
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (isDark) Color.White else (if (isHighlighted) Color.White else Color(0xFF0F172A)),
                     fontSize = 13.5.sp
                 )

@@ -177,7 +177,7 @@ fun StudioNavigationDrawer(
                                         text = "SESHAT STUDIO",
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.5.sp,
+                                            letterSpacing = 0.2.sp,
                                             color = ElectrumGold
                                         )
                                     )
@@ -623,7 +623,7 @@ private fun DrawerSection(
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
                 color = ScreenplayTextMuted,
-                letterSpacing = 1.2.sp,
+                letterSpacing = 0.2.sp,
                 fontSize = 10.sp
             ),
             modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
@@ -680,7 +680,7 @@ private fun DrawerNavItem(
                             text = "ACTIVE",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = ScribeStarNeonRed,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 8.sp,
                                 letterSpacing = 0.5.sp
                             )

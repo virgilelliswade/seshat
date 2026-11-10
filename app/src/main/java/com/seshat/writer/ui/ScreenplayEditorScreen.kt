@@ -158,6 +158,7 @@ import com.seshat.writer.ui.theme.SluglineBlue
 import com.seshat.writer.ui.theme.TransitionPurple
 import androidx.compose.ui.graphics.Brush
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.StudioIconType
 import com.seshat.writer.ui.theme.StudioMonoIcon
@@ -918,10 +919,10 @@ private fun SidebarPane(
                         text = "BINDER ⌵",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             color = Color.White,
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                 }
@@ -931,8 +932,8 @@ private fun SidebarPane(
                         text = "SESHAT",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 2.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.2.sp,
                             color = Color.White,
                             fontSize = 14.sp
                         )
@@ -944,7 +945,7 @@ private fun SidebarPane(
                             color = ScribeStarNeonRed,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                 }
@@ -999,8 +1000,8 @@ private fun SidebarPane(
                 text = "ACT I • SCENES (${uiState.scenes.size})",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.1.sp,
                     color = Color.White,
                     fontSize = 11.sp
                 )
@@ -1238,7 +1239,7 @@ private fun StatCard(
                 text = value,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     fontSize = 15.sp
                 )
@@ -1647,7 +1648,7 @@ private fun DesktopScreenplayTopBar(
                     Text(
                         text = "${(uiState.zoomLevel * 100).toInt()}%",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = ScreenplayCourierFontFamily,
+                            fontFamily = StudioMonoFontFamily,
                             color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp
@@ -2087,7 +2088,7 @@ private fun EditorCanvas(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     color = ScreenplayTextMuted.copy(alpha = 0.5f),
-                                    letterSpacing = 1.sp
+                                    letterSpacing = 0.1.sp
                                 )
                             )
                         }
@@ -2390,7 +2391,7 @@ private fun SceneHeadingSmartBar(
                             color = ScreenplayTextMuted,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                     val prefixSuggestions = ScreenplayViewModel.STANDARD_PREFIXES.filter {
@@ -2422,7 +2423,7 @@ private fun SceneHeadingSmartBar(
                             color = ScreenplayTextMuted,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                     val partialLoc = parts.location.trim()
@@ -2457,7 +2458,7 @@ private fun SceneHeadingSmartBar(
                             color = ScreenplayTextMuted,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                     val partialTime = (parts.timeOfDay ?: "").trim()
@@ -2534,7 +2535,7 @@ private fun CharacterSmartBar(
                             color = ScreenplayTextMuted,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
 
@@ -2572,7 +2573,7 @@ private fun CharacterSmartBar(
                         color = ScreenplayTextMuted,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.1.sp
                     )
                 )
 
@@ -2627,7 +2628,7 @@ private fun TransitionPresetBar(
                     color = ScreenplayTextMuted,
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.1.sp
                 )
             )
 
@@ -2891,7 +2892,7 @@ private fun BottomHud(
                     Text(
                         text = "P.${uiState.pageCount} · ${uiState.wordCount}W",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = ScreenplayCourierFontFamily,
+                            fontFamily = StudioMonoFontFamily,
                             color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.5.sp
@@ -3045,7 +3046,7 @@ private fun BottomHud(
                             Text(
                                 text = "PAGE ${uiState.pageCount} (~${uiState.pageCount}M)",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = ScreenplayCourierFontFamily,
+                                    fontFamily = StudioMonoFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     color = valColor,
                                     fontSize = 11.sp
@@ -3055,7 +3056,7 @@ private fun BottomHud(
                         Text(
                             text = "SCENE ${uiState.selectedSceneIndex + 1}/${maxOf(1, uiState.sceneCount)}",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = ScreenplayCourierFontFamily,
+                                fontFamily = StudioMonoFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = valColor,
                                 fontSize = 11.sp
@@ -3064,7 +3065,7 @@ private fun BottomHud(
                         Text(
                             text = "${uiState.wordCount} WORDS",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = ScreenplayCourierFontFamily,
+                                fontFamily = StudioMonoFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = mutedColor,
                                 fontSize = 11.sp
@@ -3119,7 +3120,7 @@ private fun InlinePageBreakMarker(
                             color = ElectrumGold,
                             fontWeight = FontWeight.Bold,
                             fontSize = (11 * zoom).sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         )
                     )
                 }
@@ -3189,7 +3190,7 @@ private fun DualDialogueRow(
                     fontSize = (10 * zoom).sp,
                     color = ElectrumGold.copy(alpha = 0.75f),
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.1.sp
                 )
             )
         }
@@ -3316,7 +3317,7 @@ private fun DualDialogueActionBar(
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     color = ObsidianBlack,
                                     fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
+                                    letterSpacing = 0.1.sp
                                 )
                             )
                         }
@@ -3337,7 +3338,7 @@ private fun DualDialogueActionBar(
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     color = ElectrumGold,
                                     fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
+                                    letterSpacing = 0.1.sp
                                 )
                             )
                         }
@@ -4237,7 +4238,7 @@ private fun ScreenplayBlockItem(
                             style = TextStyle(
                                 fontFamily = MainAppFontFamily,
                                 fontSize = (9.5f * config.zoom).sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = ScribeStarNeonRed
                             ),
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)

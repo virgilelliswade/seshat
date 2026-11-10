@@ -83,6 +83,7 @@ import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.StudioMonoIcon
 
 private val CARD_PALETTE = listOf(
@@ -851,7 +852,7 @@ private fun ActColumn(
                         style = MaterialTheme.typography.titleSmall.copy(
                             color = ElectrumGold,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.1.sp
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1296,7 +1297,7 @@ private fun CorkboardSceneCard(
                 Text(
                     text = "~${card.estimatedMinutes}:00",
                     style = TextStyle(
-                        fontFamily = ScreenplayCourierFontFamily,
+                        fontFamily = StudioMonoFontFamily,
                         color = Color(0xFF64748B),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -1357,7 +1358,7 @@ private fun CorkboardSceneCard(
                                 Text(
                                     text = "ACT ${card.actIndex + 1}",
                                     style = TextStyle(
-                                        fontFamily = ScreenplayCourierFontFamily,
+                                        fontFamily = StudioMonoFontFamily,
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF475569)

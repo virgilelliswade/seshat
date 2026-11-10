@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.StudioMonoFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.smokedGlassBrush
@@ -512,7 +513,7 @@ fun StoryBibleDialog(
                             },
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = if (isReadOnlyAirlock) Color(0xFFFFB4AB) else Color(0xFF6EE7B7),
                                 fontSize = 11.sp
                             ),
@@ -808,7 +809,7 @@ private fun LorePillarsSection(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = MainAppFontFamily,
                                     color = if (isDark) Color.White else (if (isSelected || isLit) Color.White else Color(0xFF0F172A)),
-                                    fontWeight = if (isSelected || isLit) FontWeight.ExtraBold else FontWeight.Bold,
+                                    fontWeight = if (isSelected || isLit) FontWeight.SemiBold else FontWeight.Bold,
                                     fontSize = 12.5.sp
                                 )
                             )
@@ -818,7 +819,7 @@ private fun LorePillarsSection(
                                     text = "✓",
                                     color = if (isSelected || isLit) Color.White else (if (isDark) Color(0xFF4CAF50) else Color(0xFF15803D)),
                                     fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.ExtraBold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }
@@ -882,7 +883,7 @@ private fun LorePillarsSection(
                 Text(
                     text = pillarTitle,
                     style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = if (isDark) LightGold else Color(0xFF991B1B)
                     )
                 )
@@ -1015,7 +1016,7 @@ private fun CharacterDossiersSection(
                     text = if (firstDraftState.isArcadeLocked) "CHARACTER PROFILES (${characters.size} / $maxSlots SLOTS • MAX ${maxWordsPerDossier}w)" else "CHARACTER PROFILES (${characters.size})",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -1056,7 +1057,7 @@ private fun CharacterDossiersSection(
                     text = if (firstDraftState.isArcadeLocked) "CHARACTER PROFILES (${characters.size} / $maxSlots SLOTS • MAX ${maxWordsPerDossier}w EACH)" else "CHARACTER PROFILES & FACTION ALLEGIANCES",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
 
@@ -1645,7 +1646,7 @@ private fun LocationCodexSection(
                     text = "LOCATION CODEX (${locations.size})",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
                 Spacer(modifier = Modifier.height(6.dp))
@@ -1688,7 +1689,7 @@ private fun LocationCodexSection(
                     text = "LOCATION CODEX & ATMOSPHERIC PROFILES",
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isDark) LightGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
 
@@ -1897,7 +1898,7 @@ private fun BeatsOutlineSection(
                 text = if (isCompactScreen) "STORY BEATS (${beats.size})" else "INTERACTIVE STORY BEATS & SEQUENCE OUTLINE",
                 style = MaterialTheme.typography.labelMedium.copy(
                     color = if (isDark) LightGold else Color(0xFF991B1B),
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             )
 
@@ -2172,7 +2173,7 @@ private fun SeriesHubSection(
                         text = "${descriptor.icon} ${descriptor.headerTitle}",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             color = if (isDark) Color(0xFF90CAF9) else Color(0xFF1D4ED8)
                         )
                     )
@@ -2280,7 +2281,7 @@ private fun SeriesHubSection(
                 text = "${descriptor.itemsSectionTitle} (${tvConfig.episodes.size})",
                 style = MaterialTheme.typography.labelMedium.copy(
                     color = if (isDark) LightGold else Color(0xFF991B1B),
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             )
 
