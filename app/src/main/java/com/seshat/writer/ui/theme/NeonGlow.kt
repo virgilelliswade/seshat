@@ -27,25 +27,16 @@ fun Modifier.neonBloom(
         val w = size.width
         val h = size.height
         if (w <= 0f || h <= 0f) return@drawBehind
-
-        // Crisp squared-off architectural frame (0f corner radius)
-        if (outerAlpha > 0.25f) {
+        // 90/10 Studio Discipline: only draw an explicit border when strongly highlighted
+        if (coreAlpha >= 0.72f) {
             drawRoundRect(
-                color = color.copy(alpha = (outerAlpha * 0.35f).coerceIn(0f, 0.25f)),
-                topLeft = Offset(-1.dp.toPx(), -1.dp.toPx()),
-                size = androidx.compose.ui.geometry.Size(w + 2.dp.toPx(), h + 2.dp.toPx()),
+                color = color.copy(alpha = (coreAlpha * 0.75f).coerceIn(0f, 0.9f)),
+                topLeft = Offset.Zero,
+                size = size,
                 cornerRadius = CornerRadius.Zero,
                 style = Stroke(width = 1.dp.toPx())
             )
         }
-
-        drawRoundRect(
-            color = color.copy(alpha = coreAlpha.coerceIn(0f, 1f)),
-            topLeft = Offset.Zero,
-            size = size,
-            cornerRadius = CornerRadius.Zero,
-            style = Stroke(width = strokeWidth.toPx().coerceAtLeast(1f))
-        )
     } catch (_: Throwable) {
         // Defensive: never let graphics drawing crash the UI
     }

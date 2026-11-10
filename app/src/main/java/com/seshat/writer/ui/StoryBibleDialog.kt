@@ -132,6 +132,10 @@ import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.ScreenplayCourierFontFamily
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.DeskBackground
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.parseStudioButtonLabel
 
 private data class SeriesHubDescriptor(
     val tabLabel: String,
@@ -337,319 +341,156 @@ fun StoryBibleDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ambientWorkspaceBrush(isDark))
+                .background(DeskBackground)
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .imePadding()
         ) {
-            // Persistent Seshat Studio & Statue Backdrop from Concept B
-            Image(
-                painter = painterResource(id = R.drawable.seshat_studio_splash),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = if (isDark) 0.18f else 0.08f
-                    }
-            )
-
             Column(modifier = Modifier.fillMaxSize()) {
-                // Floating Top Action Header (Bar-less Spatial Lore Studio)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Left: Floating Circle Dismiss Pill & Floating Logo+Title Chip
+                // Docked Edge-to-Edge Studio Top Bar
+                Column(modifier = Modifier.fillMaxWidth().background(ObsidianSurface)) {
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(0.dp),
-                            color = Color.Transparent,
-                            modifier = Modifier
-                                .shadow(
-                                    elevation = 4.dp,
-                                    shape = RoundedCornerShape(0.dp),
-                                    spotColor = if (isDark) ScribeStarNeonRed.copy(alpha = 0.35f) else Color(0x3064748B)
-                                )
-                                .clip(RoundedCornerShape(0.dp))
-                                .background(opticalPillBrush(isDark = isDark))
-                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                                .clickable(onClick = onDismiss)
-                                .size(42.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Close Story Bible",
-                                    tint = ScribeStarNeonRed,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(0.dp),
-                            color = Color.Transparent,
-                            modifier = Modifier
-                                .shadow(
-                                    elevation = 4.dp,
-                                    shape = RoundedCornerShape(0.dp),
-                                    spotColor = if (isDark) Color.Black else Color(0x3064748B)
-                                )
-                                .clip(RoundedCornerShape(0.dp))
-                                .background(opticalPillBrush(isDark = isDark))
-                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
+                        // Left: Close Button + Title + Continuity Score
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
                                 modifier = Modifier
-                                    .defaultMinSize(minHeight = 42.dp)
-                                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .background(ObsidianBlack)
+                                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                                    .clickable(onClick = onDismiss)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.seshat_emblem_logo),
-                                        contentDescription = "ScribeStar Logo",
-                                        modifier = Modifier.size(20.dp)
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close Story Bible",
+                                    tint = ScreenplayTextMuted,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                StudioMonoIcon(type = StudioIconType.BIBLE, tint = ScribeStarNeonRed, size = 15.dp)
+                                Text(
+                                    text = if (isCompactScreen) "STORY BIBLE" else "STORY BIBLE & LORE CODEX",
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.8.sp,
+                                        color = ScreenplayTextDark,
+                                        fontSize = 12.5.sp
                                     )
-                                    Column(horizontalAlignment = Alignment.Start) {
-                                        Text(
-                                            text = if (isCompactScreen) "STORY BIBLE" else "STORY BIBLE & LORE",
-                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                fontFamily = MainAppFontFamily,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                letterSpacing = 1.1.sp,
-                                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                                fontSize = 13.sp
-                                            )
+                                )
+                                if (!isCompactScreen) {
+                                    Box(modifier = Modifier.width(1.dp).height(16.dp).background(ObsidianSurfaceVariant))
+                                    val completeness = bible.lore.completenessScore()
+                                    Text(
+                                        text = "CONTINUITY $completeness% · ${bible.lore.wordCount()} WORDS",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = ScreenplayCourierFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ScreenplayTextMuted,
+                                            fontSize = 10.5.sp
                                         )
-                                        if (!isCompactScreen) {
-                                            val completeness = bible.lore.completenessScore()
-                                            Text(
-                                                text = "AI Continuity: $completeness% • ${bible.lore.wordCount()} words",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontFamily = MainAppFontFamily,
-                                                    color = if (completeness >= 75) (if (isDark) Color(0xFF81C784) else Color(0xFF15803D)) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)),
-                                                    fontSize = 11.sp
-                                                )
-                                            )
-                                        }
-                                    }
+                                    )
                                 }
                             }
                         }
-                    }
 
-                    // Right: Floating Utility Actions (Theme Toggle & Copy Markdown)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FloatingThemeTogglePill(
-                            isDark = isDark,
-                            onToggleTheme = onToggleTheme,
-                            isCompact = isCompactScreen
-                        )
-
-                        val copyInteraction = remember { MutableInteractionSource() }
-                        val isCopyHovered by copyInteraction.collectIsHoveredAsState()
-                        val isCopyPressed by copyInteraction.collectIsPressedAsState()
-                        val isCopyLit = isCopyHovered || isCopyPressed
-
-                        val copyScale by animateFloatAsState(
-                            targetValue = if (isCopyPressed) 0.95f else if (isCopyHovered) 1.04f else 1.0f,
-                            animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-                            label = "CopyScale"
-                        )
-                        val copyGlow by animateDpAsState(
-                            targetValue = if (isCopyLit) 8.dp else 0.dp,
-                            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-                            label = "CopyGlow"
-                        )
-                        val copyStroke by animateDpAsState(
-                            targetValue = if (isCopyLit) 1.8.dp else 1.2.dp,
-                            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-                            label = "CopyStroke"
-                        )
-
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .graphicsLayer {
-                                    scaleX = copyScale
-                                    scaleY = copyScale
-                                }
-                                .defaultMinSize(minHeight = 42.dp, minWidth = if (isCompactScreen) 42.dp else 54.dp)
-                                .shadow(
-                                    elevation = if (isCopyLit) 6.dp else 2.dp,
-                                    shape = RoundedCornerShape(0.dp),
-                                    spotColor = if (isCopyLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-                                )
-                                .then(
-                                    if (isCopyLit) {
-                                        Modifier.neonBloom(
-                                            color = ScribeStarNeonRed,
-                                            cornerRadius = 0.dp,
-                                            glowRadius = copyGlow,
-                                            strokeWidth = copyStroke,
-                                            outerAlpha = 0.45f,
-                                            midAlpha = 0.75f
+                        // Center/Right: Joined Segmented Navigation Tabs + Copy Markdown + Theme Toggle
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            val tabs = listOf(
+                                "📖 Lore Pillars (4)",
+                                "🎭 Characters (${bible.characters.size})",
+                                "🔍 Locations (${bible.locations.size})",
+                                "📌 Beats (${bible.beats.size})",
+                                hubDescriptor.tabLabel
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .horizontalScroll(rememberScrollState())
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .background(ObsidianBlack)
+                                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp)),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                tabs.forEachIndexed { index, title ->
+                                    val isSelected = mainTab == index
+                                    val (tabIcon, cleanTabTitle) = remember(title) { parseStudioButtonLabel(title) }
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .background(if (isSelected) ScribeStarNeonRed.copy(alpha = 0.14f) else Color.Transparent)
+                                            .clickable { mainTab = index }
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            if (tabIcon != StudioIconType.NONE) {
+                                                StudioMonoIcon(
+                                                    type = tabIcon,
+                                                    tint = if (isSelected) ScribeStarNeonRed else ScreenplayTextMuted,
+                                                    size = 13.dp
+                                                )
+                                            }
+                                            Text(
+                                                text = cleanTabTitle,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontFamily = MainAppFontFamily,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                    color = if (isSelected) ScreenplayTextDark else ScreenplayTextMuted,
+                                                    fontSize = 11.5.sp
+                                                ),
+                                                maxLines = 1
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .width(42.dp)
+                                                .height(2.dp)
+                                                .background(if (isSelected) ScribeStarNeonRed else Color.Transparent)
                                         )
-                                    } else Modifier
-                                )
-                                .clip(RoundedCornerShape(0.dp))
-                                .background(
-                                    if (isCopyLit) SolidColor(ScribeStarNeonRed)
-                                    else opticalPillBrush(isLit = isCopyLit, isPrimary = isCopyLit, isDark = isDark)
-                                )
-                                .border(
-                                    if (isCopyLit) BorderStroke(copyStroke, Color.Transparent)
-                                    else prismaticGlassBorder(
-                                        width = copyStroke,
-                                        isLit = isCopyLit,
-                                        isDark = isDark
-                                    ),
-                                    RoundedCornerShape(0.dp)
-                                )
-                                .clickable(
-                                    interactionSource = copyInteraction,
-                                    indication = null
-                                ) {
+                                    }
+                                    if (index < tabs.lastIndex) {
+                                        Box(modifier = Modifier.width(1.dp).height(26.dp).background(ObsidianSurfaceVariant))
+                                    }
+                                }
+                            }
+
+                            GlassActionButton(
+                                text = copyNotification ?: (if (isCompactScreen) "📋 Copy" else "📋 Export Markdown"),
+                                onClick = {
                                     val md = StoryBibleRepository.exportBibleToMarkdown(bible)
                                     clipboardManager.setText(AnnotatedString(md))
                                     copyNotification = "Copied!"
                                 }
-                                .padding(horizontal = if (isCompactScreen) 10.dp else 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = copyNotification ?: (if (isCompactScreen) "📋 Copy" else "📋 Copy Markdown"),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = MainAppFontFamily,
-                                    color = if (isDark) (if (isCopyLit) Color.White else ElectrumGold) else (if (isCopyLit) Color.White else Color(0xFF0F172A)),
-                                    fontWeight = if (isCopyLit) FontWeight.ExtraBold else FontWeight.Bold,
-                                    fontSize = 12.5.sp
-                                )
+                            )
+
+                            FloatingThemeTogglePill(
+                                isDark = isDark,
+                                onToggleTheme = onToggleTheme,
+                                isCompact = isCompactScreen
                             )
                         }
                     }
-                }
-
-                // Main Navigation Tabs (Floating Glass Pills with No Underlying Bar - Centered)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val tabs = listOf(
-                            "🌍 Lore Pillars (4)",
-                            "👥 Characters (${bible.characters.size})",
-                            "🗺️ Locations (${bible.locations.size})",
-                            "📌 Beats (${bible.beats.size})",
-                            hubDescriptor.tabLabel
-                        )
-                        tabs.forEachIndexed { index, title ->
-                            val isSelected = mainTab == index
-                            val tabInteraction = remember { MutableInteractionSource() }
-                            val isHovered by tabInteraction.collectIsHoveredAsState()
-                            val isPressed by tabInteraction.collectIsPressedAsState()
-                            val isLit = isSelected || isHovered || isPressed
-
-                            val tabScale by animateFloatAsState(
-                                targetValue = if (isPressed) 0.95f else if (isHovered) 1.04f else 1.0f,
-                                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-                                label = "TabScale_$index"
-                            )
-                            val tabGlow by animateDpAsState(
-                                targetValue = if (isSelected) 8.dp else if (isHovered) 5.dp else 0.dp,
-                                animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-                                label = "TabGlow_$index"
-                            )
-                            val tabStroke by animateDpAsState(
-                                targetValue = if (isLit) 1.8.dp else 1.2.dp,
-                                animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-                                label = "TabStroke_$index"
-                            )
-
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        scaleX = tabScale
-                                        scaleY = tabScale
-                                    }
-                                    .defaultMinSize(minHeight = 42.dp, minWidth = 54.dp)
-                                    .shadow(
-                                        elevation = if (isSelected || isLit) 6.dp else 2.dp,
-                                        shape = RoundedCornerShape(0.dp),
-                                        spotColor = if (isSelected || isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-                                    )
-                                    .then(
-                                        if (isLit) {
-                                            Modifier.neonBloom(
-                                                color = ScribeStarNeonRed,
-                                                cornerRadius = 0.dp,
-                                                glowRadius = tabGlow,
-                                                strokeWidth = tabStroke,
-                                                outerAlpha = if (isSelected) 0.40f else 0.25f,
-                                                midAlpha = if (isSelected) 0.70f else 0.45f
-                                            )
-                                        } else Modifier
-                                    )
-                                    .clip(RoundedCornerShape(0.dp))
-                                    .background(
-                                        if (isSelected) SolidColor(ScribeStarNeonRed)
-                                        else opticalPillBrush(isLit = isLit, isPrimary = isSelected, isDark = isDark)
-                                    )
-                                    .border(
-                                        if (isSelected) BorderStroke(tabStroke, Color.Transparent)
-                                        else prismaticGlassBorder(
-                                            width = tabStroke,
-                                            isLit = isLit,
-                                            isDark = isDark
-                                        ),
-                                        shape = RoundedCornerShape(0.dp)
-                                    )
-                                    .clickable(
-                                        interactionSource = tabInteraction,
-                                        indication = null
-                                    ) {
-                                        mainTab = index
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = title,
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = MainAppFontFamily,
-                                        fontWeight = if (isSelected || isLit) FontWeight.ExtraBold else FontWeight.Bold,
-                                        color = if (isDark) Color.White else (if (isSelected || isLit) Color.White else Color(0xFF0F172A)),
-                                        fontSize = 12.5.sp
-                                    ),
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
+                    HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
                 }
 
                 // Airlock Status Banner when in First Draft Mode
@@ -793,99 +634,59 @@ private fun GlassActionButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val isLit = isHovered || isPressed
-
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLit) 8.dp else if (isPrimary) 5.dp else 0.dp,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "ActionGlow"
-    )
-    val outerAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.50f else if (isPrimary) 0.28f else 0.0f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "ActionOuterAlpha"
-    )
-    val midAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.85f else if (isPrimary) 0.52f else 0.0f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "ActionMidAlpha"
-    )
-    val strokeWidth by animateDpAsState(
-        targetValue = if (isLit) 1.8.dp else 1.2.dp,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "ActionStroke"
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else if (isHovered) 1.04f else 1.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "ActionScale"
-    )
-
     val isDark = LocalSeshatDarkTheme.current
+    val (autoIcon, cleanLabel) = remember(text) { parseStudioButtonLabel(text) }
+
+    val bgColor = when {
+        isPrimary -> ScribeStarNeonRed
+        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
+        else -> ObsidianBlack
+    }
+    val borderColor = when {
+        isPrimary -> ScribeStarNeonRed
+        else -> ObsidianSurfaceVariant
+    }
+    val contentColor = when {
+        isPrimary -> Color.White
+        isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+        else -> if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
+    }
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .defaultMinSize(minHeight = 42.dp, minWidth = 54.dp)
-            .shadow(
-                elevation = if (isLit || isPrimary) 6.dp else 2.dp,
-                shape = RoundedCornerShape(0.dp),
-                spotColor = if (isLit || isPrimary) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-            )
-            .then(
-                if (isLit || isPrimary) {
-                    Modifier.neonBloom(
-                        color = ScribeStarNeonRed,
-                        cornerRadius = 0.dp,
-                        glowRadius = glowRadius,
-                        strokeWidth = strokeWidth,
-                        outerAlpha = outerAlpha,
-                        midAlpha = midAlpha,
-                        coreAlpha = if (isLit) 1.0f else 0.85f
-                    )
-                } else Modifier
-            )
+            .defaultMinSize(minHeight = 32.dp)
             .clip(RoundedCornerShape(0.dp))
-            .background(
-                if (isPrimary) SolidColor(ScribeStarNeonRed)
-                else opticalPillBrush(isLit = isLit, isPrimary = isPrimary, isDark = isDark)
-            )
-            .border(
-                if (isPrimary) BorderStroke(strokeWidth, Color.Transparent)
-                else prismaticGlassBorder(
-                    width = strokeWidth,
-                    isLit = isLit || isPrimary,
-                    isDark = isDark
-                ),
-                shape = RoundedCornerShape(0.dp)
-            )
+            .background(bgColor)
+            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             if (icon != null) {
                 icon()
-                Spacer(modifier = Modifier.width(6.dp))
+            } else if (autoIcon != StudioIconType.NONE) {
+                StudioMonoIcon(
+                    type = autoIcon,
+                    tint = contentColor,
+                    size = 13.5.dp
+                )
             }
             Text(
-                text = text,
+                text = cleanLabel,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    color = if (isDark) (if (isLit || isPrimary) Color.White else ElectrumGold) else (if (isLit || isPrimary) Color.White else Color(0xFF0F172A)),
-                    fontWeight = if (isLit || isPrimary) FontWeight.ExtraBold else FontWeight.Bold,
-                    fontSize = 12.5.sp
+                    color = contentColor,
+                    fontWeight = if (isPrimary) FontWeight.Bold else FontWeight.SemiBold,
+                    fontSize = 11.5.sp
                 ),
                 maxLines = 1,
                 softWrap = false

@@ -18,6 +18,7 @@ val CourierPrimeFamily = FontFamily(
 )
 
 val ScreenplayCourierFontFamily = CourierPrimeFamily
+val ScreenplayFontFamily = ScreenplayCourierFontFamily
 
 // Montserrat geometric typeface family (retained for backward compatibility)
 val MontserratFontFamily = FontFamily(

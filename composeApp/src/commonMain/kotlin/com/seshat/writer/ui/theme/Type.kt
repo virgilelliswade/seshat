@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.sp
 // Courier Prime typography reserved for screenplay script canvas formatting
 val CourierPrimeFamily = FontFamily.Monospace
 val ScreenplayCourierFontFamily = CourierPrimeFamily
+val ScreenplayFontFamily = ScreenplayCourierFontFamily
 
 // Montserrat geometric typeface family
 val MontserratFontFamily = FontFamily.SansSerif

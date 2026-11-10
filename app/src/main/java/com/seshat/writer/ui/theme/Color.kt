@@ -69,15 +69,15 @@ val StudioPaperWhite = Color(0xFFFFFFFF)
 val StudioPaperInk = Color(0xFF0F172A)
 val StudioPaperBorder = Color(0xFFCBD5E1)
 
-// Semantic tokens mapped to the active Studio Palette
+// Semantic tokens mapped to calm studio slate (90/10 neutral discipline: reserve accent for 10% active selections)
 val ElectrumGold: Color
-    get() = if (ActiveDarkThemeState.value) ActiveStudioPaletteState.value.darkAccent else ActiveStudioPaletteState.value.lightAccent
+    get() = if (ActiveDarkThemeState.value) Color(0xFFCBD5E1) else Color(0xFF334155)
 
 val LightGold: Color
-    get() = ActiveStudioPaletteState.value.secondaryAccent
+    get() = if (ActiveDarkThemeState.value) Color(0xFFF1F5F9) else Color(0xFF0F172A)
 
 val DarkGold: Color
-    get() = ActiveStudioPaletteState.value.lightAccent
+    get() = if (ActiveDarkThemeState.value) Color(0xFF94A3B8) else Color(0xFF475569)
 
 val LapisLazuli = CircuitCyan
 val LapisLight = Color(0xFF7DD3FC)

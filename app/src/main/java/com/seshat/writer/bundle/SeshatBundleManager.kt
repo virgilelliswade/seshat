@@ -72,7 +72,7 @@ object SeshatBundleManager {
                 ZipOutputStream(BufferedOutputStream(fos)).use { zos ->
                     // 1. manifest.json
                     val manifest = JSONObject().apply {
-                        put("seshatVersion", "2.3.1")
+                        put("seshatVersion", "2.4.0")
                         put("projectFormat", ProjectFormat.TV_SERIES.name)
                         put("screenplayType", project.format.name)
                         put("title", project.title)
@@ -180,7 +180,7 @@ object SeshatBundleManager {
             FileOutputStream(targetFile).use { fos ->
                 ZipOutputStream(BufferedOutputStream(fos)).use { zos ->
                     val manifest = JSONObject().apply {
-                        put("seshatVersion", "2.3.1")
+                        put("seshatVersion", "2.4.0")
                         put("projectFormat", ProjectFormat.SCREENPLAY.name)
                         put("screenplayType", screenplayType.name)
                         put("title", title)
@@ -228,7 +228,7 @@ object SeshatBundleManager {
             FileOutputStream(targetFile).use { fos ->
                 ZipOutputStream(BufferedOutputStream(fos)).use { zos ->
                     val manifest = JSONObject().apply {
-                        put("seshatVersion", "2.3.1")
+                        put("seshatVersion", "2.4.0")
                         put("projectFormat", ProjectFormat.NOVEL.name)
                         put("title", manuscript.title)
                         put("author", manuscript.author)

@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -26,13 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.MainAppFontFamily
-import com.seshat.writer.ui.theme.ObsidianSurface
+import com.seshat.writer.ui.theme.ObsidianBlack
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
-import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.ScreenplayFontFamily
 
 /**
- * Compact, tactile formatting bar providing 1-tap Bold, Italic, Underline, Strikethrough,
- * and Font Size step controls (A- / A+) with squared-off corners.
+ * Joined Segmented Studio Formatting Strip:
+ * Groups [ B | I | U | S ] and [ A- | 12pt | A+ ] into unified 1px-bordered segmented strips
+ * with internal hairline dividers instead of separate floating boxes.
  */
 @Composable
 fun EditorFormattingToolbarRow(
@@ -45,181 +45,175 @@ fun EditorFormattingToolbarRow(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
-    val pillBg = ObsidianSurface
-    val pillBorder = ObsidianSurfaceVariant
-    val textColor = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A)
+    val stripBg = ObsidianBlack
+    val stripBorder = ObsidianSurfaceVariant
+    val textColor = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
+    val mutedTextColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
     val btnPaddingH = if (isCompact) 8.dp else 10.dp
-    val btnPaddingV = if (isCompact) 4.dp else 6.dp
-    val fontSize = if (isCompact) 11.5.sp else 12.sp
+    val btnPaddingV = if (isCompact) 4.dp else 5.dp
+    val fontSize = if (isCompact) 11.sp else 11.5.sp
+    val dividerHeight = if (isCompact) 20.dp else 24.dp
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
     ) {
-        // [ B ] Bold Button
-        Box(
+        // Unified Typography Strip: [ B | I | U | S ]
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
                 .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { formattingController.toggleBold() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
+                .background(stripBg)
+                .border(BorderStroke(1.dp, stripBorder), RoundedCornerShape(0.dp))
         ) {
-            Text(
-                text = "B",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.Black,
-                    fontSize = fontSize,
-                    color = textColor
+            // [ B ] Bold
+            Box(
+                modifier = Modifier
+                    .clickable { formattingController.toggleBold() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "B",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
                 )
-            )
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(dividerHeight).background(stripBorder))
+
+            // [ I ] Italic
+            Box(
+                modifier = Modifier
+                    .clickable { formattingController.toggleItalic() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "I",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
+                )
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(dividerHeight).background(stripBorder))
+
+            // [ U ] Underline
+            Box(
+                modifier = Modifier
+                    .clickable { formattingController.toggleUnderline() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "U",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
+                )
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(dividerHeight).background(stripBorder))
+
+            // [ S ] Strikethrough
+            Box(
+                modifier = Modifier
+                    .clickable { formattingController.toggleStrikethrough() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "S",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        textDecoration = TextDecoration.LineThrough,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
+                )
+            }
         }
 
-        // [ I ] Italic Button
-        Box(
-            modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { formattingController.toggleItalic() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "I",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    color = textColor
-                )
-            )
-        }
-
-        // [ U ] Underline Button
-        Box(
-            modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { formattingController.toggleUnderline() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "U",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    textDecoration = TextDecoration.Underline,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    color = textColor
-                )
-            )
-        }
-
-        // [ S ] Strikethrough Button
-        Box(
-            modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { formattingController.toggleStrikethrough() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "S",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    textDecoration = TextDecoration.LineThrough,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    color = textColor
-                )
-            )
-        }
-
-        // Divider
-        Box(
-            modifier = Modifier
-                .padding(horizontal = 2.dp)
-                .width(1.dp)
-                .height(if (isCompact) 16.dp else 20.dp)
-                .background(pillBorder)
-        )
-
-        // [ A- ] Decrease Font Size
-        Box(
-            modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { onDecreaseFontSize() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "A-",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    color = textColor
-                )
-            )
-        }
-
-        // Font Size Badge
-        Box(
+        // Unified Font Scale Strip: [ A- | 12pt | A+ ]
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .clip(RoundedCornerShape(0.dp))
-                .background(ScribeStarNeonRed.copy(alpha = 0.16f))
-                .border(BorderStroke(0.8.dp, ScribeStarNeonRed.copy(alpha = 0.6f)), RoundedCornerShape(0.dp))
-                .clickable { onResetFontSize() }
-                .padding(horizontal = 6.dp, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
+                .background(stripBg)
+                .border(BorderStroke(1.dp, stripBorder), RoundedCornerShape(0.dp))
         ) {
-            Text(
-                text = "${currentFontSizePt}pt",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = (fontSize.value - 1f).sp,
-                    color = ScribeStarNeonRed
+            // [ A- ] Decrease Font Size
+            Box(
+                modifier = Modifier
+                    .clickable { onDecreaseFontSize() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "A-",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
                 )
-            )
-        }
+            }
 
-        // [ A+ ] Increase Font Size
-        Box(
-            modifier = Modifier
-                .shadow(4.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(pillBg)
-                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(0.dp))
-                .clickable { onIncreaseFontSize() }
-                .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "A+",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = fontSize,
-                    color = textColor
+            Box(modifier = Modifier.width(1.dp).height(dividerHeight).background(stripBorder))
+
+            // [ 12pt ] Monospace Readout (Click to reset)
+            Box(
+                modifier = Modifier
+                    .clickable { onResetFontSize() }
+                    .padding(horizontal = 8.dp, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "${currentFontSizePt}pt",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = ScreenplayFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = (fontSize.value - 0.5f).sp,
+                        color = mutedTextColor
+                    )
                 )
-            )
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(dividerHeight).background(stripBorder))
+
+            // [ A+ ] Increase Font Size
+            Box(
+                modifier = Modifier
+                    .clickable { onIncreaseFontSize() }
+                    .padding(horizontal = btnPaddingH, vertical = btnPaddingV),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "A+",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
+                )
+            }
         }
     }
 }

@@ -71,6 +71,10 @@ import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.parseStudioButtonLabel
 
 /**
  * Universal Studio Navigation Drawer (Option 1)
@@ -574,24 +578,34 @@ private fun DrawerQuickButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val (autoIcon, cleanText) = remember(text) { parseStudioButtonLabel(text) }
     Surface(
         color = ObsidianBlack,
         shape = RoundedCornerShape(0.dp),
-        border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.45f)),
+        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
         modifier = modifier
             .clip(RoundedCornerShape(0.dp))
             .clickable(onClick = onClick)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = ElectrumGold,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp
-            ),
-            modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
-            maxLines = 1
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(vertical = 6.dp, horizontal = 6.dp)
+        ) {
+            if (autoIcon != StudioIconType.NONE) {
+                StudioMonoIcon(type = autoIcon, tint = ScreenplayTextMuted, size = 12.5.dp)
+                Spacer(modifier = Modifier.width(5.dp))
+            }
+            Text(
+                text = cleanText,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = ScreenplayTextDark,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp
+                ),
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -601,14 +615,14 @@ private fun DrawerSection(
     content: @Composable () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
-                color = ElectrumGold.copy(alpha = 0.7f),
+                color = ScreenplayTextMuted,
                 letterSpacing = 1.2.sp,
                 fontSize = 10.sp
             ),
@@ -626,12 +640,13 @@ private fun DrawerNavItem(
     isActive: Boolean = false,
     onClick: () -> Unit
 ) {
+    val (autoIcon, _) = remember(icon, title) { parseStudioButtonLabel("$icon $title") }
     Surface(
-        color = if (isActive) ElectrumGold.copy(alpha = 0.15f) else ObsidianSurface,
+        color = if (isActive) ScribeStarNeonRed.copy(alpha = 0.14f) else ObsidianSurface,
         shape = RoundedCornerShape(0.dp),
         border = BorderStroke(
             1.dp,
-            if (isActive) ElectrumGold else Color.Transparent
+            if (isActive) ScribeStarNeonRed else ObsidianSurfaceVariant
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -642,19 +657,20 @@ private fun DrawerNavItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = icon,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(end = 10.dp)
+            StudioMonoIcon(
+                type = if (autoIcon != StudioIconType.NONE) autoIcon else StudioIconType.PAGE,
+                tint = if (isActive) ScribeStarNeonRed else ScreenplayTextMuted,
+                size = 15.dp
             )
+            Spacer(modifier = Modifier.width(10.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isActive) ElectrumGold else ScreenplayTextDark,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
+                            color = ScreenplayTextDark,
                             fontSize = 12.sp
                         )
                     )
@@ -663,7 +679,7 @@ private fun DrawerNavItem(
                         Text(
                             text = "ACTIVE",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = ElectrumGold,
+                                color = ScribeStarNeonRed,
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 8.sp,
                                 letterSpacing = 0.5.sp

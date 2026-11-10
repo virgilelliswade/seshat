@@ -120,6 +120,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import com.seshat.writer.ui.theme.MainAppFontFamily
+import com.seshat.writer.ui.theme.ScreenplayFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.opticalGlassBrush
@@ -132,7 +133,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import com.seshat.writer.ui.EditorFormattingToolbarRow
 import com.seshat.writer.ui.FloatingThemeTogglePill
 import com.seshat.writer.ui.LocalEditorFormattingController
+import com.seshat.writer.ui.ScreenplayMarginRulerBar
 import com.seshat.writer.ui.rememberEditorFormattingController
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.parseStudioButtonLabel
 
 @Composable
 fun NovelEditorPane(
@@ -366,77 +371,83 @@ fun NovelEditorPane(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // SCRIVENER-STYLE LEFT BINDER (Tablet / Desktop side-by-side squared card)
+                // SCRIVENER-STYLE LEFT BINDER (Tablet / Desktop side-by-side docked flush)
                 AnimatedVisibility(visible = isBinderVisible && !isCompactScreen) {
-                    Box(
-                        modifier = Modifier
-                            .width(260.dp)
-                            .fillMaxHeight()
-                            .padding(start = 14.dp, top = 8.dp, bottom = 12.dp, end = 6.dp)
-                            .shadow(16.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.25f))
-                            .clip(RoundedCornerShape(0.dp))
-                            .background(opticalGlassBrush(glassOpacity = 0.88f))
-                            .border(prismaticGlassBorder(width = 1.2.dp), RoundedCornerShape(0.dp))
-                    ) {
-                        NovelBinderPane(
-                            manuscript = manuscript,
-                            selectedChapterIndex = activeChapterIndex,
-                            onSelectChapter = onSelectChapter,
-                            onAddChapter = {
-                                val newNum = manuscript.chapters.size + 1
-                                val newChapter = NovelChapter(
-                                    chapterNumber = newNum,
-                                    title = "Chapter $newNum",
-                                    actIndex = 0,
-                                    paragraphs = NovelChapter.defaultParagraphs(newNum)
-                                )
-                                val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
-                                onUpdateManuscript(updated)
-                                onSelectChapter(manuscript.chapters.size)
-                            },
-                            onMoveChapterUp = { idx ->
-                                if (idx > 0) {
-                                    val list = manuscript.chapters.toMutableList()
-                                    val temp = list[idx]
-                                    list[idx] = list[idx - 1]
-                                    list[idx - 1] = temp
-                                    onUpdateManuscript(manuscript.copy(chapters = list))
-                                    onSelectChapter(idx - 1)
-                                }
-                            },
-                            onMoveChapterDown = { idx ->
-                                if (idx < manuscript.chapters.lastIndex) {
-                                    val list = manuscript.chapters.toMutableList()
-                                    val temp = list[idx]
-                                    list[idx] = list[idx + 1]
-                                    list[idx + 1] = temp
-                                    onUpdateManuscript(manuscript.copy(chapters = list))
-                                    onSelectChapter(idx + 1)
-                                }
-                            },
-                            onCloseBinder = { isBinderVisible = false },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    Row(modifier = Modifier.fillMaxHeight()) {
+                        Box(
+                            modifier = Modifier
+                                .width(260.dp)
+                                .fillMaxHeight()
+                                .background(ObsidianSurface)
+                        ) {
+                            NovelBinderPane(
+                                manuscript = manuscript,
+                                selectedChapterIndex = activeChapterIndex,
+                                onSelectChapter = onSelectChapter,
+                                onAddChapter = {
+                                    val newNum = manuscript.chapters.size + 1
+                                    val newChapter = NovelChapter(
+                                        chapterNumber = newNum,
+                                        title = "Chapter $newNum",
+                                        actIndex = 0,
+                                        paragraphs = NovelChapter.defaultParagraphs(newNum)
+                                    )
+                                    val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
+                                    onUpdateManuscript(updated)
+                                    onSelectChapter(manuscript.chapters.size)
+                                },
+                                onMoveChapterUp = { idx ->
+                                    if (idx > 0) {
+                                        val list = manuscript.chapters.toMutableList()
+                                        val temp = list[idx]
+                                        list[idx] = list[idx - 1]
+                                        list[idx - 1] = temp
+                                        onUpdateManuscript(manuscript.copy(chapters = list))
+                                        onSelectChapter(idx - 1)
+                                    }
+                                },
+                                onMoveChapterDown = { idx ->
+                                    if (idx < manuscript.chapters.lastIndex) {
+                                        val list = manuscript.chapters.toMutableList()
+                                        val temp = list[idx]
+                                        list[idx] = list[idx + 1]
+                                        list[idx + 1] = temp
+                                        onUpdateManuscript(manuscript.copy(chapters = list))
+                                        onSelectChapter(idx + 1)
+                                    }
+                                },
+                                onCloseBinder = { isBinderVisible = false },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        VerticalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
                     }
                 }
 
                 // CENTER MANUSCRIPT EDITOR CANVAS
-                Box(
+                Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current)),
-                    contentAlignment = Alignment.TopCenter
+                        .background(DeskBackground),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
+                    ScreenplayMarginRulerBar(isNovelMode = true)
+                    Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else 760.dp)
-                            .padding(
-                                horizontal = if (isCompactScreen) 6.dp else 16.dp,
-                                vertical = if (isCompactScreen) 8.dp else 20.dp
-                            )
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.TopCenter
                     ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else 760.dp)
+                                .padding(
+                                    horizontal = if (isCompactScreen) 6.dp else 16.dp,
+                                    vertical = if (isCompactScreen) 8.dp else 20.dp
+                                )
+                        ) {
                     val isChapterEditable = !uiState.firstDraftState.isArcadeLocked ||
                         uiState.firstDraftState.isMulliganActive() ||
                         activeChapterIndex == uiState.firstDraftState.novelUnlockedChapterIndex
@@ -791,6 +802,7 @@ fun NovelEditorPane(
                     )
                 }
             }
+            }
         }
     }
 
@@ -977,77 +989,75 @@ private fun CompactNovelTopBar(
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Left: Squared Drawer & Dedicated Chapter Binder Button
+    val isDark = LocalSeshatDarkTheme.current
+    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
-                    .clickable(onClick = onOpenStudioDrawer)
-                    .size(38.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ObsidianBlack)
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                        .clickable(onClick = onOpenStudioDrawer)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Studio Navigation Drawer",
-                        tint = ScribeStarNeonRed,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
                     )
                 }
+
+                NovelGlassPillButton(
+                    text = "📑 Binder (${manuscript.chapters.size})",
+                    onClick = onToggleBinder,
+                    isHighlight = isBinderVisible
+                )
             }
 
-            NovelGlassPillButton(
-                text = "📑 Binder (${manuscript.chapters.size})",
-                onClick = onToggleBinder,
-                isHighlight = isBinderVisible
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                NovelGlassPillButton(
+                    text = "📚 Novel",
+                    onClick = {},
+                    isHighlight = true
+                )
+                NovelGlassPillButton(
+                    text = "📌 Board",
+                    onClick = onToggleCorkboard
+                )
+                NovelGlassPillButton(
+                    text = "📖 Lore",
+                    onClick = onOpenStoryBible
+                )
+            }
+
+            CompactNovelTopBarTools(
+                isTypewriterMode = isTypewriterMode,
+                isArcadeMode = isArcadeMode,
+                onOpenFindReplace = onOpenFindReplace,
+                onOpenSprint = onOpenSprint,
+                onToggleTypewriter = onToggleTypewriter,
+                onOpenScraps = onOpenScraps,
+                onOpenCompiler = onOpenCompiler,
+                onSaveProject = onSaveProject,
+                onOpenSettings = onOpenSettings
             )
         }
-
-        // Center: Workspace Switcher [📚 Novel] [📌 Board] [📖 Lore]
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            NovelGlassPillButton(
-                text = "📚 Novel",
-                onClick = {},
-                isPrimary = true
-            )
-            NovelGlassPillButton(
-                text = "📌 Board",
-                onClick = onToggleCorkboard
-            )
-            NovelGlassPillButton(
-                text = "📖 Lore",
-                onClick = onOpenStoryBible
-            )
-        }
-
-        CompactNovelTopBarTools(
-            isTypewriterMode = isTypewriterMode,
-            isArcadeMode = isArcadeMode,
-            onOpenFindReplace = onOpenFindReplace,
-            onOpenSprint = onOpenSprint,
-            onToggleTypewriter = onToggleTypewriter,
-            onOpenScraps = onOpenScraps,
-            onOpenCompiler = onOpenCompiler,
-            onSaveProject = onSaveProject,
-            onOpenSettings = onOpenSettings
-        )
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 
@@ -1065,27 +1075,27 @@ private fun CompactNovelTopBarTools(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        NovelGlassPillButton(text = "🔍", onClick = onOpenFindReplace)
-        NovelGlassPillButton(text = "🎯", onClick = onOpenSprint)
+        NovelGlassPillButton(text = "🔍 Find", onClick = onOpenFindReplace)
+        NovelGlassPillButton(text = "🎯 Sprint", onClick = onOpenSprint)
         NovelGlassPillButton(
-            text = "📜",
+            text = "📜 Type",
             onClick = onToggleTypewriter,
             isHighlight = isTypewriterMode
         )
-        NovelGlassPillButton(text = "🪦", onClick = onOpenScraps)
+        NovelGlassPillButton(text = "🪦 Scraps", onClick = onOpenScraps)
         if (!isArcadeMode) {
-            NovelGlassPillButton(text = "🚀", onClick = onOpenCompiler)
+            NovelGlassPillButton(text = "🚀 Compile", onClick = onOpenCompiler)
         }
-        NovelGlassPillButton(
-            text = "💾",
-            onClick = onSaveProject,
-            isAccent = true
-        )
         NovelGlassPillButton(
             text = "⚙️",
             onClick = onOpenSettings
+        )
+        NovelGlassPillButton(
+            text = "💾 Save",
+            onClick = onSaveProject,
+            isAccent = true
         )
     }
 }
@@ -1110,152 +1120,92 @@ private fun DesktopNovelTopBar(
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Left: Squared Hamburger + Squared Logo+Title Chip
+    val isDark = LocalSeshatDarkTheme.current
+    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
-                    .clickable(onClick = onOpenStudioDrawer)
-                    .size(42.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Studio Navigation Drawer",
-                        tint = ScribeStarNeonRed,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush())
-                    .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .defaultMinSize(minHeight = 42.dp)
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ObsidianBlack)
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                        .clickable(onClick = onOpenStudioDrawer)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.seshat_emblem_logo),
-                            contentDescription = "ScribeStar Logo",
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Text(
-                            text = manuscript.title.ifBlank { "UNTITLED NOVEL" }.uppercase(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.2.sp,
-                                color = Color.White,
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Studio Navigation Drawer",
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
-            }
-        }
 
-        // Center: Squared Telemetry Glass Pill
-        Surface(
-            shape = RoundedCornerShape(0.dp),
-            color = Color.Transparent,
-            modifier = Modifier
-                .shadow(8.dp, RoundedCornerShape(0.dp))
-                .clip(RoundedCornerShape(0.dp))
-                .background(opticalPillBrush())
-                .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 42.dp)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                 ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.seshat_emblem_logo),
+                        contentDescription = "ScribeStar Logo",
+                        modifier = Modifier.size(18.dp)
+                    )
                     Text(
-                        text = "${manuscript.totalWordCount()} Words",
+                        text = manuscript.title.ifBlank { "UNTITLED NOVEL" }.uppercase(),
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                        style = MaterialTheme.typography.titleSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                    )
-                    Text(text = "•", color = Color(0xFF64748B))
-                    Text(
-                        text = "~${manuscript.estimatedPages()} Pages",
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            color = Color(0xFFCBD5E1),
-                            fontSize = 11.5.sp
-                        )
-                    )
-                    Text(text = "•", color = Color(0xFF64748B))
-                    Text(
-                        text = "~${manuscript.estimatedReadingMinutes()}m Read",
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            color = Color(0xFFCBD5E1),
-                            fontSize = 11.5.sp
+                            letterSpacing = 0.6.sp,
+                            color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+                            fontSize = 12.5.sp
                         )
                     )
                 }
-            }
-        }
 
-        // Right Actions: Squared Pills
-        DesktopNovelTopBarActions(
-            scrapsCount = manuscript.scraps.size,
-            isDictating = isDictating,
-            isCorkboardOpen = isCorkboardOpen,
-            isTypewriterMode = isTypewriterMode,
-            isArcadeMode = isArcadeMode,
-            onToggleDictation = onToggleDictation,
-            onOpenStoryBible = onOpenStoryBible,
-            onToggleCorkboard = onToggleCorkboard,
-            onOpenFindReplace = onOpenFindReplace,
-            onOpenSprint = onOpenSprint,
-            onToggleTypewriter = onToggleTypewriter,
-            onOpenScraps = onOpenScraps,
-            onOpenCompiler = onOpenCompiler,
-            onSaveProject = onSaveProject,
-            onOpenSettings = onOpenSettings
-        )
+                Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+
+                Text(
+                    text = "${manuscript.totalWordCount()} WORDS · ~${manuscript.estimatedPages()} PP · ~${manuscript.estimatedReadingMinutes()}M",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = com.seshat.writer.ui.theme.ScreenplayFontFamily,
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.5.sp
+                    )
+                )
+            }
+
+            DesktopNovelTopBarActions(
+                scrapsCount = manuscript.scraps.size,
+                isDictating = isDictating,
+                isCorkboardOpen = isCorkboardOpen,
+                isTypewriterMode = isTypewriterMode,
+                isArcadeMode = isArcadeMode,
+                onToggleDictation = onToggleDictation,
+                onOpenStoryBible = onOpenStoryBible,
+                onToggleCorkboard = onToggleCorkboard,
+                onOpenFindReplace = onOpenFindReplace,
+                onOpenSprint = onOpenSprint,
+                onToggleTypewriter = onToggleTypewriter,
+                onOpenScraps = onOpenScraps,
+                onOpenCompiler = onOpenCompiler,
+                onSaveProject = onSaveProject,
+                onOpenSettings = onOpenSettings
+            )
+        }
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 
@@ -1279,73 +1229,53 @@ private fun DesktopNovelTopBarActions(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         NovelGlassPillButton(
-            text = if (isDictating) "Recording" else "Dictate",
-            icon = if (isDictating) "🔴" else "🎙️",
-            onClick = onToggleDictation,
-            isHighlight = isDictating,
-            isBig = true
-        )
-        NovelGlassPillButton(
-            text = "Story Bible",
-            icon = "📖",
-            onClick = onOpenStoryBible,
-            isBig = true
-        )
-        NovelGlassPillButton(
-            text = if (isCorkboardOpen) "Corkboard ON" else "Corkboard",
-            icon = "📌",
+            text = "📌 Corkboard",
             onClick = onToggleCorkboard,
-            isHighlight = isCorkboardOpen,
-            isBig = true
+            isHighlight = isCorkboardOpen
         )
         NovelGlassPillButton(
-            text = "Find",
-            icon = "🔍",
-            onClick = onOpenFindReplace,
-            isBig = true
+            text = "📖 Bible",
+            onClick = onOpenStoryBible
         )
         NovelGlassPillButton(
-            text = "Goal / Sprint",
-            icon = "🎯",
-            onClick = onOpenSprint,
-            isBig = true
+            text = "🔍 Find",
+            onClick = onOpenFindReplace
         )
         NovelGlassPillButton(
-            text = if (isTypewriterMode) "Typewriter ON" else "Typewriter",
-            icon = "📜",
+            text = "🎯 Sprint",
+            onClick = onOpenSprint
+        )
+        NovelGlassPillButton(
+            text = "📜 Typewriter",
             onClick = onToggleTypewriter,
-            isHighlight = isTypewriterMode,
-            isBig = true
+            isHighlight = isTypewriterMode
         )
         NovelGlassPillButton(
-            text = "Scraps ($scrapsCount)",
-            icon = "🪦",
-            onClick = onOpenScraps,
-            isBig = true
+            text = "🪦 Scraps ($scrapsCount)",
+            onClick = onOpenScraps
         )
         if (!isArcadeMode) {
             NovelGlassPillButton(
-                text = "Compile",
-                icon = "🚀",
-                onClick = onOpenCompiler,
-                isBig = true
+                text = "🚀 Compile",
+                onClick = onOpenCompiler
             )
         }
         NovelGlassPillButton(
-            text = "Save",
-            icon = "💾",
-            onClick = onSaveProject,
-            isAccent = true,
-            isBig = true
+            text = if (isDictating) "🔴 Recording" else "🎙️ Dictate",
+            onClick = onToggleDictation,
+            isAccent = isDictating
         )
         NovelGlassPillButton(
-            text = "Settings",
-            icon = "⚙️",
-            onClick = onOpenSettings,
-            isBig = true
+            text = "⚙️ Settings",
+            onClick = onOpenSettings
+        )
+        NovelGlassPillButton(
+            text = "💾 Save",
+            onClick = onSaveProject,
+            isAccent = true
         )
     }
 }
@@ -1364,7 +1294,7 @@ private fun NovelChapterHeaderBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
+            .padding(bottom = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1374,30 +1304,23 @@ private fun NovelChapterHeaderBar(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = if (isDark) Color.White else Color(0xFF0F172A)
+                    color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
                 )
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                color = ObsidianSurface,
-                shape = RoundedCornerShape(0.dp),
-                border = BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.35f))
-            ) {
-                Text(
-                    text = "${chapter.wordCount()} words",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = MainAppFontFamily,
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                        fontSize = 10.5.sp
-                    ),
-                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+            Text(
+                text = "${chapter.wordCount()} WORDS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = com.seshat.writer.ui.theme.ScreenplayFontFamily,
+                    color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.5.sp
                 )
-            }
+            )
             if (!isArcadeMode) {
                 Spacer(modifier = Modifier.width(6.dp))
                 NovelGlassPillButton(
-                    text = "Snapshots (${chapter.snapshots.size})",
-                    icon = "📸",
+                    text = "📸 Snapshots (${chapter.snapshots.size})",
                     onClick = onOpenSnapshots
                 )
             }
@@ -1405,20 +1328,18 @@ private fun NovelChapterHeaderBar(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             NovelGlassPillButton(
-                text = if (isTypewriterMode) "Typewriter ON" else "Typewriter",
-                icon = "📜",
+                text = "📜 Typewriter",
                 onClick = onToggleTypewriter,
                 isHighlight = isTypewriterMode
             )
 
             NovelGlassPillButton(
-                text = "Scene Break (* * *)",
-                icon = "+",
+                text = "+ Scene Break (* * *)",
                 onClick = onInsertSceneBreak,
-                isAccent = true
+                isHighlight = true
             )
         }
     }
@@ -1438,108 +1359,71 @@ private fun NovelGlassPillButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val isLit = isHovered || isPressed || isHighlight
-
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLit) (if (isBig) 8.dp else 6.dp) else if (isAccent || isPrimary) 3.dp else 0.dp,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "NovelBtnGlow"
-    )
-    val outerAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.35f else if (isAccent || isPrimary) 0.18f else 0.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "NovelBtnOuterAlpha"
-    )
-    val midAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.65f else if (isAccent || isPrimary) 0.35f else 0.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "NovelBtnMidAlpha"
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else if (isHovered) 1.04f else 1.0f,
-        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-        label = "NovelBtnScale"
-    )
-
-    val cornerRadius = 0.dp
-    val hPadding = if (isBig) 16.dp else 12.dp
-    val vPadding = if (isBig) 8.dp else 6.dp
-    val textFontSize = if (isBig) 12.5.sp else 11.5.sp
-    val iconFontSize = if (isBig) 12.5.sp else 11.sp
-
     val isDark = LocalSeshatDarkTheme.current
+    val combinedText = if (icon != null && !text.startsWith(icon)) "$icon $text" else text
+    val (autoIcon, cleanLabel) = remember(combinedText) { parseStudioButtonLabel(combinedText) }
+
+    val bgColor = when {
+        isPrimary || isAccent -> ScribeStarNeonRed
+        isHighlight -> ScribeStarNeonRed.copy(alpha = if (isDark) 0.14f else 0.10f)
+        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
+        else -> Color.Transparent
+    }
+    val borderColor = when {
+        isPrimary || isAccent -> ScribeStarNeonRed
+        isHighlight -> ScribeStarNeonRed.copy(alpha = 0.55f)
+        isHovered || isPressed -> ObsidianSurfaceVariant
+        else -> Color.Transparent
+    }
+    val contentColor = when {
+        isPrimary || isAccent -> Color.White
+        isHighlight -> if (isDark) Color.White else ScribeStarNeonRed
+        isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+        else -> if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
+    }
+    val iconTint = when {
+        isPrimary || isAccent -> Color.White
+        isHighlight -> ScribeStarNeonRed
+        else -> contentColor
+    }
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .defaultMinSize(
-                minHeight = if (isBig) 42.dp else 36.dp,
-                minWidth = if (isBig) 54.dp else 42.dp
-            )
-            .shadow(
-                elevation = if (isLit || isPrimary) 10.dp else 6.dp,
-                shape = RoundedCornerShape(cornerRadius),
-                spotColor = if (isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-            )
-            .then(
-                if (isLit || isAccent || isPrimary) {
-                    Modifier.neonBloom(
-                        color = ScribeStarNeonRed,
-                        cornerRadius = cornerRadius,
-                        glowRadius = glowRadius,
-                        strokeWidth = if (isLit) 1.4.dp else 1.dp,
-                        outerAlpha = outerAlpha,
-                        midAlpha = midAlpha,
-                        coreAlpha = if (isLit) 1.0f else 0.75f
-                    )
-                } else Modifier
-            )
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(
-                opticalPillBrush(
-                    isLit = isLit,
-                    isPrimary = isPrimary,
-                    isAccent = isAccent,
-                    isDark = isDark
-                )
-            )
-            .border(
-                prismaticGlassBorder(
-                    width = if (isLit) 1.4.dp else 0.8.dp,
-                    isLit = isLit,
-                    isDark = isDark
-                ),
-                shape = RoundedCornerShape(cornerRadius)
-            )
+            .defaultMinSize(minHeight = 32.dp)
+            .clip(RoundedCornerShape(0.dp))
+            .background(bgColor)
+            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = hPadding, vertical = vPadding)
+            .padding(horizontal = 11.dp, vertical = 6.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            if (icon != null) {
-                Text(text = icon, fontSize = iconFontSize)
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            Text(
-                text = text,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    color = if (isHighlight || isAccent || isLit || isPrimary) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
-                    fontWeight = if (isHighlight || isLit || isPrimary) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = textFontSize
+            if (autoIcon != StudioIconType.NONE) {
+                StudioMonoIcon(
+                    type = autoIcon,
+                    tint = iconTint,
+                    size = 13.5.dp
                 )
-            )
+            }
+            if (cleanLabel.isNotBlank()) {
+                Text(
+                    text = cleanLabel,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        color = contentColor,
+                        fontWeight = if (isHighlight || isAccent || isPrimary) FontWeight.Bold else FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+                )
+            }
         }
     }
 }

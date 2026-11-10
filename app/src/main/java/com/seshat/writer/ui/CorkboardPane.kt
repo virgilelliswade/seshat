@@ -81,6 +81,9 @@ import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
 import com.seshat.writer.ui.theme.ScreenplayCourierFontFamily
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
 
 private val CARD_PALETTE = listOf(
     "#F59E0B", // Electrum Gold
@@ -363,235 +366,253 @@ fun CorkboardPane(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Title and scene count and Workspace Switcher
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        StudioMonoIcon(type = StudioIconType.CORKBOARD, tint = ScribeStarNeonRed, size = 14.dp)
                         Text(
-                            text = "📌 CORKBOARD OUTLINE",
+                            text = "CORKBOARD OUTLINE",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = ElectrumGold,
-                                letterSpacing = 1.sp
+                                color = ScreenplayTextDark,
+                                letterSpacing = 0.8.sp
                             )
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp)
-                        ) {
-                            Text(
-                                text = "${cards.size} Scenes",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ScreenplayTextMuted,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        Text(
+                            text = "${cards.size} SCENES",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = ScreenplayCourierFontFamily,
+                                color = ScreenplayTextMuted,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.5.sp
                             )
-                        }
+                        )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(modifier = Modifier.width(1.dp).height(18.dp).background(ObsidianSurfaceVariant))
 
-                        // Switcher tabs
-                        val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "📚 Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "🎬 Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "🎬 Script"
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
-                            modifier = Modifier.clickable { viewModel.closeCorkboard() }
+                        // Unified Workspace Switcher Strip
+                        val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "Script"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .background(ObsidianBlack)
+                                .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                         ) {
-                            Text(
-                                text = editorLabel,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectrumGold,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
-                            modifier = Modifier.clickable {
-                                viewModel.closeCorkboard()
-                                viewModel.openStoryBible(context)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier
+                                    .clickable { viewModel.closeCorkboard() }
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                StudioMonoIcon(type = StudioIconType.SCRIPT, tint = ScreenplayTextMuted, size = 12.5.dp)
+                                Text(
+                                    text = editorLabel,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = ScreenplayTextMuted,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp
+                                    )
+                                )
                             }
+                            Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier
+                                    .background(ScribeStarNeonRed.copy(alpha = 0.14f))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                StudioMonoIcon(type = StudioIconType.CORKBOARD, tint = ScribeStarNeonRed, size = 12.5.dp)
+                                Text(
+                                    text = "Corkboard",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = ScreenplayTextDark,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp
+                                    )
+                                )
+                            }
+                            Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier
+                                    .clickable {
+                                        viewModel.closeCorkboard()
+                                        viewModel.openStoryBible(context)
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                            ) {
+                                StudioMonoIcon(type = StudioIconType.BIBLE, tint = ScreenplayTextMuted, size = 12.5.dp)
+                                Text(
+                                    text = "Story Bible",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = ScreenplayTextMuted,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    // Center: Joined Act Count Strip [ 3 | 4 | 5 | + ]
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "ACTS",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = ScreenplayCourierFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = ScreenplayTextMuted,
+                                fontSize = 10.5.sp
+                            )
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .background(ObsidianBlack)
+                                .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                         ) {
+                            listOf(3, 4, 5).forEach { actPreset ->
+                                val isSelected = corkboard.actCount == actPreset
+                                Text(
+                                    text = "$actPreset",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = ScreenplayCourierFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) ScribeStarNeonRed else ScreenplayTextMuted
+                                    ),
+                                    modifier = Modifier
+                                        .background(if (isSelected) ScribeStarNeonRed.copy(alpha = 0.14f) else Color.Transparent)
+                                        .clickable { viewModel.setCorkboardActCount(context, actPreset) }
+                                        .padding(horizontal = 9.dp, vertical = 5.dp)
+                                )
+                                Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+                            }
                             Text(
-                                text = "📖 Lore",
+                                text = "+",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectrumGold,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
+                                    fontFamily = ScreenplayCourierFontFamily,
+                                    color = ScreenplayTextDark,
+                                    fontWeight = FontWeight.Bold
                                 ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier
+                                    .clickable {
+                                        if (corkboard.actCount < 9) {
+                                            viewModel.setCorkboardActCount(context, corkboard.actCount + 1)
+                                        }
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
                             )
                         }
                     }
 
-                    // Center: Acts Configuration Presets & Stepper
+                    // Right Actions: AI Summarize All, Templates, Split/Full, Save, Close
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = "Acts:",
-                            style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted),
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
-
-                        listOf(3, 4, 5).forEach { actPreset ->
-                            val isSelected = corkboard.actCount == actPreset
-                            Surface(
-                                color = if (isSelected) ElectrumGold.copy(alpha = 0.25f) else ObsidianBlack,
-                                shape = RoundedCornerShape(0.dp),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (isSelected) ElectrumGold else ObsidianSurfaceVariant
-                                ),
-                                modifier = Modifier
-                                    .clickable { viewModel.setCorkboardActCount(context, actPreset) }
-                            ) {
+                        val isAnyAiLoading = cards.any { it.isAiSummarizing }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable(enabled = !isAnyAiLoading) {
+                                    viewModel.summarizeAllSceneCardsWithAi(context)
+                                }
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                        ) {
+                            if (isAnyAiLoading) {
+                                CircularProgressIndicator(
+                                    strokeWidth = 1.5.dp,
+                                    modifier = Modifier.size(12.dp),
+                                    color = ScribeStarNeonRed
+                                )
                                 Text(
-                                    text = "$actPreset",
+                                    text = "Summarizing...",
+                                    style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted, fontSize = 11.sp)
+                                )
+                            } else {
+                                StudioMonoIcon(type = StudioIconType.SPARKLE, tint = ScreenplayTextMuted, size = 13.dp)
+                                Text(
+                                    text = "AI Summarize",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) ElectrumGold else ScreenplayTextMuted
-                                    ),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        color = ScreenplayTextMuted,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp
+                                    )
                                 )
                             }
                         }
 
-                        // Stepper for custom act counts (1..9)
-                        Surface(
-                            color = ObsidianBlack,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
-                                .clickable {
-                                    if (corkboard.actCount < 9) {
-                                        viewModel.setCorkboardActCount(context, corkboard.actCount + 1)
-                                    }
-                                }
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable { showTemplateDialog = true }
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
                         ) {
+                            StudioMonoIcon(type = StudioIconType.LIST, tint = ScreenplayTextMuted, size = 13.dp)
                             Text(
-                                text = "+",
-                                style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold, fontWeight = FontWeight.Bold),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                text = "Templates ▾",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = ScreenplayTextMuted,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                )
                             )
                         }
 
-                        if (corkboard.actCount > 1 && corkboard.actCount !in listOf(3, 4, 5)) {
-                            Text(
-                                text = "(${corkboard.actCount} Acts)",
-                                style = MaterialTheme.typography.labelSmall.copy(color = LightGold),
-                                modifier = Modifier.padding(start = 2.dp)
-                            )
-                        }
-                    }
-
-                    // Right Actions: AI Summarize All, Save, View Mode, Close
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // AI Summarize All Scenes
-                        val isAnyAiLoading = cards.any { it.isAiSummarizing }
-                        Surface(
-                            color = ObsidianBlack,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, LightGold.copy(alpha = 0.6f)),
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier
-                                .clickable(enabled = !isAnyAiLoading) {
-                                    viewModel.summarizeAllSceneCardsWithAi(context)
-                                }
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable { viewModel.toggleCorkboardSideBySide() }
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                        ) {
+                            StudioMonoIcon(type = StudioIconType.PAGE, tint = ScreenplayTextMuted, size = 13.dp)
+                            Text(
+                                text = if (isSideBySide) "Full Board" else "Side-by-Side",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = ScreenplayTextMuted,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+
+                        Surface(
+                            color = ScribeStarNeonRed,
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier.clickable { onSaveProject() }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
-                                if (isAnyAiLoading) {
-                                    CircularProgressIndicator(
-                                        strokeWidth = 1.5.dp,
-                                        modifier = Modifier.size(12.dp),
-                                        color = LightGold
+                                StudioMonoIcon(type = StudioIconType.SAVE, tint = Color.White, size = 13.dp)
+                                Text(
+                                    text = "Save",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "AI Summarizing...",
-                                        style = MaterialTheme.typography.labelSmall.copy(color = LightGold, fontSize = 11.sp)
-                                    )
-                                } else {
-                                    Text(
-                                        text = "✨ AI Summarize All",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = LightGold,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp
-                                        )
-                                    )
-                                }
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        Surface(
-                            color = ObsidianBlack,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f)),
-                            modifier = Modifier.clickable { showTemplateDialog = true }
-                        ) {
-                            Text(
-                                text = "📋 Templates ▾",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectrumGold,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        // 1-Tap Save Button
-                        Surface(
-                            color = ElectrumGold.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ElectrumGold),
-                            modifier = Modifier.clickable { onSaveProject() }
-                        ) {
-                            Text(
-                                text = "💾 Save",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectrumGold,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        // Split vs Full Toggle
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
-                            modifier = Modifier.clickable { viewModel.toggleCorkboardSideBySide() }
-                        ) {
-                            Text(
-                                text = if (isSideBySide) "⛶ Full Board" else "🪟 Side-by-Side",
-                                style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold, fontSize = 11.sp),
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        // Close Corkboard
                         IconButton(
                             onClick = { viewModel.closeCorkboard() },
                             modifier = Modifier.size(28.dp)
@@ -600,7 +621,7 @@ fun CorkboardPane(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close Corkboard",
                                 tint = ScreenplayTextMuted,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -1031,160 +1052,158 @@ private fun CorkboardSceneCard(
     var isColorPaletteOpen by remember { mutableStateOf(false) }
     var isActDropdownOpen by remember { mutableStateOf(false) }
 
-    val isDark = LocalSeshatDarkTheme.current
+    // Scrivener / Arc Studio-grade physical white index card (#FFFFFF in both dark and light mode)
     Card(
         colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = if (isDark) ObsidianBlack else Color.White
+            containerColor = Color.White
         ),
         shape = RoundedCornerShape(0.dp),
-        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
         elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Colored accent bar across top edge
+        Column(modifier = Modifier.fillMaxWidth().background(Color.White)) {
+            // 3px top color rule across top edge
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.5.dp)
+                    .height(3.dp)
                     .background(cardColor)
             )
 
-            Column(
+            // Index Card Header Strip (Courier Prime bold slugline on #FFFFFF)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp)
+                    .background(Color.White)
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Card Top Row: Scene/Beat number badge, Editable Heading, Color swatch
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Surface(
-                            color = cardColor.copy(alpha = 0.22f),
-                            shape = RoundedCornerShape(0.dp),
-                            border = BorderStroke(1.dp, cardColor.copy(alpha = 0.85f)),
-                            modifier = Modifier.clickable { onSelectScene() }
-                        ) {
-                            Text(
-                                text = "#${card.sceneNumber}",
-                                style = TextStyle(
-                                    fontFamily = ScreenplayCourierFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    color = ScreenplayTextDark
-                                ),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                    Text(
+                        text = "${card.sceneNumber}.",
+                        style = TextStyle(
+                            fontFamily = ScreenplayCourierFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp,
+                            color = cardColor
+                        ),
+                        modifier = Modifier
+                            .clickable { onSelectScene() }
+                            .padding(end = 6.dp)
+                    )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                    var isEditingCardTitle by remember { mutableStateOf(false) }
+                    var titleText by remember(card.headingText) { mutableStateOf(card.headingText) }
 
-                        var isEditingCardTitle by remember { mutableStateOf(false) }
-                        var titleText by remember(card.headingText) { mutableStateOf(card.headingText) }
-
-                        if (isEditingCardTitle) {
-                            BasicTextField(
-                                value = titleText,
-                                onValueChange = { titleText = it },
-                                textStyle = TextStyle(
-                                    fontFamily = ScreenplayCourierFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = LightGold
-                                ),
-                                cursorBrush = SolidColor(ElectrumGold),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = {
-                                    isEditingCardTitle = false
-                                    if (titleText.isNotBlank()) onUpdateTitle(titleText)
-                                },
-                                modifier = Modifier.size(20.dp)
-                            ) {
-                                Text(text = "✓", color = LightGold, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                            }
-                        } else {
-                            Text(
-                                text = card.headingText,
-                                style = TextStyle(
-                                    fontFamily = ScreenplayCourierFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = LightGold
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .weight(1f, fill = false)
-                                    .clickable {
-                                        titleText = card.headingText
-                                        isEditingCardTitle = true
-                                    }
-                            )
-                        }
-                    }
-
-                    // Color accent picker square swatch
-                    Box {
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clip(RoundedCornerShape(0.dp))
-                                .background(cardColor)
-                                .clickable { isColorPaletteOpen = true }
-                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                    if (isEditingCardTitle) {
+                        BasicTextField(
+                            value = titleText,
+                            onValueChange = { titleText = it },
+                            textStyle = TextStyle(
+                                fontFamily = ScreenplayCourierFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF0F172A)
+                            ),
+                            cursorBrush = SolidColor(ScribeStarNeonRed),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
                         )
-
-                        DropdownMenu(
-                            expanded = isColorPaletteOpen,
-                            onDismissRequest = { isColorPaletteOpen = false }
+                        IconButton(
+                            onClick = {
+                                isEditingCardTitle = false
+                                if (titleText.isNotBlank()) onUpdateTitle(titleText)
+                            },
+                            modifier = Modifier.size(20.dp)
                         ) {
-                            CARD_PALETTE.forEach { hex ->
-                                val color = Color(android.graphics.Color.parseColor(hex))
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(16.dp)
-                                                    .clip(RoundedCornerShape(0.dp))
-                                                    .background(color)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(text = hex, color = ScreenplayTextDark)
-                                        }
-                                    },
-                                    onClick = {
-                                        onUpdateColor(hex)
-                                        isColorPaletteOpen = false
-                                    }
-                                )
-                            }
+                            Text(text = "✓", color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
+                    } else {
+                        Text(
+                            text = card.headingText,
+                            style = TextStyle(
+                                fontFamily = ScreenplayCourierFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF0F172A)
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .clickable {
+                                    titleText = card.headingText
+                                    isEditingCardTitle = true
+                                }
+                        )
                     }
                 }
 
-                // Beat Guidance Prompt (if available from template)
+                // Color accent picker square swatch
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(cardColor)
+                            .clickable { isColorPaletteOpen = true }
+                            .border(1.dp, Color(0xFF94A3B8), RoundedCornerShape(0.dp))
+                    )
+
+                    DropdownMenu(
+                        expanded = isColorPaletteOpen,
+                        onDismissRequest = { isColorPaletteOpen = false }
+                    ) {
+                        CARD_PALETTE.forEach { hex ->
+                            val color = Color(android.graphics.Color.parseColor(hex))
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(14.dp)
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .background(color)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(text = hex, color = ScreenplayTextDark)
+                                    }
+                                },
+                                onClick = {
+                                    onUpdateColor(hex)
+                                    isColorPaletteOpen = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFE2E8F0))
+
+            // Index Card Body (#FFFFFF white surface, #334155 readable synopsis ink)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+            ) {
                 if (card.prompt.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Surface(
-                        color = ElectrumGold.copy(alpha = 0.08f),
+                        color = Color(0xFFF8FAFC),
                         shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.25f)),
-                        modifier = Modifier.fillMaxWidth()
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                     ) {
                         Text(
-                            text = "💡 ${card.prompt}",
+                            text = card.prompt,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = LightGold.copy(alpha = 0.9f),
+                                color = Color(0xFF475569),
                                 fontSize = 10.sp,
                                 lineHeight = 13.sp
                             ),
@@ -1193,9 +1212,6 @@ private fun CorkboardSceneCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Card Body: Scene/Beat Summary text field
                 var summaryText by remember(card.summary) { mutableStateOf(card.summary) }
 
                 BasicTextField(
@@ -1208,17 +1224,17 @@ private fun CorkboardSceneCard(
                         }
                     },
                     textStyle = MaterialTheme.typography.bodySmall.copy(
-                        color = ScreenplayTextDark,
-                        fontSize = 12.sp,
+                        color = Color(0xFF334155),
+                        fontSize = 11.5.sp,
                         lineHeight = 16.sp
                     ),
-                    cursorBrush = SolidColor(ElectrumGold),
+                    cursorBrush = SolidColor(ScribeStarNeonRed),
                     decorationBox = { innerTextField ->
                         if (summaryText.isBlank()) {
                             Text(
-                                text = "Write beat notes / scene summary...",
+                                text = "Write beat notes / scene synopsis...",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = ScreenplayTextMuted.copy(alpha = 0.6f),
+                                    color = Color(0xFF94A3B8),
                                     fontSize = 11.sp
                                 )
                             )
@@ -1227,12 +1243,9 @@ private fun CorkboardSceneCard(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(if (isDark) ObsidianSurface else Color(0xFFF8FAFC), RoundedCornerShape(0.dp))
-                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
-                        .padding(8.dp)
+                        .padding(vertical = 2.dp)
                 )
 
-                // Characters Present in this scene
                 if (card.charactersInScene.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     FlowRow(
@@ -1242,9 +1255,9 @@ private fun CorkboardSceneCard(
                     ) {
                         card.charactersInScene.take(4).forEach { charName ->
                             Surface(
-                                color = ObsidianSurface,
+                                color = Color(0xFFF1F5F9),
                                 shape = RoundedCornerShape(0.dp),
-                                border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.4f))
+                                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                             ) {
                                 Text(
                                     text = charName,
@@ -1252,156 +1265,147 @@ private fun CorkboardSceneCard(
                                         fontFamily = ScreenplayCourierFontFamily,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = ElectrumGold
+                                        color = Color(0xFF475569)
                                     ),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                                 )
                             }
                         }
                         if (card.charactersInScene.size > 4) {
                             Text(
                                 text = "+${card.charactersInScene.size - 4}",
-                                style = TextStyle(fontSize = 9.sp, color = ScreenplayTextMuted),
+                                style = TextStyle(fontSize = 9.sp, color = Color(0xFF64748B)),
                                 modifier = Modifier.padding(vertical = 1.dp)
                             )
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(6.dp))
-                HorizontalDivider(color = ObsidianSurfaceVariant)
-                Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFE2E8F0))
 
-                // Card Footer: Scene stats, AI summarize, Reorder up/down, Move to Act, Delete
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Estimated time badge
-                    Surface(
-                        color = ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(0.5.dp, ObsidianSurfaceVariant)
+            // Index Card Footer Bar (#F8FAFC light slate footer with monospace runtime & controls)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF8FAFC))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "~${card.estimatedMinutes}:00",
+                    style = TextStyle(
+                        fontFamily = ScreenplayCourierFontFamily,
+                        color = Color(0xFF64748B),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (card.isAiSummarizing) {
+                        CircularProgressIndicator(
+                            strokeWidth = 1.dp,
+                            modifier = Modifier.size(13.dp),
+                            color = ScribeStarNeonRed
+                        )
+                    } else {
+                        IconButton(
+                            onClick = onSummarizeWithAi,
+                            modifier = Modifier.size(22.dp)
+                        ) {
+                            StudioMonoIcon(type = StudioIconType.SPARKLE, tint = Color(0xFF64748B), size = 12.dp)
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onMoveUp,
+                        modifier = Modifier.size(22.dp)
                     ) {
-                        Text(
-                            text = "~${card.estimatedMinutes}m",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = ScreenplayTextMuted,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Move Scene Up",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(15.dp)
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // AI Summarize Button
-                        if (card.isAiSummarizing) {
-                            CircularProgressIndicator(
-                                strokeWidth = 1.dp,
-                                modifier = Modifier.size(14.dp),
-                                color = LightGold
-                            )
-                        } else {
-                            IconButton(
-                                onClick = onSummarizeWithAi,
-                                modifier = Modifier.size(24.dp)
+                    IconButton(
+                        onClick = onMoveDown,
+                        modifier = Modifier.size(22.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Move Scene Down",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+
+                    Box {
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(0.dp),
+                            border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                            modifier = Modifier.clickable { isActDropdownOpen = true }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             ) {
-                                Text(text = "✨", fontSize = 12.sp)
+                                Text(
+                                    text = "ACT ${card.actIndex + 1}",
+                                    style = TextStyle(
+                                        fontFamily = ScreenplayCourierFontFamily,
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF475569)
+                                    )
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Change Act",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(12.dp)
+                                )
                             }
                         }
 
-                        // Move Up
-                        IconButton(
-                            onClick = onMoveUp,
-                            modifier = Modifier.size(22.dp)
+                        DropdownMenu(
+                            expanded = isActDropdownOpen,
+                            onDismissRequest = { isActDropdownOpen = false }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Move Scene Up",
-                                tint = ScreenplayTextMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // Move Down
-                        IconButton(
-                            onClick = onMoveDown,
-                            modifier = Modifier.size(22.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Move Scene Down",
-                                tint = ScreenplayTextMuted,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // Move to Act Dropdown
-                        Box {
-                            Surface(
-                                color = ObsidianSurface,
-                                shape = RoundedCornerShape(0.dp),
-                                border = BorderStroke(0.5.dp, ObsidianSurfaceVariant),
-                                modifier = Modifier.clickable { isActDropdownOpen = true }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "Act",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            color = ScreenplayTextMuted
+                            for (targetAct in 0 until totalActs) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = "Move to Act ${targetAct + 1}",
+                                            fontWeight = if (targetAct == card.actIndex) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (targetAct == card.actIndex) ScribeStarNeonRed else ScreenplayTextDark
                                         )
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "Change Act",
-                                        tint = ScreenplayTextMuted,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                }
-                            }
-
-                            DropdownMenu(
-                                expanded = isActDropdownOpen,
-                                onDismissRequest = { isActDropdownOpen = false }
-                            ) {
-                                for (targetAct in 0 until totalActs) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = "Move to Act ${targetAct + 1}",
-                                                fontWeight = if (targetAct == card.actIndex) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (targetAct == card.actIndex) ElectrumGold else ScreenplayTextDark
-                                            )
-                                        },
-                                        onClick = {
-                                            onMoveToAct(targetAct)
-                                            isActDropdownOpen = false
-                                        }
-                                    )
-                                }
+                                    },
+                                    onClick = {
+                                        onMoveToAct(targetAct)
+                                        isActDropdownOpen = false
+                                    }
+                                )
                             }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
 
-                        // Delete Card Button
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(22.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Card",
-                                tint = ScreenplayTextMuted.copy(alpha = 0.7f),
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(22.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Card",
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(13.dp)
+                        )
                     }
                 }
             }

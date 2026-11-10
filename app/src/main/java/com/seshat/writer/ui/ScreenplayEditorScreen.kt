@@ -159,6 +159,9 @@ import com.seshat.writer.ui.theme.TransitionPurple
 import androidx.compose.ui.graphics.Brush
 import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.parseStudioButtonLabel
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.opticalGlassBrush
 import com.seshat.writer.ui.theme.prismaticGlassBorder
@@ -249,20 +252,8 @@ fun ScreenplayEditorScreen(
             .navigationBarsPadding(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().background(DeskBackground)) {
             val isDarkTheme = LocalSeshatDarkTheme.current
-            // Persistent Concept B Studio Background & Seshat Statue across the entire app
-            Image(
-                painter = painterResource(id = R.drawable.seshat_studio_splash),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = if (isDarkTheme) 0.22f else 0.10f
-                    }
-            )
 
             Column(modifier = Modifier.fillMaxSize()) {
                 val totalProjectWords = if (uiState.projectFormat == ProjectFormat.NOVEL) {
@@ -356,55 +347,54 @@ fun ScreenplayEditorScreen(
                     )
                 }
 
-                // Adaptive Left Sidebar (Tablet / Desktop side-by-side)
+                // Adaptive Left Sidebar (Tablet / Desktop side-by-side — docked flush edge-to-edge)
                 AnimatedVisibility(
                     visible = uiState.isSidebarExpanded && !uiState.isZenMode && !isCompactScreen
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 14.dp, top = 8.dp, bottom = 12.dp, end = 6.dp)
-                            .width(280.dp)
-                            .fillMaxHeight()
-                            .shadow(16.dp, RoundedCornerShape(0.dp))
-                            .clip(RoundedCornerShape(0.dp))
-                            .background(opticalGlassBrush())
-                            .border(prismaticGlassBorder(), RoundedCornerShape(0.dp))
-                    ) {
-                        if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
-                            TvEpisodeBinderPane(
-                                viewModel = viewModel,
-                                uiState = uiState,
-                                seriesProject = uiState.tvSeriesProject!!,
-                                onCloseBinder = { viewModel.toggleSidebar() },
-                                onOpenStoryBible = { viewModel.openStoryBible(context) },
-                                onOpenWritersRoom = { viewModel.openWritersRoom() },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            SidebarPane(
-                                uiState = uiState,
-                                onSceneClick = { viewModel.selectScene(it) },
-                                onCloseSidebar = { viewModel.toggleSidebar() },
-                                onOpenTitlePage = onOpenTitlePage,
-                                onOpenFileExport = { showExportDialog = true },
-                                onOpenReports = { viewModel.openReportsDialog() },
-                                onOpenRevisions = { viewModel.openRevisionDialog() },
-                                onOpenLibrary = { viewModel.openScriptLibrary() },
-                                onOpenDraftDiff = { viewModel.openDraftDiff() },
-                                onToggleReorderMode = { viewModel.toggleReorderMode() },
-                                onMoveSceneUp = { idx -> viewModel.moveSceneUp(idx) },
-                                onMoveSceneDown = { idx -> viewModel.moveSceneDown(idx) },
-                                onToggleOmitScene = { blockId -> viewModel.toggleSceneOmitted(blockId) },
-                                onOpenSettings = { viewModel.openSettingsDialog() },
-                                onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
-                                onOpenTableRead = { viewModel.openTableRead(context) },
-                                onOpenStoryBible = { viewModel.openStoryBible(context) },
-                                onOpenCorkboard = { viewModel.openCorkboard(context) },
-                                onOpenStartMenu = { viewModel.openStartMenu() },
-                                onOpenCompiler = { viewModel.openNovelCompiler() },
-                                modifier = Modifier.fillMaxSize()
-                            )
+                    Row(modifier = Modifier.fillMaxHeight()) {
+                        Box(
+                            modifier = Modifier
+                                .width(268.dp)
+                                .fillMaxHeight()
+                                .background(ObsidianSurface)
+                        ) {
+                            if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
+                                TvEpisodeBinderPane(
+                                    viewModel = viewModel,
+                                    uiState = uiState,
+                                    seriesProject = uiState.tvSeriesProject!!,
+                                    onCloseBinder = { viewModel.toggleSidebar() },
+                                    onOpenStoryBible = { viewModel.openStoryBible(context) },
+                                    onOpenWritersRoom = { viewModel.openWritersRoom() },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                SidebarPane(
+                                    uiState = uiState,
+                                    onSceneClick = { viewModel.selectScene(it) },
+                                    onCloseSidebar = { viewModel.toggleSidebar() },
+                                    onOpenTitlePage = onOpenTitlePage,
+                                    onOpenFileExport = { showExportDialog = true },
+                                    onOpenReports = { viewModel.openReportsDialog() },
+                                    onOpenRevisions = { viewModel.openRevisionDialog() },
+                                    onOpenLibrary = { viewModel.openScriptLibrary() },
+                                    onOpenDraftDiff = { viewModel.openDraftDiff() },
+                                    onToggleReorderMode = { viewModel.toggleReorderMode() },
+                                    onMoveSceneUp = { idx -> viewModel.moveSceneUp(idx) },
+                                    onMoveSceneDown = { idx -> viewModel.moveSceneDown(idx) },
+                                    onToggleOmitScene = { blockId -> viewModel.toggleSceneOmitted(blockId) },
+                                    onOpenSettings = { viewModel.openSettingsDialog() },
+                                    onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
+                                    onOpenTableRead = { viewModel.openTableRead(context) },
+                                    onOpenStoryBible = { viewModel.openStoryBible(context) },
+                                    onOpenCorkboard = { viewModel.openCorkboard(context) },
+                                    onOpenStartMenu = { viewModel.openStartMenu() },
+                                    onOpenCompiler = { viewModel.openNovelCompiler() },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
+                        VerticalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
                     }
                 }
 
@@ -770,8 +760,10 @@ fun ScreenplayEditorScreen(
     }
 }
 /**
- * Tactile glass action pill button with red border, high transparency,
- * and bright radiant neon bloom on hover or touch press.
+ * Borderless Ghost Studio Toolbar Button with Monochrome Vector Line Icon.
+ * At rest: 0px border, transparent background, calm #94A3B8 text.
+ * Hovered: subtle surface fill, primary text.
+ * Highlighted / Primary: 2px bottom accent indicator or crisp accent fill.
  */
 @Composable
 private fun GlassEditorPillButton(
@@ -786,104 +778,80 @@ private fun GlassEditorPillButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val isLit = isHovered || isPressed || isHighlight
-
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLit) 8.dp else if (isPrimary) 5.dp else 0.dp,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "PillGlow"
-    )
-    val outerAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.50f else if (isPrimary) 0.28f else 0.0f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "PillOuterAlpha"
-    )
-    val midAlpha by animateFloatAsState(
-        targetValue = if (isLit) 0.85f else if (isPrimary) 0.52f else 0.0f,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "PillMidAlpha"
-    )
-    val strokeWidth by animateDpAsState(
-        targetValue = if (isLit) 1.8.dp else 1.2.dp,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "PillStroke"
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else if (isHovered) 1.04f else 1.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "PillScale"
-    )
-
     val isDark = LocalSeshatDarkTheme.current
+    val (autoIcon, cleanLabel) = remember(text) { parseStudioButtonLabel(text) }
+
+    val bgColor = when {
+        isPrimary -> accentColor
+        isHighlight -> accentColor.copy(alpha = if (isDark) 0.14f else 0.10f)
+        isHovered || isPressed -> if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.65f) else Color(0xFFE2E8F0)
+        else -> Color.Transparent
+    }
+    val borderColor = when {
+        isPrimary -> accentColor
+        isHighlight -> accentColor.copy(alpha = 0.55f)
+        isHovered || isPressed -> ObsidianSurfaceVariant
+        else -> Color.Transparent
+    }
+    val contentColor = when {
+        isPrimary -> Color.White
+        isHighlight -> if (isDark) Color.White else accentColor
+        isHovered || isPressed -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+        else -> if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
+    }
+    val iconTint = when {
+        isPrimary -> Color.White
+        isHighlight -> accentColor
+        else -> contentColor
+    }
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .defaultMinSize(minHeight = 42.dp, minWidth = 52.dp)
-            .shadow(
-                elevation = if (isLit || isPrimary) 10.dp else 6.dp,
-                shape = RoundedCornerShape(0.dp),
-                spotColor = if (isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-            )
-            .neonBloom(
-                color = accentColor,
-                cornerRadius = 0.dp,
-                glowRadius = glowRadius,
-                strokeWidth = strokeWidth,
-                outerAlpha = outerAlpha,
-                midAlpha = midAlpha,
-                coreAlpha = if (isLit) 1.0f else 0.85f
-            )
+            .defaultMinSize(minHeight = 32.dp)
             .clip(RoundedCornerShape(0.dp))
-            .background(
-                if (isPrimary) {
-                    SolidColor(accentColor)
-                } else {
-                    opticalPillBrush(isLit = isLit, accentColor = accentColor, isDark = isDark)
-                }
-            )
-            .border(
-                if (isPrimary) BorderStroke(strokeWidth, Color.Transparent)
-                else prismaticGlassBorder(width = strokeWidth, isLit = isLit, accentColor = accentColor, isDark = isDark),
-                shape = RoundedCornerShape(0.dp)
-            )
+            .background(bgColor)
+            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(0.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 11.dp, vertical = 6.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            if (autoIcon != StudioIconType.NONE) {
+                StudioMonoIcon(
+                    type = autoIcon,
+                    tint = iconTint,
+                    size = 13.5.dp
+                )
+            }
             Text(
-                text = text,
+                text = cleanLabel,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
-                    color = if (isDark) Color.White else (if (isPrimary || isLit) Color.White else Color(0xFF0F172A)),
-                    fontWeight = if (isPrimary || isLit) FontWeight.ExtraBold else FontWeight.Bold,
-                    fontSize = 12.5.sp
+                    color = contentColor,
+                    fontWeight = if (isPrimary || isHighlight) FontWeight.Bold else FontWeight.SemiBold,
+                    fontSize = 12.sp
                 ),
                 maxLines = 1,
                 softWrap = false
             )
             if (badgeText != null) {
                 Surface(
-                    color = if (isDark) Color(0x33FFFFFF) else Color(0x150F172A),
+                    color = if (isDark) Color(0x28FFFFFF) else Color(0x140F172A),
                     shape = RoundedCornerShape(0.dp)
                 ) {
                     Text(
                         text = badgeText,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
-                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
+                            color = contentColor,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         ),
@@ -1407,149 +1375,137 @@ private fun CompactScreenplayTopBar(
     onSaveProject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Left: Squared Hamburger & Squared Logo+Title Chip
+    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.padding(end = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            val isDark = LocalSeshatDarkTheme.current
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                    .clickable(onClick = actions::openStudioDrawer)
-                    .size(38.dp)
+            // Left: Squared Hamburger & Squared Logo+Title Chip
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(end = 8.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                val isDark = LocalSeshatDarkTheme.current
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ObsidianBlack)
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                        .clickable(onClick = actions::openStudioDrawer)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Studio Navigation Drawer",
-                        tint = ScribeStarNeonRed,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(0.dp))
+                        .clickable(onClick = onOpenTitlePage)
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.seshat_emblem_logo),
+                        contentDescription = "ScribeStar Logo",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = uiState.title.ifBlank { "UNTITLED" }.uppercase(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.6.sp,
+                            color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+                            fontSize = 12.sp
+                        ),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 110.dp)
                     )
                 }
             }
 
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
+            Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Right: Horizontally Scrollable Ghost Action Controls
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                    .clickable(onClick = onOpenTitlePage)
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState())
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 38.dp)
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.seshat_emblem_logo),
-                            contentDescription = "ScribeStar Logo",
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = uiState.title.ifBlank { "UNTITLED" }.uppercase(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 0.9.sp,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontSize = 12.5.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 110.dp)
-                        )
-                    }
+                val activeSceneNumber = uiState.selectedSceneIndex + 1
+                GlassEditorPillButton(
+                    text = "Scene $activeSceneNumber",
+                    onClick = actions::toggleSidebar,
+                    isHighlight = uiState.isSidebarExpanded
+                )
+
+                GlassEditorPillButton(
+                    text = "📌 Corkboard",
+                    onClick = actions::toggleCorkboard,
+                    isHighlight = uiState.isCorkboardOpen
+                )
+
+                GlassEditorPillButton(
+                    text = "📖 Bible",
+                    onClick = actions::openStoryBible
+                )
+
+                if (uiState.firstDraftState.canUseAiDoctor()) {
+                    GlassEditorPillButton(
+                        text = "🧠 Doctor",
+                        onClick = actions::openScriptDoctor
+                    )
                 }
-            }
-        }
 
-        // Right: Horizontally Scrollable Floating Action Pills
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier
-                .weight(1f)
-                .horizontalScroll(rememberScrollState())
-        ) {
-            GlassEditorPillButton(
-                text = "💾 Save",
-                onClick = onSaveProject,
-                isPrimary = true
-            )
+                if (!uiState.firstDraftState.isArcadeLocked) {
+                    GlassEditorPillButton(
+                        text = "🚀 Compile",
+                        onClick = onOpenFileExport
+                    )
+                }
 
-            val activeSceneNumber = uiState.selectedSceneIndex + 1
-            GlassEditorPillButton(
-                text = "Scene $activeSceneNumber",
-                onClick = actions::toggleSidebar
-            )
+                if (uiState.isDictating) {
+                    GlassEditorPillButton(
+                        text = "🔴 Recording",
+                        onClick = actions::toggleDictation,
+                        isPrimary = true
+                    )
+                } else {
+                    GlassEditorPillButton(
+                        text = "🎙️ Dictate",
+                        onClick = actions::toggleDictation
+                    )
+                }
 
-            GlassEditorPillButton(
-                text = "📌 Corkboard",
-                onClick = actions::toggleCorkboard,
-                isHighlight = uiState.isCorkboardOpen
-            )
-
-            GlassEditorPillButton(
-                text = "📖 Bible",
-                onClick = actions::openStoryBible
-            )
-
-            if (uiState.firstDraftState.canUseAiDoctor()) {
                 GlassEditorPillButton(
-                    text = "🧠 Doctor",
-                    onClick = actions::openScriptDoctor
+                    text = "⚙️ Settings",
+                    onClick = actions::openSettings
                 )
-            }
 
-            if (!uiState.firstDraftState.isArcadeLocked) {
                 GlassEditorPillButton(
-                    text = "🚀 Compile",
-                    onClick = onOpenFileExport
-                )
-            }
-
-            if (uiState.isDictating) {
-                GlassEditorPillButton(
-                    text = "🔴 Recording",
-                    onClick = actions::toggleDictation,
+                    text = "💾 Save",
+                    onClick = onSaveProject,
                     isPrimary = true
                 )
-            } else {
-                GlassEditorPillButton(
-                    text = "🎙️ Dictate",
-                    onClick = actions::toggleDictation
-                )
             }
-
-            GlassEditorPillButton(
-                text = "⚙️ Settings",
-                onClick = actions::openSettings
-            )
         }
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 
@@ -1562,228 +1518,205 @@ private fun DesktopScreenplayTopBar(
     onSaveProject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Left: Squared Hamburger + Squared Logo+Title Chip + Main Action Pills
+    val isDark = LocalSeshatDarkTheme.current
+    Column(modifier = modifier.fillMaxWidth().background(ObsidianSurface)) {
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val isDark = LocalSeshatDarkTheme.current
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp), spotColor = ScribeStarNeonRed.copy(alpha = 0.35f))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                    .clickable(onClick = actions::openStudioDrawer)
-                    .size(42.dp)
+            // Left: Hamburger + Project Title + Docked Ghost Workspace Controls
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ObsidianBlack)
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                        .clickable(onClick = actions::openStudioDrawer)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Studio Navigation Drawer",
-                        tint = ScribeStarNeonRed,
-                        modifier = Modifier.size(24.dp)
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(0.dp))
+                        .clickable(onClick = onOpenTitlePage)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.seshat_emblem_logo),
+                        contentDescription = "ScribeStar Logo",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = uiState.title.ifBlank { "UNTITLED SCRIPT" }.uppercase(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.6.sp,
+                            color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+                            fontSize = 12.5.sp
+                        )
+                    )
+                }
+
+                Box(modifier = Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+
+                val activeSceneNumber = uiState.selectedSceneIndex + 1
+                GlassEditorPillButton(
+                    text = "Scene $activeSceneNumber",
+                    onClick = actions::toggleSidebar,
+                    isHighlight = uiState.isSidebarExpanded
+                )
+
+                GlassEditorPillButton(
+                    text = "📌 Corkboard",
+                    onClick = actions::toggleCorkboard,
+                    isHighlight = uiState.isCorkboardOpen
+                )
+
+                GlassEditorPillButton(
+                    text = "📖 Bible",
+                    onClick = actions::openStoryBible
+                )
+
+                if (uiState.firstDraftState.canUseAiDoctor()) {
+                    GlassEditorPillButton(
+                        text = "🧠 Doctor",
+                        onClick = actions::openScriptDoctor
+                    )
+                }
+
+                if (!uiState.firstDraftState.isArcadeLocked) {
+                    GlassEditorPillButton(
+                        text = "🚀 Compile",
+                        onClick = onOpenFileExport
                     )
                 }
             }
 
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush(isDark = isDark))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                    .clickable(onClick = onOpenTitlePage)
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Right: View Mode, Unified Zoom Strip, Scene #s, Notes, Find, Dictate, Zen, Settings, Save CTA
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 42.dp)
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.seshat_emblem_logo),
-                            contentDescription = "ScribeStar Logo",
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = uiState.title.ifBlank { "UNTITLED SCRIPT" }.uppercase(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.2.sp,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
+                if (!uiState.firstDraftState.isArcadeLocked) {
+                    GlassEditorPillButton(
+                        text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
+                        onClick = actions::toggleViewMode
+                    )
                 }
-            }
 
-            val activeSceneNumber = uiState.selectedSceneIndex + 1
-            GlassEditorPillButton(
-                text = "Scene $activeSceneNumber",
-                onClick = actions::toggleSidebar
-            )
-
-            GlassEditorPillButton(
-                text = "📌 Corkboard",
-                onClick = actions::toggleCorkboard,
-                isHighlight = uiState.isCorkboardOpen
-            )
-
-            GlassEditorPillButton(
-                text = "📖 Bible",
-                onClick = actions::openStoryBible
-            )
-
-            if (uiState.firstDraftState.canUseAiDoctor()) {
-                GlassEditorPillButton(
-                    text = "🧠 Doctor",
-                    onClick = actions::openScriptDoctor
-                )
-            }
-
-            if (!uiState.firstDraftState.isArcadeLocked) {
-                GlassEditorPillButton(
-                    text = "🚀 Compile",
-                    onClick = onOpenFileExport
-                )
-            }
-
-            GlassEditorPillButton(
-                text = "💾 Save",
-                onClick = onSaveProject,
-                isPrimary = true
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Right: View Mode, Zoom Pill, Scene #s, Notes, Find, Dictate, Zen, Settings
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (!uiState.firstDraftState.isArcadeLocked) {
-                GlassEditorPillButton(
-                    text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
-                    onClick = actions::toggleViewMode
-                )
-            }
-
-            // Squared Zoom Control
-            val isDarkThemeForZoom = LocalSeshatDarkTheme.current
-            Surface(
-                shape = RoundedCornerShape(0.dp),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .shadow(8.dp, RoundedCornerShape(0.dp))
-                    .clip(RoundedCornerShape(0.dp))
-                    .background(opticalPillBrush(isDark = isDarkThemeForZoom))
-                    .border(prismaticGlassBorder(width = 1.dp, isDark = isDarkThemeForZoom), RoundedCornerShape(0.dp))
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
+                // Joined Segmented Zoom Strip: [ - | 100% | + ]
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .defaultMinSize(minHeight = 42.dp)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ObsidianBlack)
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "–",
-                            color = if (isDarkThemeForZoom) Color.White else Color(0xFF0F172A),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .clickable(onClick = actions::zoomOut)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                        Text(
-                            text = "${(uiState.zoomLevel * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (isDarkThemeForZoom) Color.White else Color(0xFF0F172A),
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 12.5.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .clickable(onClick = actions::resetZoom)
-                                .padding(horizontal = 6.dp)
-                        )
-                        Text(
-                            text = "+",
-                            color = if (isDarkThemeForZoom) Color.White else Color(0xFF0F172A),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .clickable(onClick = actions::zoomIn)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                    Text(
+                        text = "–",
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .clickable(onClick = actions::zoomOut)
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
+                    Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                    Text(
+                        text = "${(uiState.zoomLevel * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = ScreenplayCourierFontFamily,
+                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .clickable(onClick = actions::resetZoom)
+                            .padding(horizontal = 7.dp, vertical = 5.dp)
+                    )
+                    Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                    Text(
+                        text = "+",
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .clickable(onClick = actions::zoomIn)
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    )
                 }
-            }
 
-            if (!uiState.firstDraftState.isArcadeLocked) {
+                if (!uiState.firstDraftState.isArcadeLocked) {
+                    GlassEditorPillButton(
+                        text = if (uiState.showSceneNumbers) "# Scene #s" else "# Scene #s",
+                        onClick = actions::toggleSceneNumbers,
+                        isHighlight = uiState.showSceneNumbers
+                    )
+                }
+
                 GlassEditorPillButton(
-                    text = if (uiState.showSceneNumbers) "# Scene #s ON" else "# Scene #s",
-                    onClick = actions::toggleSceneNumbers,
-                    isHighlight = uiState.showSceneNumbers
+                    text = if (uiState.notesCount > 0) "📝 Notes (${uiState.notesCount})" else "📝 Notes",
+                    onClick = actions::toggleWriterNotes,
+                    isHighlight = uiState.showWriterNotes
+                )
+
+                GlassEditorPillButton(
+                    text = "🔍 Find",
+                    onClick = { if (uiState.isFindReplaceVisible) actions.closeFind() else actions.openFind(false) },
+                    isHighlight = uiState.isFindReplaceVisible
+                )
+
+                GlassEditorPillButton(
+                    text = if (uiState.isDictating) "🔴 Recording" else "🎙️ Dictate",
+                    onClick = actions::toggleDictation,
+                    isPrimary = uiState.isDictating
+                )
+
+                GlassEditorPillButton(
+                    text = if (uiState.isZenMode) "Exit Zen" else "Zen",
+                    onClick = actions::toggleZenMode,
+                    isHighlight = uiState.isZenMode
+                )
+
+                GlassEditorPillButton(
+                    text = "⚙️ Settings",
+                    onClick = actions::openSettings
+                )
+
+                Box(modifier = Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+
+                GlassEditorPillButton(
+                    text = "💾 Save",
+                    onClick = onSaveProject,
+                    isPrimary = true
                 )
             }
-
-            GlassEditorPillButton(
-                text = if (uiState.notesCount > 0) "📝 Notes (${uiState.notesCount})" else "📝 Notes",
-                onClick = actions::toggleWriterNotes,
-                isHighlight = uiState.showWriterNotes
-            )
-
-            GlassEditorPillButton(
-                text = "🔍 Find",
-                onClick = { if (uiState.isFindReplaceVisible) actions.closeFind() else actions.openFind(false) },
-                isHighlight = uiState.isFindReplaceVisible
-            )
-
-            GlassEditorPillButton(
-                text = if (uiState.isDictating) "🔴 Recording" else "🎙️ Dictate",
-                onClick = actions::toggleDictation,
-                isPrimary = uiState.isDictating
-            )
-
-            GlassEditorPillButton(
-                text = if (uiState.isZenMode) "Exit Zen" else "Zen",
-                onClick = actions::toggleZenMode,
-                isHighlight = uiState.isZenMode
-            )
-
-            GlassEditorPillButton(
-                text = "⚙️ Settings",
-                onClick = actions::openSettings
-            )
         }
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 
@@ -1893,6 +1826,15 @@ private fun EditorCanvas(
                 onRenameCharacter = actions::renameCharacter
             )
         }
+
+        // Top Screenplay Margin & Tab Ruler Bar (Final Draft / Fade In architectural precision)
+        val activeRulerBlockType = remember(uiState.focusedBlockId, uiState.blocks) {
+            uiState.blocks.find { it.id == uiState.focusedBlockId }?.type ?: BlockType.SCENE_HEADING
+        }
+        ScreenplayMarginRulerBar(
+            activeBlockType = activeRulerBlockType,
+            isNovelMode = false
+        )
 
         // US Letter Screenplay Canvas with Zoom & View Mode Support
         val zoom = uiState.zoomLevel
@@ -2748,693 +2690,393 @@ private fun BottomHud(
                 .navigationBarsPadding()
                 .imePadding()
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .background(ObsidianSurface)
         ) {
-            // Tier 1: Scrollable touch element pills (Sleek Modern Capsules)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 3.dp)
-            ) {
-                BlockType.forFormat(uiState.projectFormat).forEach { type ->
-                    val isSelected = type == currentType
-                    val blockInteraction = remember { MutableInteractionSource() }
-                    val isBlockHovered by blockInteraction.collectIsHoveredAsState()
-                    val isBlockPressed by blockInteraction.collectIsPressedAsState()
-                    val isBlockLit = isSelected || isBlockHovered || isBlockPressed
-
-                    val iconLabel = when (type) {
-                        BlockType.SCENE_HEADING -> "🎬 Scene"
-                        BlockType.ACTION -> "🏃 Action"
-                        BlockType.CHARACTER -> "👤 Character"
-                        BlockType.PARENTHETICAL -> "( ) Paren"
-                        BlockType.DIALOGUE -> "💬 Dialogue"
-                        BlockType.TRANSITION -> "⚡ Trans"
-                        BlockType.STAGE_ACT_SCENE -> "🎭 Act/Scene"
-                        BlockType.STAGE_DIRECTION -> "📜 Direction"
-                        BlockType.STAGE_CURTAIN -> "🎬 Curtain"
-                        BlockType.COMIC_PAGE -> "📄 Page"
-                        BlockType.COMIC_PANEL -> "🖼️ Panel"
-                        BlockType.COMIC_ART_NOTE -> "🎨 Art Note"
-                        BlockType.COMIC_BALLOON -> "💬 Balloon"
-                        BlockType.COMIC_CAPTION -> "🏷️ Caption"
-                        BlockType.COMIC_SFX -> "⚡ SFX"
-                    }
-                    Box(
+            HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp)) {
+                // Tier 1: Unified Segmented Element Strip
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(vertical = 2.dp)
+                ) {
+                    val elementTypes = BlockType.forFormat(uiState.projectFormat)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .shadow(
-                                elevation = if (isBlockLit) 8.dp else 4.dp,
-                                shape = RoundedCornerShape(0.dp),
-                                spotColor = if (isBlockLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-                            )
-                            .then(
-                                if (isBlockLit) {
-                                    Modifier.neonBloom(
-                                        color = ScribeStarNeonRed,
-                                        cornerRadius = 0.dp,
-                                        glowRadius = if (isSelected) 7.dp else 4.dp,
-                                        strokeWidth = 1.4.dp,
-                                        outerAlpha = if (isSelected) 0.35f else 0.20f,
-                                        midAlpha = if (isSelected) 0.65f else 0.40f
-                                    )
-                                } else Modifier
-                            )
                             .clip(RoundedCornerShape(0.dp))
-                            .background(opticalPillBrush(isLit = isBlockLit, isPrimary = isSelected, isDark = isDark))
-                            .border(
-                                prismaticGlassBorder(
-                                    width = if (isBlockLit) 1.5.dp else 1.dp,
-                                    isLit = isBlockLit,
-                                    isDark = isDark
-                                ),
-                                RoundedCornerShape(0.dp)
-                            )
-                            .clickable(
-                                interactionSource = blockInteraction,
-                                indication = null
-                            ) {
-                                currentBlock?.let { onChangeBlockType(it.id, type) }
-                            }
+                            .background(ObsidianBlack)
+                            .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                     ) {
-                        Text(
-                            text = iconLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isBlockLit) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
-                                fontWeight = if (isBlockLit) FontWeight.ExtraBold else FontWeight.SemiBold,
-                                fontSize = 11.5.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)
-                        )
+                        elementTypes.forEachIndexed { idx, type ->
+                            val isSelected = type == currentType
+                            val labelText = when (type) {
+                                BlockType.SCENE_HEADING -> "Scene Heading"
+                                BlockType.ACTION -> "Action"
+                                BlockType.CHARACTER -> "Character"
+                                BlockType.PARENTHETICAL -> "Parenthetical"
+                                BlockType.DIALOGUE -> "Dialogue"
+                                BlockType.TRANSITION -> "Transition"
+                                BlockType.STAGE_ACT_SCENE -> "Act / Scene"
+                                BlockType.STAGE_DIRECTION -> "Direction"
+                                BlockType.STAGE_CURTAIN -> "Curtain"
+                                BlockType.COMIC_PAGE -> "Page"
+                                BlockType.COMIC_PANEL -> "Panel"
+                                BlockType.COMIC_ART_NOTE -> "Art Note"
+                                BlockType.COMIC_BALLOON -> "Balloon"
+                                BlockType.COMIC_CAPTION -> "Caption"
+                                BlockType.COMIC_SFX -> "SFX"
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .background(if (isSelected) ScribeStarNeonRed.copy(alpha = 0.14f) else Color.Transparent)
+                                    .clickable { currentBlock?.let { onChangeBlockType(it.id, type) } }
+                            ) {
+                                Text(
+                                    text = labelText,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        color = if (isSelected) (if (isDark) Color.White else ScribeStarNeonRed) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)),
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        fontSize = 11.sp
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(36.dp)
+                                        .height(2.dp)
+                                        .background(if (isSelected) ScribeStarNeonRed else Color.Transparent)
+                                )
+                            }
+                            if (idx < elementTypes.lastIndex) {
+                                Box(modifier = Modifier.width(1.dp).height(24.dp).background(ObsidianSurfaceVariant))
+                            }
+                        }
                     }
+
+                    GlassEditorPillButton(
+                        text = "🧠 Seshat AI",
+                        onClick = onOpenScriptDoctor,
+                        isHighlight = true
+                    )
                 }
 
-                // SESHAT AI Star Medallion Button
-                Box(
+                // Tier 2: Controls (Dictation, Keyboard Toggle, Tab, Enter, Del, Save, Metrics)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
-                        .neonBloom(
-                            color = ScribeStarNeonRed,
-                            cornerRadius = 0.dp,
-                            glowRadius = 7.dp,
-                            strokeWidth = 1.3.dp,
-                            outerAlpha = 0.25f,
-                            midAlpha = 0.48f
-                        )
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(
-                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
-                        )
-                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
-                        .clickable { onOpenScriptDoctor() }
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 2.dp)
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState())
+                            .padding(end = 6.dp)
+                    ) {
+                        val enterLabel = when (uiState.projectFormat) {
+                            com.seshat.writer.library.ProjectFormat.STAGE_PLAY -> when (currentType) {
+                                BlockType.STAGE_ACT_SCENE -> "↵ Direction"
+                                BlockType.STAGE_DIRECTION -> "↵ Direction"
+                                BlockType.CHARACTER -> "↵ Dialogue"
+                                BlockType.PARENTHETICAL -> "↵ Dialogue"
+                                BlockType.DIALOGUE -> "↵ Character"
+                                BlockType.STAGE_CURTAIN -> "↵ Act/Scene"
+                                else -> "↵ Enter"
+                            }
+                            com.seshat.writer.library.ProjectFormat.COMIC_BOOK -> when (currentType) {
+                                BlockType.COMIC_PAGE -> "↵ Panel 1"
+                                BlockType.COMIC_PANEL -> "↵ Art Note"
+                                BlockType.COMIC_ART_NOTE -> "↵ Art Note"
+                                BlockType.CHARACTER -> "↵ Balloon"
+                                BlockType.COMIC_BALLOON -> "↵ Character"
+                                BlockType.COMIC_CAPTION -> "↵ Balloon"
+                                BlockType.COMIC_SFX -> "↵ Next Panel"
+                                else -> "↵ Enter"
+                            }
+                            else -> when (currentType) {
+                                BlockType.SCENE_HEADING -> "↵ Action"
+                                BlockType.CHARACTER -> "↵ Dialogue"
+                                BlockType.DIALOGUE -> "↵ Action"
+                                BlockType.ACTION -> "↵ Action"
+                                BlockType.PARENTHETICAL -> "↵ Dialogue"
+                                BlockType.TRANSITION -> "↵ Scene"
+                                else -> "↵ Enter"
+                            }
+                        }
+
+                        // Unified Key Navigation Strip: [ Tab | Enter | Del | Kbd ]
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .background(ObsidianBlack)
+                                .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                        ) {
+                            Text(
+                                text = "⇥ Tab",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier
+                                    .clickable { currentBlock?.let { onTabPressed(it.id) } }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                            Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+                            Text(
+                                text = enterLabel,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier
+                                    .clickable { currentBlock?.let { onEnterPressed(it.id) } }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                            Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+                            Text(
+                                text = "⌫ Del",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier
+                                    .clickable { currentBlock?.let { onBackspaceEmpty(it.id) } }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                            Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+                            Text(
+                                text = if (isKeyboardActive) "Kbd On" else "Kbd Off",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    color = if (isKeyboardActive) ScribeStarNeonRed else (if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier
+                                    .clickable(onClick = onToggleKeyboard)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        // Formatting Strip: [B | I | U | S] [A- | 12pt | A+]
+                        EditorFormattingToolbarRow(
+                            formattingController = formattingController,
+                            currentFontSizePt = currentFontSizePt,
+                            onDecreaseFontSize = onZoomOut,
+                            onIncreaseFontSize = onZoomIn,
+                            onResetFontSize = onResetZoom,
+                            isCompact = true
+                        )
+                    }
+
+                    // Clean borderless monospace telemetry readout
                     Text(
-                        text = "🌟 SESHAT AI",
+                        text = "P.${uiState.pageCount} · ${uiState.wordCount}W",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            color = Color.White,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 11.5.sp,
-                            letterSpacing = 0.8.sp
+                            fontFamily = ScreenplayCourierFontFamily,
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.5.sp
                         ),
                         maxLines = 1,
                         softWrap = false,
-                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                    )
+
+                    FloatingThemeTogglePill(
+                        isDark = isDark,
+                        onToggleTheme = onToggleTheme
                     )
                 }
             }
-
-            // Tier 2: Controls (Dictation, Keyboard Toggle, Tab, Enter, Del, Save, Metrics)
+        }
+    } else {
+        Column(
+            modifier = modifier
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .background(ObsidianSurface)
+        ) {
+            HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 2.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
+                // Left side: Joined Segmented Screenplay Element Strip + Ghost Tab & AI Doctor
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(1f, fill = false)
                         .horizontalScroll(rememberScrollState())
-                        .padding(end = 6.dp)
                 ) {
-                    // Dictation indicator
-                    Surface(
-                        color = if (uiState.isDictating) ScribeStarNeonRed.copy(alpha = 0.25f) else ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(1.dp, if (uiState.isDictating) ScribeStarNeonRed else ObsidianSurfaceVariant)
+                    val elementTypes = BlockType.forFormat(uiState.projectFormat)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(ObsidianBlack)
+                            .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                     ) {
-                        Text(
-                            text = if (uiState.isDictating) "🔴 Recording" else "🎙️ Ready",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (uiState.isDictating) ScribeStarNeonRed else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    // Keyboard Toggle Button
-                    Surface(
-                        color = if (isKeyboardActive) ScribeStarNeonRed.copy(alpha = 0.25f) else ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(1.dp, if (isKeyboardActive) ScribeStarNeonRed else ObsidianSurfaceVariant),
-                        modifier = Modifier.clickable(onClick = onToggleKeyboard)
-                    ) {
-                        Text(
-                            text = if (isKeyboardActive) "⌨️ On" else "⌨️ Off",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isKeyboardActive) ScribeStarNeonRed else (if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    // Tab Button (cycles / advances elements)
-                    Surface(
-                        color = ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
-                        modifier = Modifier.clickable {
-                            currentBlock?.let { onTabPressed(it.id) }
-                        }
-                    ) {
-                        Text(
-                            text = "⇥ Tab",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    // Enter Button (Context-aware: ↵ Action from Heading, ↵ Dialogue from Char, etc.)
-                    val enterLabel = when (uiState.projectFormat) {
-                        com.seshat.writer.library.ProjectFormat.STAGE_PLAY -> when (currentType) {
-                            BlockType.STAGE_ACT_SCENE -> "↵ Direction"
-                            BlockType.STAGE_DIRECTION -> "↵ Direction"
-                            BlockType.CHARACTER -> "↵ Dialogue"
-                            BlockType.PARENTHETICAL -> "↵ Dialogue"
-                            BlockType.DIALOGUE -> "↵ Character"
-                            BlockType.STAGE_CURTAIN -> "↵ Act/Scene"
-                            else -> "↵ Enter"
-                        }
-                        com.seshat.writer.library.ProjectFormat.COMIC_BOOK -> when (currentType) {
-                            BlockType.COMIC_PAGE -> "↵ Panel 1"
-                            BlockType.COMIC_PANEL -> "↵ Art Note"
-                            BlockType.COMIC_ART_NOTE -> "↵ Art Note"
-                            BlockType.CHARACTER -> "↵ Balloon"
-                            BlockType.COMIC_BALLOON -> "↵ Character"
-                            BlockType.COMIC_CAPTION -> "↵ Balloon"
-                            BlockType.COMIC_SFX -> "↵ Next Panel"
-                            else -> "↵ Enter"
-                        }
-                        else -> when (currentType) {
-                            BlockType.SCENE_HEADING -> "↵ Action"
-                            BlockType.CHARACTER -> "↵ Dialogue"
-                            BlockType.DIALOGUE -> "↵ Action"
-                            BlockType.ACTION -> "↵ Action"
-                            BlockType.PARENTHETICAL -> "↵ Dialogue"
-                            BlockType.TRANSITION -> "↵ Scene"
-                            else -> "↵ Enter"
+                        elementTypes.forEachIndexed { idx, type ->
+                            val isSelected = type == currentType
+                            val blockInteraction = remember { MutableInteractionSource() }
+                            val isHovered by blockInteraction.collectIsHoveredAsState()
+                            val labelText = when (type) {
+                                BlockType.SCENE_HEADING -> "Scene Heading"
+                                BlockType.ACTION -> "Action"
+                                BlockType.CHARACTER -> "Character"
+                                BlockType.PARENTHETICAL -> "Parenthetical"
+                                BlockType.DIALOGUE -> "Dialogue"
+                                BlockType.TRANSITION -> "Transition"
+                                BlockType.STAGE_ACT_SCENE -> "Act / Scene"
+                                BlockType.STAGE_DIRECTION -> "Direction"
+                                BlockType.STAGE_CURTAIN -> "Curtain"
+                                BlockType.COMIC_PAGE -> "Page"
+                                BlockType.COMIC_PANEL -> "Panel"
+                                BlockType.COMIC_ART_NOTE -> "Art Note"
+                                BlockType.COMIC_BALLOON -> "Balloon"
+                                BlockType.COMIC_CAPTION -> "Caption"
+                                BlockType.COMIC_SFX -> "SFX"
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .background(
+                                        when {
+                                            isSelected -> ScribeStarNeonRed.copy(alpha = 0.14f)
+                                            isHovered -> ObsidianSurfaceVariant.copy(alpha = 0.45f)
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .clickable(
+                                        interactionSource = blockInteraction,
+                                        indication = null
+                                    ) {
+                                        currentBlock?.let { onChangeBlockType(it.id, type) }
+                                    }
+                            ) {
+                                Text(
+                                    text = labelText,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        color = when {
+                                            isSelected -> if (isDark) Color.White else ScribeStarNeonRed
+                                            isHovered -> if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+                                            else -> if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)
+                                        },
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        fontSize = 11.5.sp
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(44.dp)
+                                        .height(2.dp)
+                                        .background(if (isSelected) ScribeStarNeonRed else Color.Transparent)
+                                )
+                            }
+                            if (idx < elementTypes.lastIndex) {
+                                Box(modifier = Modifier.width(1.dp).height(26.dp).background(ObsidianSurfaceVariant))
+                            }
                         }
                     }
-                    val isHeadingCurrent = currentType == BlockType.SCENE_HEADING || currentType == BlockType.STAGE_ACT_SCENE || currentType == BlockType.COMIC_PAGE
 
-                    Surface(
-                        color = if (isHeadingCurrent) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(1.dp, if (isHeadingCurrent) ElectrumGold else ObsidianSurfaceVariant),
-                        modifier = Modifier.clickable {
-                            currentBlock?.let { onEnterPressed(it.id) }
-                        }
-                    ) {
-                        Text(
-                            text = enterLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isHeadingCurrent) ElectrumGold else (if (isDark) Color.White else Color(0xFF0F172A)),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                    GlassEditorPillButton(
+                        text = "⇥ Tab",
+                        onClick = { currentBlock?.let { onTabPressed(it.id) } }
+                    )
 
-                    // Del Button
-                    Surface(
-                        color = ObsidianSurface,
-                        shape = RoundedCornerShape(0.dp),
-                        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
-                        modifier = Modifier.clickable {
-                            currentBlock?.let { onBackspaceEmpty(it.id) }
-                        }
-                    ) {
-                        Text(
-                            text = "⌫ Del",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                    GlassEditorPillButton(
+                        text = "🧠 Seshat AI",
+                        onClick = onOpenScriptDoctor,
+                        isHighlight = true
+                    )
+                }
 
-                    // 1-Tap Save Button
-                    Surface(
-                        color = ScribeStarNeonRed,
-                        shape = RoundedCornerShape(0.dp),
-                        modifier = Modifier.clickable { onSaveProject() }
-                    ) {
-                        Text(
-                            text = "💾 Save",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    // Formatting Capsule: Bold, Italic, Underline, Font Size (A- / A+)
+                // Right side: Joined Formatting Strips + Clean Monospace Telemetry Readouts
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     EditorFormattingToolbarRow(
                         formattingController = formattingController,
                         currentFontSizePt = currentFontSizePt,
                         onDecreaseFontSize = onZoomOut,
                         onIncreaseFontSize = onZoomIn,
                         onResetFontSize = onResetZoom,
-                        isCompact = true
+                        isCompact = false
                     )
-                }
 
-                // Compact metrics
-                Surface(
-                    shape = RoundedCornerShape(0.dp),
-                    color = Color.Transparent,
-                    modifier = Modifier
-                        .shadow(6.dp, RoundedCornerShape(0.dp))
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(opticalPillBrush(isDark = isDark))
-                        .border(prismaticGlassBorder(width = 0.8.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "P.${uiState.pageCount} • ${uiState.wordCount}w",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            color = if (isDark) Color.White else Color(0xFF0F172A),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp
-                        ),
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
+                    Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
 
-                Spacer(modifier = Modifier.width(6.dp))
-
-                FloatingThemeTogglePill(
-                    isDark = isDark,
-                    onToggleTheme = onToggleTheme
-                )
-            }
-        }
-    } else {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = modifier
-                .navigationBarsPadding()
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-        ) {
-            // Left side: Modern Squared Element Dock
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .horizontalScroll(rememberScrollState())
-            ) {
-                BlockType.forFormat(uiState.projectFormat).forEach { type ->
-                    val isSelected = type == currentType
-                    val blockInteraction = remember { MutableInteractionSource() }
-                    val isHovered by blockInteraction.collectIsHoveredAsState()
-                    val isPressed by blockInteraction.collectIsPressedAsState()
-                    val isBlockLit = isSelected || isHovered || isPressed
-
-                    val iconLabel = when (type) {
-                        BlockType.SCENE_HEADING -> "🎬 Scene"
-                        BlockType.ACTION -> "🏃 Action"
-                        BlockType.CHARACTER -> "👤 Character"
-                        BlockType.PARENTHETICAL -> "( ) Paren"
-                        BlockType.DIALOGUE -> "💬 Dialogue"
-                        BlockType.TRANSITION -> "⚡ Trans"
-                        BlockType.STAGE_ACT_SCENE -> "🎭 Act/Scene"
-                        BlockType.STAGE_DIRECTION -> "📜 Direction"
-                        BlockType.STAGE_CURTAIN -> "🎬 Curtain"
-                        BlockType.COMIC_PAGE -> "📄 Page"
-                        BlockType.COMIC_PANEL -> "🖼️ Panel"
-                        BlockType.COMIC_ART_NOTE -> "🎨 Art Note"
-                        BlockType.COMIC_BALLOON -> "💬 Balloon"
-                        BlockType.COMIC_CAPTION -> "🏷️ Caption"
-                        BlockType.COMIC_SFX -> "⚡ SFX"
-                    }
-                    Box(
-                        modifier = Modifier
-                            .shadow(
-                                elevation = if (isBlockLit) 10.dp else 6.dp,
-                                shape = RoundedCornerShape(0.dp),
-                                spotColor = if (isBlockLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-                            )
-                            .then(
-                                if (isBlockLit) {
-                                    Modifier.neonBloom(
-                                        color = ScribeStarNeonRed,
-                                        cornerRadius = 0.dp,
-                                        glowRadius = if (isSelected) 8.dp else 5.dp,
-                                        strokeWidth = 1.4.dp,
-                                        outerAlpha = if (isSelected) 0.35f else 0.20f,
-                                        midAlpha = if (isSelected) 0.65f else 0.40f
-                                    )
-                                } else Modifier
-                            )
-                            .clip(RoundedCornerShape(0.dp))
-                            .background(opticalPillBrush(isLit = isBlockLit, isPrimary = isSelected, isDark = isDark))
-                            .border(
-                                prismaticGlassBorder(
-                                    width = if (isBlockLit) 1.5.dp else 1.dp,
-                                    isLit = isBlockLit,
-                                    isDark = isDark
-                                ),
-                                RoundedCornerShape(0.dp)
-                            )
-                            .clickable(
-                                interactionSource = blockInteraction,
-                                indication = null
-                            ) {
-                                currentBlock?.let { onChangeBlockType(it.id, type) }
-                            }
-                    ) {
-                        Text(
-                            text = iconLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                color = if (isBlockLit) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
-                                fontWeight = if (isBlockLit) FontWeight.ExtraBold else FontWeight.SemiBold,
-                                fontSize = 12.5.sp
-                            ),
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp)
-                        )
-                    }
-                }
-
-                // SESHAT AI Star Medallion Button
-                Box(
-                    modifier = Modifier
-                        .shadow(
-                            elevation = 10.dp,
-                            shape = RoundedCornerShape(0.dp),
-                            spotColor = ScribeStarNeonRed
-                        )
-                        .neonBloom(
-                            color = ScribeStarNeonRed,
-                            cornerRadius = 0.dp,
-                            glowRadius = 7.dp,
-                            strokeWidth = 1.3.dp,
-                            outerAlpha = 0.25f,
-                            midAlpha = 0.48f
-                        )
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(
-                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
-                        )
-                        .border(BorderStroke(1.4.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
-                        .clickable { onOpenScriptDoctor() }
-                ) {
-                    Text(
-                        text = "🌟 SESHAT AI",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            color = Color.White,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 12.sp,
-                            letterSpacing = 0.8.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
-                }
-
-                // Quick "⇥ Tab" button in footer
-                val tabInteraction = remember { MutableInteractionSource() }
-                val isTabHovered by tabInteraction.collectIsHoveredAsState()
-                val isTabPressed by tabInteraction.collectIsPressedAsState()
-                val isTabLit = isTabHovered || isTabPressed
-
-                Box(
-                    modifier = Modifier
-                        .shadow(
-                            elevation = if (isTabLit) 8.dp else 5.dp,
-                            shape = RoundedCornerShape(0.dp),
-                            spotColor = if (isTabLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
-                        )
-                        .then(
-                            if (isTabLit) {
-                                Modifier.neonBloom(
-                                    color = ScribeStarNeonRed,
-                                    cornerRadius = 0.dp,
-                                    glowRadius = 5.dp,
-                                    strokeWidth = 1.2.dp,
-                                    outerAlpha = 0.25f,
-                                    midAlpha = 0.45f
-                                )
-                            } else Modifier
-                        )
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(
-                            opticalPillBrush(isDark = isDark, isHighlighted = isTabLit, highlightColor = ScribeStarNeonRed)
-                        )
-                        .border(
-                            BorderStroke(
-                                if (isTabLit) 1.4.dp else 1.dp,
-                                if (isTabLit) ScribeStarNeonRed else if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
-                            ),
-                            RoundedCornerShape(0.dp)
-                        )
-                        .clickable(
-                            interactionSource = tabInteraction,
-                            indication = null
-                        ) {
-                            currentBlock?.let { onTabPressed(it.id) }
-                        }
-                ) {
-                    Text(
-                        text = "⇥ Tab",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isTabLit) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)),
-                            fontSize = 12.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp)
-                    )
-                }
-
-                // Quick "💾 Save" button in footer
-                val saveInteraction = remember { MutableInteractionSource() }
-                val isSaveHovered by saveInteraction.collectIsHoveredAsState()
-                val isSavePressed by saveInteraction.collectIsPressedAsState()
-                val isSaveLit = isSaveHovered || isSavePressed
-
-                Box(
-                    modifier = Modifier
-                        .shadow(
-                            elevation = if (isSaveLit) 10.dp else 6.dp,
-                            shape = RoundedCornerShape(0.dp),
-                            spotColor = ScribeStarNeonRed
-                        )
-                        .then(
-                            if (isSaveLit) {
-                                Modifier.neonBloom(
-                                    color = ScribeStarNeonRed,
-                                    cornerRadius = 0.dp,
-                                    glowRadius = 6.dp,
-                                    strokeWidth = 1.3.dp,
-                                    outerAlpha = 0.30f,
-                                    midAlpha = 0.55f
-                                )
-                            } else Modifier
-                        )
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(
-                            opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = ScribeStarNeonRed)
-                        )
-                        .border(
-                            BorderStroke(
-                                if (isSaveLit) 1.5.dp else 1.dp,
-                                ScribeStarNeonRed
-                            ),
-                            RoundedCornerShape(0.dp)
-                        )
-                        .clickable(
-                            interactionSource = saveInteraction,
-                            indication = null
-                        ) { onSaveProject() }
-                ) {
-                    Text(
-                        text = "💾 Save",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 12.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp)
-                    )
-                }
-            }
-
-            // Right side: Squared Telemetry Pill & Device Environment Chip
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                EditorFormattingToolbarRow(
-                    formattingController = formattingController,
-                    currentFontSizePt = currentFontSizePt,
-                    onDecreaseFontSize = onZoomOut,
-                    onIncreaseFontSize = onZoomIn,
-                    onResetFontSize = onResetZoom,
-                    isCompact = false
-                )
-
-                Surface(
-                    shape = RoundedCornerShape(0.dp),
-                    color = Color.Transparent,
-                    modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(0.dp))
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(opticalPillBrush(isDark = isDark))
-                        .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
+                    // Clean borderless monospace telemetry readouts (no box around Page/Word/Scene count)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        val mutedColor = if (isDark) Color(0xFF64748B) else Color(0xFF64748B)
+                        val valColor = if (isDark) Color(0xFFCBD5E1) else Color(0xFF0F172A)
                         if (!uiState.firstDraftState.isArcadeLocked) {
                             Text(
-                                text = "${uiState.pageCount} ${if (uiState.pageCount == 1) "Page" else "Pages"} (~${uiState.pageCount}m)",
+                                text = "PAGE ${uiState.pageCount} (~${uiState.pageCount}M)",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = MainAppFontFamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (isDark) Color.White else Color(0xFF0F172A),
-                                    fontSize = 11.5.sp
+                                    fontFamily = ScreenplayCourierFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = valColor,
+                                    fontSize = 11.sp
                                 )
-                            )
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.labelSmall.copy(color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
                             )
                         }
                         Text(
-                            text = "${uiState.wordCount} Words",
+                            text = "SCENE ${uiState.selectedSceneIndex + 1}/${maxOf(1, uiState.sceneCount)}",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
-                                fontSize = 11.5.sp
+                                fontFamily = ScreenplayCourierFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = valColor,
+                                fontSize = 11.sp
                             )
                         )
                         Text(
-                            text = "•",
-                            style = MaterialTheme.typography.labelSmall.copy(color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
-                        )
-                        Text(
-                            text = "${uiState.sceneCount} ${if (uiState.sceneCount == 1) "Scene" else "Scenes"}",
+                            text = "${uiState.wordCount} WORDS",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontSize = 11.5.sp
-                            )
-                        )
-                        Text(
-                            text = if (uiState.firstDraftState.isArcadeLocked) "• Arcade Scroll" else "• Courier 12pt",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = MainAppFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isDark) Color.White else Color(0xFF0F172A),
-                                fontSize = 11.5.sp
+                                fontFamily = ScreenplayCourierFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = mutedColor,
+                                fontSize = 11.sp
                             )
                         )
                     }
-                }
 
-                val context = LocalContext.current
-                val isGooglebook = remember { DeviceEnvironment.isGooglebook(context) }
-                val deviceLabel = remember { DeviceEnvironment.getDeviceNavLabel(context) }
-
-                Surface(
-                    shape = RoundedCornerShape(0.dp),
-                    color = Color.Transparent,
-                    modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(0.dp))
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(opticalPillBrush(isDark = isDark))
-                        .border(
-                            prismaticGlassBorder(width = 1.dp, accentColor = ElectrumGold, isDark = isDark),
-                            RoundedCornerShape(0.dp)
-                        )
-                        .padding(horizontal = 11.dp, vertical = 7.dp)
-                ) {
-                    Text(
-                        text = deviceLabel,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontSize = 11.sp,
-                            color = ElectrumGold,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    FloatingThemeTogglePill(
+                        isDark = isDark,
+                        onToggleTheme = onToggleTheme
                     )
                 }
-
-                FloatingThemeTogglePill(
-                    isDark = isDark,
-                    onToggleTheme = onToggleTheme
-                )
             }
         }
     }

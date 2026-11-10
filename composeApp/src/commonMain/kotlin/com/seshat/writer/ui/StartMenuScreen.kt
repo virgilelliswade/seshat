@@ -106,6 +106,11 @@ import com.seshat.writer.ui.theme.RawScreenplayTextMutedLight
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
 import androidx.compose.ui.graphics.Brush
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
+import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.ui.theme.StudioMonoIcon
+import com.seshat.writer.ui.theme.cleanLabel
+import com.seshat.writer.ui.theme.iconType
+import com.seshat.writer.ui.theme.parseStudioButtonLabel
 import com.seshat.writer.ui.theme.neonBloom
 import com.seshat.writer.ui.theme.ambientWorkspaceBrush
 import com.seshat.writer.ui.theme.opticalPillBrush
@@ -1516,19 +1521,33 @@ private fun StartMenuTopBarButton(
                 onClick = onClick
             )
     ) {
+        val parsed = remember(text) { parseStudioButtonLabel(text) }
+        val textColor = if (isDark) Color.White else (if (isLit) Color.White else Color(0xFF0F172A))
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    color = if (isDark) Color.White else (if (isLit) Color.White else Color(0xFF0F172A)),
-                    fontWeight = if (isLit) FontWeight.ExtraBold else FontWeight.Bold,
-                    fontSize = 12.sp
+            if (parsed.iconType != StudioIconType.NONE) {
+                StudioMonoIcon(
+                    type = parsed.iconType,
+                    tint = if (isLit) Color.White else (if (isDark) Color(0xFF94A3B8) else Color(0xFF475569)),
+                    size = 13.dp
                 )
-            )
+                if (parsed.cleanLabel.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+            }
+            if (parsed.cleanLabel.isNotEmpty()) {
+                Text(
+                    text = parsed.cleanLabel,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        color = textColor,
+                        fontWeight = if (isLit) FontWeight.ExtraBold else FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                )
+            }
             if (trailingIcon != null) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
@@ -1938,17 +1957,28 @@ private fun StartMenuBigButton(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon Badge
+            val parsedBadge = remember(badgeText) { parseStudioButtonLabel(badgeText) }
+            val parsedTitle = remember(title) { parseStudioButtonLabel(title) }
             Surface(
-                color = if (isHighlighted) badgeColor.copy(alpha = 0.35f) else badgeColor.copy(alpha = 0.2f),
+                color = if (isHighlighted) badgeColor.copy(alpha = 0.28f) else (if (isDark) Color(0xFF151923) else Color(0xFFF1F5F9)),
                 shape = RoundedCornerShape(0.dp),
-                border = BorderStroke(if (isHighlighted) 1.6.dp else 1.2.dp, if (isHighlighted) ScribeStarNeonRed else badgeColor.copy(alpha = 0.8f)),
+                border = BorderStroke(1.dp, if (isHighlighted) ScribeStarNeonRed else (if (isDark) Color(0xFF283044) else Color(0xFFCBD5E1))),
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = badgeText,
-                        fontSize = 24.sp
-                    )
+                    if (parsedBadge.iconType != StudioIconType.NONE) {
+                        StudioMonoIcon(
+                            type = parsedBadge.iconType,
+                            tint = if (isHighlighted) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)),
+                            size = 20.dp
+                        )
+                    } else {
+                        Text(
+                            text = badgeText,
+                            fontSize = 20.sp,
+                            color = if (isHighlighted) Color.White else (if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155))
+                        )
+                    }
                 }
             }
 
@@ -1957,7 +1987,7 @@ private fun StartMenuBigButton(
             // Text Titles
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = title,
+                    text = parsedTitle.cleanLabel.ifEmpty { title },
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = MainAppFontFamily,
                         fontWeight = FontWeight.ExtraBold,
