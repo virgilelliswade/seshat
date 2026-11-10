@@ -69,7 +69,7 @@ fun ProductionRevisionDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             color = ObsidianSurface,
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
             modifier = Modifier
@@ -91,7 +91,7 @@ fun ProductionRevisionDialog(
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(uiState.currentRevisionColor.composeColor)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -119,7 +119,7 @@ fun ProductionRevisionDialog(
                 // Toggle Revision Tracking Row
                 Card(
                     colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -181,16 +181,16 @@ fun ProductionRevisionDialog(
                         val isSelected = uiState.currentRevisionColor == revColor
                         Surface(
                             color = if (isSelected) revColor.composeColor.copy(alpha = 0.25f) else ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable {
                                     viewModel.setCurrentRevisionColor(revColor)
                                 }
                                 .border(
                                     width = if (isSelected) 1.5.dp else 0.5.dp,
                                     color = if (isSelected) revColor.composeColor else ObsidianSurfaceVariant,
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(0.dp)
                                 )
                         ) {
                             Row(
@@ -200,7 +200,7 @@ fun ProductionRevisionDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(10.dp)
-                                        .clip(CircleShape)
+                                        .clip(RoundedCornerShape(0.dp))
                                         .background(revColor.composeColor)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -247,8 +247,8 @@ fun ProductionRevisionDialog(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                                        .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                        .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                        .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                         .padding(horizontal = 10.dp, vertical = 8.dp)
                                 ) {
                                     inner()
@@ -259,7 +259,7 @@ fun ProductionRevisionDialog(
 
                     Card(
                         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Row(
@@ -295,7 +295,7 @@ fun ProductionRevisionDialog(
                 // Scene Numbering & Continuity (Shooting Script Mode)
                 Card(
                     colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -360,13 +360,13 @@ fun ProductionRevisionDialog(
 
                             Surface(
                                 color = ObsidianSurface,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable {
                                         viewModel.renumberAllScenes()
                                     }
-                                    .border(0.5.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                                    .border(0.5.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = "Renumber All Scenes (1..N)",
@@ -403,13 +403,13 @@ fun ProductionRevisionDialog(
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable {
                                     viewModel.markAllBlocksRevised(true)
                                 }
-                                .border(0.5.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                                .border(0.5.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                         ) {
                             Text(
                                 text = "Mark All Revised",
@@ -423,13 +423,13 @@ fun ProductionRevisionDialog(
 
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable {
                                     viewModel.markAllBlocksRevised(false)
                                 }
-                                .border(0.5.dp, ScreenplayTextMuted.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                .border(0.5.dp, ScreenplayTextMuted.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                         ) {
                             Text(
                                 text = "Clear Marks",

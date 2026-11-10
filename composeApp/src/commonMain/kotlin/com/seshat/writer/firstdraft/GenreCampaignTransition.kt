@@ -171,7 +171,7 @@ fun GenreIgnitionTransitionOverlay(
             ) {
                 Surface(
                     color = Color(0xCC050811),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.2.dp, ElectrumGold.copy(alpha = 0.8f))
                 ) {
                     Text(
@@ -189,7 +189,7 @@ fun GenreIgnitionTransitionOverlay(
 
                 Surface(
                     color = Color(0xB30F172A),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
                 ) {
                     Text(
@@ -207,7 +207,7 @@ fun GenreIgnitionTransitionOverlay(
 
             Surface(
                 color = Color(0xCC450E1A),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.75f))
             ) {
                 val secs = String.format(Locale.US, "%.1fs / %.1fs", elapsedMs / 1000f, durationMs / 1000f)
@@ -228,7 +228,7 @@ fun GenreIgnitionTransitionOverlay(
         // 3. Center Cinematic Title Card Overlay
         Surface(
             color = Color(0xBF050811),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.75f)),
             modifier = Modifier
                 .align(Alignment.Center)
@@ -286,7 +286,7 @@ fun GenreIgnitionTransitionOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(7.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(Color.White.copy(alpha = 0.16f))
                 ) {
                     Box(
@@ -306,7 +306,7 @@ fun GenreIgnitionTransitionOverlay(
         // 4. Bottom Stage Roadmap Strip
         Surface(
             color = Color(0xCC050811),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
             modifier = Modifier
                 .fillMaxWidth()

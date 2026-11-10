@@ -135,7 +135,7 @@ fun ScriptLibraryDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             color = ObsidianSurface,
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
             modifier = Modifier
@@ -183,7 +183,7 @@ fun ScriptLibraryDialog(
                                 } catch (_: Throwable) {}
                             },
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.7f)),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
                             Text("📥 Import File (.fdx / .fountain)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
@@ -195,7 +195,7 @@ fun ScriptLibraryDialog(
                         Button(
                             onClick = { showNewTemplateDialog = true },
                             colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color(0xFF0F1216), modifier = Modifier.size(16.dp))
@@ -218,7 +218,7 @@ fun ScriptLibraryDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ObsidianBlack)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
@@ -362,7 +362,7 @@ fun ScriptLibraryDialog(
                         cursorBrush = SolidColor(ElectrumGold),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(ObsidianBlack)
                             .padding(10.dp)
                     )
@@ -409,7 +409,7 @@ fun ScriptLibraryDialog(
                         cursorBrush = SolidColor(ElectrumGold),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(ObsidianBlack)
                             .padding(10.dp)
                     )
@@ -486,7 +486,7 @@ private fun ScriptProjectCard(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(
             width = if (project.isActive) 1.5.dp else 0.5.dp,
             color = if (project.isActive) ElectrumGold else ObsidianSurfaceVariant
@@ -515,7 +515,7 @@ private fun ScriptProjectCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(if (project.format == "FDX") Color(0xFF1976D2).copy(alpha = 0.2f) else ElectrumGold.copy(alpha = 0.2f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -533,7 +533,7 @@ private fun ScriptProjectCard(
                         Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(Color(0xFF4CAF50).copy(alpha = 0.2f))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
@@ -573,7 +573,7 @@ private fun ScriptProjectCard(
                     Button(
                         onClick = onOpen,
                         colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold),
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
                         Text("Open", color = ObsidianBlack, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
@@ -584,7 +584,7 @@ private fun ScriptProjectCard(
                 OutlinedButton(
                     onClick = onDuplicate,
                     border = BorderStroke(0.8.dp, ElectrumGold.copy(alpha = 0.6f)),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text("Fork", color = ElectrumGold, style = MaterialTheme.typography.labelSmall)
@@ -620,7 +620,7 @@ private fun NewScriptTemplateDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             color = ObsidianSurface,
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
             modifier = Modifier
@@ -649,7 +649,7 @@ private fun NewScriptTemplateDialog(
                         val isSelected = selectedFormat == fmt
                         Surface(
                             color = if (isSelected) ElectrumGold else ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (isSelected) ElectrumGold else Color(0xFF334155)),
                             modifier = Modifier
                                 .weight(1f)
@@ -684,7 +684,7 @@ private fun NewScriptTemplateDialog(
                     cursorBrush = SolidColor(ElectrumGold),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ObsidianBlack)
                         .padding(10.dp),
                     decorationBox = { inner ->
@@ -705,7 +705,7 @@ private fun NewScriptTemplateDialog(
                     cursorBrush = SolidColor(ElectrumGold),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ObsidianBlack)
                         .padding(10.dp),
                     decorationBox = { inner ->
@@ -729,17 +729,17 @@ private fun NewScriptTemplateDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(if (isSelected) Color(0x35E11D48) else ObsidianBlack)
-                            .border(1.dp, if (isSelected) ScribeStarNeonRed else Color(0x25334155), RoundedCornerShape(6.dp))
+                            .border(1.dp, if (isSelected) ScribeStarNeonRed else Color(0x25334155), RoundedCornerShape(0.dp))
                             .clickable { selectedTemplate = tmpl }
                             .padding(vertical = 7.dp, horizontal = 10.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(12.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .border(1.dp, if (isSelected) ScribeStarNeonRed else ScreenplayTextMuted, RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
+                                .border(1.dp, if (isSelected) ScribeStarNeonRed else ScreenplayTextMuted, RoundedCornerShape(0.dp))
                                 .background(if (isSelected) ScribeStarNeonRed else Color.Transparent)
                         )
                         Spacer(modifier = Modifier.width(8.dp))

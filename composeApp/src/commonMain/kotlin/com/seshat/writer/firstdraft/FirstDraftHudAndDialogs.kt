@@ -119,7 +119,7 @@ fun FirstDraftControlStrip(
             ) {
                 Surface(
                     color = Color(0xFF280812),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ElectrumGold)
                 ) {
                     Text(
@@ -144,7 +144,7 @@ fun FirstDraftControlStrip(
                             isPassed -> Color(0xFF1E293B)
                             else -> Color(0xFF0F141E)
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(
                             1.dp,
                             when {
@@ -170,7 +170,7 @@ fun FirstDraftControlStrip(
                 // Active Countdown Badge
                 Surface(
                     color = Color(0xFF18080E),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ScribeStarNeonRed)
                 ) {
                     Text(
@@ -188,7 +188,7 @@ fun FirstDraftControlStrip(
                 if (state.stage == FirstDraftStage.DRAFT) {
                     Surface(
                         color = Color(0xFF0E1B2A),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFF38BDF8))
                     ) {
                         Text(
@@ -216,7 +216,7 @@ fun FirstDraftControlStrip(
                 if (state.airlockPassRemainingMs > 0L) {
                     Surface(
                         color = Color(0xFF064E3B),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFF10B981))
                     ) {
                         Text(
@@ -235,7 +235,7 @@ fun FirstDraftControlStrip(
                 if (state.mulliganPassRemainingMs > 0L) {
                     Surface(
                         color = Color(0xFF3B0764),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFFA855F7))
                     ) {
                         Text(
@@ -254,7 +254,7 @@ fun FirstDraftControlStrip(
                 // XP Shop Pill
                 Surface(
                     color = Color(0xFF1E1B0E),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ElectrumGold),
                     modifier = Modifier.clickable { onOpenXpShop() }
                 ) {
@@ -276,7 +276,7 @@ fun FirstDraftControlStrip(
                     val sprintSec = (state.activeSprintRemainingMs % 60000L) / 1000L
                     Surface(
                         color = if (state.isSprintRunning) ScribeStarNeonRed else Color(0xFF1E293B),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ScribeStarNeonRed),
                         modifier = Modifier.clickable { onToggleSprint() }
                     ) {
@@ -299,7 +299,7 @@ fun FirstDraftControlStrip(
                     // [TK] Token Hotkey Pill (Cmd+K / Ctrl+K)
                     Surface(
                         color = Color(0xFF2A0810),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ScribeStarNeonRed),
                         modifier = Modifier.clickable { onInsertTkToken() }
                     ) {
@@ -320,7 +320,7 @@ fun FirstDraftControlStrip(
                 if (state.stage == FirstDraftStage.DRAFT || state.stage == FirstDraftStage.OUTLINE) {
                     Surface(
                         color = if (state.isReferenceDrawerOpen) ScribeStarNeonRed else Color(0xFF161E2E),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFF475569)),
                         modifier = Modifier.clickable { onToggleReferenceDrawer() }
                     ) {
@@ -340,7 +340,7 @@ fun FirstDraftControlStrip(
                 // Day Job Duty Roster Button
                 Surface(
                     color = Color(0xFF161E2E),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFF475569)),
                     modifier = Modifier.clickable { onOpenDutyRoster() }
                 ) {
@@ -360,7 +360,7 @@ fun FirstDraftControlStrip(
                 if (state.stage == FirstDraftStage.DRAFT) {
                     Surface(
                         color = if (canShareDaily) ScribeStarNeonRed else Color(0xFF111622),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, if (canShareDaily) Color.White else Color(0xFF334155)),
                         modifier = Modifier.clickable(enabled = canShareDaily) { onOpenDailyReceipt() }
                     ) {
@@ -385,7 +385,7 @@ fun FirstDraftControlStrip(
                     val nextLabel = state.stage.nextStage().label
                     Surface(
                         color = ScribeStarNeonRed,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color.White),
                         modifier = Modifier.clickable { onAdvanceStage() }
                     ) {
@@ -444,21 +444,21 @@ fun SparkStageEditorView(
                 .fillMaxWidth()
                 .neonBloom(
                     color = ScribeStarNeonRed,
-                    cornerRadius = 24.dp,
+                    cornerRadius = 0.dp,
                     glowRadius = 16.dp,
                     strokeWidth = 1.8.dp,
                     outerAlpha = 0.35f,
                     midAlpha = 0.65f
                 )
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(Color(0xFF0E131F))
-                .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(24.dp))
+                .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                 .padding(28.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Surface(
                 color = ScribeStarNeonRed.copy(alpha = 0.18f),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ScribeStarNeonRed)
             ) {
                 Text(
@@ -542,9 +542,9 @@ fun SparkStageEditorView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(130.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Color(0xFF07090E))
-                    .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(14.dp))
+                    .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(0.dp))
                     .padding(14.dp)
             ) {
                 if (state.sparkLogline.isEmpty()) {
@@ -611,9 +611,9 @@ fun SparkStageEditorView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(110.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(Color(0xFF07090E))
-                        .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(14.dp))
+                        .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(0.dp))
                         .padding(14.dp)
                 ) {
                     if (state.sparkPilotLogline.isEmpty()) {
@@ -655,7 +655,7 @@ fun SparkStageEditorView(
             ) {
                 Surface(
                     color = Color(0xFF161E2E),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFF475569)),
                     modifier = Modifier.clickable { onOpenDutyRoster() }
                 ) {
@@ -673,7 +673,7 @@ fun SparkStageEditorView(
 
                 Surface(
                     color = ScribeStarNeonRed,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onSealSparkAndAdvance() }
@@ -717,15 +717,15 @@ fun WorkShiftReverseLockoutOverlay(
                 .fillMaxWidth()
                 .neonBloom(
                     color = ScribeStarNeonRed,
-                    cornerRadius = 24.dp,
+                    cornerRadius = 0.dp,
                     glowRadius = 20.dp,
                     strokeWidth = 2.dp,
                     outerAlpha = 0.45f,
                     midAlpha = 0.80f
                 )
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(Color(0xFF0C101A))
-                .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(24.dp))
+                .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                 .padding(36.dp)
         ) {
             Text(
@@ -800,9 +800,9 @@ fun WorkShiftRosterDialog(
                 modifier = Modifier
                     .widthIn(max = 640.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Color(0xFF0E131F))
-                    .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(22.dp))
+                    .border(BorderStroke(1.5.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                     .padding(24.dp)
             ) {
                 Row(
@@ -875,7 +875,7 @@ fun WorkShiftRosterDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(RoundedCornerShape(0.dp))
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -885,9 +885,9 @@ fun WorkShiftRosterDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(Color(0xFF07090E))
-                            .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(12.dp))
+                            .border(BorderStroke(1.dp, Color(0xFF334155)), RoundedCornerShape(0.dp))
                             .padding(12.dp)
                     ) {
                         Row(
@@ -907,7 +907,7 @@ fun WorkShiftRosterDialog(
                                 val isSel = selectedDay == dConst
                                 Surface(
                                     color = if (isSel) ScribeStarNeonRed else Color(0xFF161E2E),
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { selectedDay = dConst }
@@ -938,7 +938,7 @@ fun WorkShiftRosterDialog(
                                 Text("Start: ", color = Color(0xFF94A3B8), fontSize = 12.sp)
                                 Surface(
                                     color = Color(0xFF161E2E),
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier.clickable { startHour = (startHour + 1) % 24 }
                                 ) {
                                     Text(
@@ -953,7 +953,7 @@ fun WorkShiftRosterDialog(
                                 Text("End: ", color = Color(0xFF94A3B8), fontSize = 12.sp)
                                 Surface(
                                     color = Color(0xFF161E2E),
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier.clickable { endHour = (endHour + 1) % 24 }
                                 ) {
                                     Text(
@@ -968,7 +968,7 @@ fun WorkShiftRosterDialog(
 
                             Surface(
                                 color = ElectrumGold,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier.clickable {
                                     val candidate = WorkShiftBlock(
                                         dayOfWeek = selectedDay,
@@ -1032,7 +1032,7 @@ fun WorkShiftRosterDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .background(Color(0xFF161E2E))
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
@@ -1068,7 +1068,7 @@ fun WorkShiftRosterDialog(
                 if (canEdit) {
                     Surface(
                         color = ScribeStarNeonRed,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -1118,9 +1118,9 @@ fun XpShopDialog(
                 modifier = Modifier
                     .widthIn(max = 600.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Color(0xFF0E131F))
-                    .border(BorderStroke(1.5.dp, ElectrumGold), RoundedCornerShape(22.dp))
+                    .border(BorderStroke(1.5.dp, ElectrumGold), RoundedCornerShape(0.dp))
                     .padding(24.dp)
             ) {
                 Row(
@@ -1158,7 +1158,7 @@ fun XpShopDialog(
                     val canAfford = state.xpBalance >= item.costXp
                     Surface(
                         color = Color(0xFF07090E),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, if (canAfford) ElectrumGold else Color(0xFF334155)),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1193,7 +1193,7 @@ fun XpShopDialog(
 
                             Surface(
                                 color = if (canAfford) ElectrumGold else Color(0xFF1E293B),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier.clickable(enabled = canAfford) {
                                     onPurchaseItem(item)
                                 }
@@ -1232,7 +1232,7 @@ fun IdleInstigatorBanner(
 
     Surface(
         color = Color(0xFF28050C),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(2.dp, ScribeStarNeonRed),
         shadowElevation = 16.dp,
         modifier = modifier
@@ -1408,7 +1408,7 @@ fun ReadOnlyReferenceDrawer(
         bible.characters.forEach { ch ->
             Surface(
                 color = Color(0xFF131926),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
@@ -1453,7 +1453,7 @@ fun ReadOnlyReferenceDrawer(
         sceneCards.take(state.unlockedCorkboardSceneSlots).forEachIndexed { idx, card ->
             Surface(
                 color = Color(0xFF131926),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {

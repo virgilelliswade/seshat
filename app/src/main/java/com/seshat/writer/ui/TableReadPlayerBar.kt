@@ -62,10 +62,10 @@ fun TableReadPlayerBar(
 
     Surface(
         color = ObsidianSurface,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
             .padding(2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -73,11 +73,11 @@ fun TableReadPlayerBar(
             AnimatedVisibility(visible = state.isWaitingForUser) {
                 Surface(
                     color = ElectrumGold.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
-                        .border(1.dp, ElectrumGold, RoundedCornerShape(8.dp))
+                        .border(1.dp, ElectrumGold, RoundedCornerShape(0.dp))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -106,9 +106,9 @@ fun TableReadPlayerBar(
 
                         Surface(
                             color = ElectrumGold,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { tableReadManager.userFinishedTurn() }
                         ) {
                             Text(
@@ -186,11 +186,11 @@ fun TableReadPlayerBar(
                     // Previous
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable { tableReadManager.skipPrevious() }
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                     ) {
                         Text(
                             text = "⏮️",
@@ -202,9 +202,9 @@ fun TableReadPlayerBar(
                     // Play / Pause
                     Surface(
                         color = ElectrumGold,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable {
                                 if (state.isPlaying) {
                                     tableReadManager.pause()
@@ -226,11 +226,11 @@ fun TableReadPlayerBar(
                     // Next
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable { tableReadManager.skipNext() }
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                     ) {
                         Text(
                             text = "⏭️",
@@ -251,14 +251,14 @@ fun TableReadPlayerBar(
                     Box {
                         Surface(
                             color = if (state.mode == TableReadMode.REHEARSAL_SPARRING) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { isRoleMenuOpen = true }
                                 .border(
                                     1.dp,
                                     if (state.mode == TableReadMode.REHEARSAL_SPARRING) ElectrumGold else ObsidianSurfaceVariant,
-                                    RoundedCornerShape(6.dp)
+                                    RoundedCornerShape(0.dp)
                                 )
                         ) {
                             Text(
@@ -315,11 +315,11 @@ fun TableReadPlayerBar(
                         val isSel = state.speechRate == sp
                         Surface(
                             color = if (isSel) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { tableReadManager.setSpeechRate(sp) }
-                                .border(1.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant, RoundedCornerShape(4.dp))
+                                .border(1.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         ) {
                             Text(
                                 text = "${sp}x",

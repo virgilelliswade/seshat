@@ -877,14 +877,14 @@ private fun WorkspaceViewContent(
         // Optional Project Title Input - High Contrast
         Surface(
             color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.4.dp, ScribeStarNeonRed.copy(alpha = 0.70f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
                 .neonBloom(
                     color = ScribeStarNeonRed,
-                    cornerRadius = 14.dp,
+                    cornerRadius = 0.dp,
                     glowRadius = 6.dp,
                     strokeWidth = 1.4.dp,
                     outerAlpha = 0.12f,
@@ -1155,7 +1155,7 @@ private fun SparkNewSetupContent(
                             } else {
                                 ObsidianSurface.copy(alpha = 0.90f)
                             },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(
                                 width = if (isSelected) 1.8.dp else 1.dp,
                                 color = if (isSelected) ElectrumGold else Color(0xFF334155)
@@ -1166,7 +1166,7 @@ private fun SparkNewSetupContent(
                                     if (isSelected) {
                                         Modifier.neonBloom(
                                             color = ElectrumGold,
-                                            cornerRadius = 12.dp,
+                                            cornerRadius = 0.dp,
                                             glowRadius = 8.dp,
                                             strokeWidth = 1.6.dp,
                                             outerAlpha = 0.25f,
@@ -1174,7 +1174,7 @@ private fun SparkNewSetupContent(
                                         )
                                     } else Modifier
                                 )
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { selectedGenre = genre }
                         ) {
                             Row(
@@ -1221,14 +1221,14 @@ private fun SparkNewSetupContent(
         // 2. LIVE CAMPAIGN BRIEFING CARD (with Ambient Procedural Genre Transition Backdrop)
         Surface(
             color = Color(0xFF0A0F1A).copy(alpha = 0.94f),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.75f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 14.dp)
                 .neonBloom(
                     color = ScribeStarNeonRed,
-                    cornerRadius = 14.dp,
+                    cornerRadius = 0.dp,
                     glowRadius = 6.dp,
                     strokeWidth = 1.4.dp,
                     outerAlpha = 0.14f,
@@ -1272,7 +1272,7 @@ private fun SparkNewSetupContent(
                     }
                     Surface(
                         color = ElectrumGold.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.55f))
                     ) {
                         Text(
@@ -1292,9 +1292,9 @@ private fun SparkNewSetupContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(Color(0xFF111827))
-                        .border(BorderStroke(1.dp, Color(0xFF1E293B)), RoundedCornerShape(10.dp))
+                        .border(BorderStroke(1.dp, Color(0xFF1E293B)), RoundedCornerShape(0.dp))
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -1352,7 +1352,7 @@ private fun SparkNewSetupContent(
         // 3. OPTIONAL PROJECT TITLE INPUT
         Surface(
             color = if (isDark) Color(0xFF0F1522).copy(alpha = 0.92f) else ObsidianSurface,
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.4.dp, ElectrumGold.copy(alpha = 0.85f)),
             modifier = Modifier
                 .fillMaxWidth()

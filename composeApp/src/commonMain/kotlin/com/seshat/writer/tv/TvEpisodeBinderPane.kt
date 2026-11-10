@@ -143,7 +143,7 @@ fun TvEpisodeBinderPane(
         // Series Title & Showrunner Card
         Surface(
             color = ObsidianBlack,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.3f)),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -176,11 +176,11 @@ fun TvEpisodeBinderPane(
         // Persistent Series Lore Bible Action Button
         Surface(
             color = ObsidianSurfaceVariant,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.6f)),
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .clickable { onOpenStoryBible() }
         ) {
             Row(
@@ -241,9 +241,9 @@ fun TvEpisodeBinderPane(
 
             Surface(
                 color = if (isRuleZeroLocked) ObsidianSurfaceVariant else ElectrumGold,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         if (isRuleZeroLocked) {
                             Toast.makeText(
@@ -296,11 +296,11 @@ fun TvEpisodeBinderPane(
 
                 Surface(
                     color = containerColor,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(if (isActive) 1.5.dp else 1.dp, borderColor),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .clickable {
                             if (isEpLockedByRuleZero) {
                                 Toast.makeText(
@@ -322,7 +322,7 @@ fun TvEpisodeBinderPane(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     color = if (isActive) ElectrumGold else ObsidianSurfaceVariant,
-                                    shape = RoundedCornerShape(4.dp)
+                                    shape = RoundedCornerShape(0.dp)
                                 ) {
                                     Text(
                                         text = "EP ${ep.episodeNumber}",
@@ -351,9 +351,9 @@ fun TvEpisodeBinderPane(
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(0.dp))
                                     .background(Color(ep.revisionColor.primaryColorHex))
-                                    .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                             )
                         }
 
@@ -432,11 +432,11 @@ fun TvEpisodeBinderPane(
         ) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable { onOpenWritersRoom() }
             ) {
                 Row(
@@ -459,11 +459,11 @@ fun TvEpisodeBinderPane(
 
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f)),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         val exported = SeshatBundleManager.exportTvSeriesBundle(context, seriesProject)
                         if (exported != null) {
@@ -505,11 +505,11 @@ fun TvEpisodeBinderPane(
 
         Dialog(onDismissRequest = { showAddEpisodeDialog = false }) {
             Card(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
@@ -612,11 +612,11 @@ fun TvEpisodeBinderPane(
         if (ep != null) {
             Dialog(onDismissRequest = { episodeToDeleteIndex = null }) {
                 Card(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(0.dp),
                     colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(

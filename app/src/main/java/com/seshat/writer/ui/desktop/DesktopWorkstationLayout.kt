@@ -152,11 +152,11 @@ fun DesktopMenuBar(
                         .size(8.dp)
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 4.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 4.dp,
                             strokeWidth = 1.dp
                         )
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ScribeStarNeonRed)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -188,7 +188,7 @@ fun DesktopMenuBar(
                         onDismissRequest = { activeMenu = null },
                         modifier = Modifier
                             .background(menuDropBg)
-                            .border(BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.50f)), RoundedCornerShape(4.dp))
+                            .border(BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.50f)), RoundedCornerShape(0.dp))
                     ) {
                         when (menuName) {
                             "File" -> {
@@ -321,16 +321,16 @@ fun DesktopMenuBar(
             // Auto-save status pip
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Color(0xFF131A26))
-                    .border(BorderStroke(0.8.dp, borderCol), RoundedCornerShape(3.dp))
+                    .border(BorderStroke(0.8.dp, borderCol), RoundedCornerShape(0.dp))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .size(5.dp)
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(0.dp))
                             .background(Color(0xFF4ADE80))
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -350,7 +350,7 @@ fun DesktopMenuBar(
                 text = if (isDark) "🌙" else "☀️",
                 fontSize = 11.sp,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable { onToggleThemeMode() }
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             )
@@ -413,7 +413,7 @@ private fun DesktopMenuPill(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 4.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = 4.dp,
                         strokeWidth = 1.dp,
                         outerAlpha = 0.22f,
@@ -421,14 +421,14 @@ private fun DesktopMenuPill(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(opticalPillBrush(isLit = isLit, isAccent = isHovered))
             .border(
                 prismaticGlassBorder(
                     width = if (isLit) 1.dp else 0.8.dp,
                     isLit = isLit
                 ),
-                shape = RoundedCornerShape(4.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -472,7 +472,6 @@ fun DesktopActionRibbon(
 ) {
     val barBg = opticalGlassBrush(glassOpacity = 0.85f)
     val borderCol = ScribeStarNeonRed.copy(alpha = 0.40f)
-    val isDark = LocalSeshatDarkTheme.current
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -555,14 +554,14 @@ fun DesktopActionRibbon(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(opticalPillBrush(isLit = false))
-                    .border(prismaticGlassBorder(width = 0.8.dp), RoundedCornerShape(6.dp))
+                    .border(prismaticGlassBorder(width = 0.8.dp), RoundedCornerShape(0.dp))
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = "–",
-                    color = if (isDark) Color(0xFF94A3B8) else Color.Black,
+                    color = Color(0xFF94A3B8),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     modifier = Modifier
@@ -573,8 +572,7 @@ fun DesktopActionRibbon(
                     text = "${(uiState.zoomLevel * 100).toInt()}%",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        color = if (isDark) Color.White else Color.Black,
-                        fontWeight = if (isDark) FontWeight.Medium else FontWeight.Bold,
+                        color = Color.White,
                         fontSize = 10.5.sp
                     ),
                     modifier = Modifier
@@ -583,7 +581,7 @@ fun DesktopActionRibbon(
                 )
                 Text(
                     text = "+",
-                    color = if (isDark) Color(0xFF94A3B8) else Color.Black,
+                    color = Color(0xFF94A3B8),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     modifier = Modifier
@@ -646,7 +644,7 @@ private fun DesktopRibbonButton(
                 if (isLit || isAccent) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 6.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = if (isLit) 1.4.dp else 1.dp,
                         outerAlpha = outerAlpha,
@@ -655,7 +653,7 @@ private fun DesktopRibbonButton(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 opticalPillBrush(
                     isLit = isLit,
@@ -668,7 +666,7 @@ private fun DesktopRibbonButton(
                     width = if (isLit) 1.4.dp else 0.8.dp,
                     isLit = isLit
                 ),
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -757,9 +755,9 @@ fun DesktopDockedBinder(
                 Spacer(modifier = Modifier.width(6.dp))
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ScribeStarNeonRed.copy(alpha = 0.20f))
-                        .border(BorderStroke(0.8.dp, ScribeStarNeonRed.copy(alpha = 0.60f)), RoundedCornerShape(3.dp))
+                        .border(BorderStroke(0.8.dp, ScribeStarNeonRed.copy(alpha = 0.60f)), RoundedCornerShape(0.dp))
                         .padding(horizontal = 5.dp, vertical = 1.dp)
                 ) {
                     Text(
@@ -784,7 +782,7 @@ fun DesktopDockedBinder(
                         fontSize = 11.sp
                     ),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .clickable { onToggleReorderMode() }
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 )
@@ -856,7 +854,7 @@ private fun DesktopSceneBinderItem(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 6.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = if (isSelected) 1.2.dp else 0.9.dp,
                         outerAlpha = if (isSelected) 0.32f else 0.16f,
@@ -865,7 +863,7 @@ private fun DesktopSceneBinderItem(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 opticalPillBrush(
                     isLit = isSelected,
@@ -877,7 +875,7 @@ private fun DesktopSceneBinderItem(
                     width = if (isSelected) 1.2.dp else 0.8.dp,
                     isLit = isLit
                 ),
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -895,7 +893,7 @@ private fun DesktopSceneBinderItem(
                 modifier = Modifier
                     .width(3.dp)
                     .height(18.dp)
-                    .clip(RoundedCornerShape(1.5.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(if (isSelected) ScribeStarNeonRed else ScribeStarNeonRed.copy(alpha = 0.25f))
             )
 
@@ -1204,7 +1202,7 @@ private fun DesktopInspectorTabPill(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 5.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = 4.dp,
                         strokeWidth = 1.dp,
                         outerAlpha = if (isSelected) 0.32f else 0.16f,
@@ -1212,7 +1210,7 @@ private fun DesktopInspectorTabPill(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(5.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 opticalPillBrush(
                     isLit = isSelected,
@@ -1224,7 +1222,7 @@ private fun DesktopInspectorTabPill(
                     width = if (isLit) 1.2.dp else 0.8.dp,
                     isLit = isLit
                 ),
-                shape = RoundedCornerShape(5.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1271,7 +1269,7 @@ private fun DesktopGlassActionButton(
                 if (isLit || isPrimary) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 6.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = if (isLit) 1.4.dp else 1.dp,
                         outerAlpha = if (isLit) 0.35f else 0.18f,
@@ -1279,7 +1277,7 @@ private fun DesktopGlassActionButton(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 opticalPillBrush(
                     isLit = isLit,
@@ -1291,7 +1289,7 @@ private fun DesktopGlassActionButton(
                     width = if (isLit) 1.4.dp else 1.dp,
                     isLit = isLit
                 ),
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -1368,29 +1366,26 @@ fun DesktopStatusBar(
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = Color.White,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Normal,
                     fontSize = 9.5.sp
                 )
             )
-
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val isGooglebook = remember { com.seshat.writer.util.DeviceEnvironment.isGooglebook(context) }
-            val deviceLabel = if (isGooglebook) "💻 Googlebook • Arrow Nav" else "📱 Touch Screen"
             Text(text = "•", color = mutedText, fontSize = 9.sp)
+            val isMacBookDesk = remember { com.seshat.writer.util.DeviceEnvironment.isMacBook() }
             Surface(
-                color = Color(0x351E2836),
-                shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(0.8.dp, Color(0xFF64B5F6).copy(alpha = 0.5f))
+                color = if (isMacBookDesk) Color(0x25E11D48) else Color(0x351E2836),
+                shape = RoundedCornerShape(0.dp),
+                border = BorderStroke(1.dp, if (isMacBookDesk) ScribeStarNeonRed.copy(alpha = 0.5f) else Color(0xFF64B5F6).copy(alpha = 0.5f))
             ) {
                 Text(
-                    text = deviceLabel,
+                    text = if (isMacBookDesk) "🍎 MacBook • ⌘ Arrow Nav" else "💻 Keyboard Nav",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = MainAppFontFamily,
-                        fontSize = 9.sp,
-                        color = Color(0xFF64B5F6),
-                        fontWeight = FontWeight.Medium
+                        fontSize = 9.5.sp,
+                        color = if (isMacBookDesk) ScribeStarNeonRed else Color(0xFF64B5F6),
+                        fontWeight = FontWeight.Normal
                     ),
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                 )
             }
         }
@@ -1426,19 +1421,6 @@ fun DesktopStatusBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Hardware Keyboard Ready
-            Text(
-                text = "⌨ QWERTY DESKTOP",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = MainAppFontFamily,
-                    color = Color(0xFF4ADE80),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 9.5.sp
-                )
-            )
-
-            Text(text = "•", color = mutedText, fontSize = 9.sp)
-
             // Unified bottom-right mode switch toggle button
             WorkstationModeToggleButton(
                 isDesktopMode = true,
@@ -1473,13 +1455,13 @@ fun WorkstationModeToggleButton(
                 if (isLit) {
                     Modifier.neonBloom(
                         color = accentColor,
-                        cornerRadius = 4.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = 3.dp,
                         strokeWidth = 1.dp
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(opticalPillBrush(isLit = isLit, accentColor = accentColor))
             .border(
                 prismaticGlassBorder(
@@ -1487,7 +1469,7 @@ fun WorkstationModeToggleButton(
                     isLit = isLit,
                     accentColor = accentColor
                 ),
-                RoundedCornerShape(4.dp)
+                RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interaction,

@@ -208,8 +208,8 @@ fun ScriptDoctorDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.92f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(0.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp)),
                 color = ObsidianBlack
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -337,7 +337,7 @@ private fun ScriptDoctorHeader(
                 )
                 if (storyBibleContext.isNotBlank()) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    Surface(color = Color(0xFF1B5E20), shape = RoundedCornerShape(3.dp)) {
+                    Surface(color = Color(0xFF1B5E20), shape = RoundedCornerShape(0.dp)) {
                         Text(
                             text = "🌍 Lore Connected",
                             style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF81C784), fontSize = 10.sp),
@@ -387,13 +387,13 @@ private fun ScriptDoctorChatTab(
                 ) {
                     Surface(
                         color = if (isUser) ElectrumGold.copy(alpha = 0.15f) else ObsidianSurface,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .border(
                                 1.dp,
                                 if (isUser) ElectrumGold.copy(alpha = 0.5f) else ObsidianSurfaceVariant,
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(0.dp)
                             )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -456,11 +456,11 @@ private fun ScriptDoctorChatTab(
             for (qp in quickPrompts) {
                 Surface(
                     color = ObsidianSurface,
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .clickable { onSendMessage(qp) }
-                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(4.dp))
+                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = qp,
@@ -506,7 +506,7 @@ private fun ScriptDoctorChatTab(
                 onClick = { onSendMessage(chatInput) },
                 enabled = chatInput.isNotBlank() && !isChatLoading,
                 modifier = Modifier
-                    .background(if (chatInput.isNotBlank()) ElectrumGold else ObsidianSurface, RoundedCornerShape(8.dp))
+                    .background(if (chatInput.isNotBlank()) ElectrumGold else ObsidianSurface, RoundedCornerShape(0.dp))
                     .size(48.dp)
             ) {
                 Icon(
@@ -547,13 +547,13 @@ private fun ScriptDoctorWhatIfTab(
             )
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable(enabled = !isComplicationsLoading) {
                         onRegenerate()
                     }
-                    .border(1.dp, ElectrumGold, RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold, RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = if (isComplicationsLoading) "GENERATING..." else "🔄 RE-GENERATE",
@@ -584,10 +584,10 @@ private fun ScriptDoctorWhatIfTab(
             for ((idx, comp) in complications.withIndex()) {
                 Surface(
                     color = ObsidianSurface,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         .padding(bottom = 12.dp)
                 ) {
                     Row(
@@ -655,13 +655,13 @@ private fun ScriptDoctorAuditTab(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
                     color = ObsidianBlack,
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .clickable(enabled = !isAuditLoading) {
                             onRunSceneAudit()
                         }
-                        .border(1.dp, ElectrumGold, RoundedCornerShape(6.dp))
+                        .border(1.dp, ElectrumGold, RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = if (isAuditLoading) "AUDITING..." else "🔄 DRAMA AUDIT",
@@ -675,13 +675,13 @@ private fun ScriptDoctorAuditTab(
 
                 Surface(
                     color = ObsidianBlack,
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .clickable(enabled = !isAuditLoading) {
                             onRunLoreAudit()
                         }
-                        .border(1.dp, Color(0xFF81C784), RoundedCornerShape(6.dp))
+                        .border(1.dp, Color(0xFF81C784), RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = "🌍 4-PILLAR LORE AUDIT",
@@ -712,10 +712,10 @@ private fun ScriptDoctorAuditTab(
         } else {
             Surface(
                 color = ObsidianSurface,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = sceneAuditText ?: "(No audit performed yet)",

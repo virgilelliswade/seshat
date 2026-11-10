@@ -484,7 +484,7 @@ fun StudioNavigationDrawer(
                             ) {
                                 Surface(
                                     color = ObsidianBlack,
-                                    shape = CircleShape,
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(1.dp, ElectrumGold),
                                     modifier = Modifier.size(36.dp)
                                 ) {
@@ -523,7 +523,7 @@ fun StudioNavigationDrawer(
 
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f))
                             ) {
                                 Text(
@@ -551,7 +551,7 @@ private fun DrawerMetricChip(
 ) {
     Surface(
         color = ObsidianBlack,
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
         modifier = modifier
     ) {
@@ -576,10 +576,10 @@ private fun DrawerQuickButton(
 ) {
     Surface(
         color = ObsidianBlack,
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.45f)),
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .clickable(onClick = onClick)
     ) {
         Text(
@@ -628,14 +628,14 @@ private fun DrawerNavItem(
 ) {
     Surface(
         color = if (isActive) ElectrumGold.copy(alpha = 0.15f) else ObsidianSurface,
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(
             1.dp,
             if (isActive) ElectrumGold else Color.Transparent
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .clickable(onClick = onClick)
     ) {
         Row(

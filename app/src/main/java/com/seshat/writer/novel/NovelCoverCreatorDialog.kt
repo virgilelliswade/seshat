@@ -203,7 +203,7 @@ fun NovelCoverCreatorDialog(
             modifier = Modifier
                 .fillMaxWidth(0.96f)
                 .fillMaxHeight(0.96f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.7f)),
             shadowElevation = 24.dp
@@ -222,7 +222,7 @@ fun NovelCoverCreatorDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             color = ElectrumGold.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f))
                         ) {
                             Text(
@@ -250,7 +250,7 @@ fun NovelCoverCreatorDialog(
                         // Preview Mode Switcher
                         Surface(
                             color = if (previewMode == CoverPreviewMode.FRONT_COVER) ElectrumGold.copy(alpha = 0.25f) else ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (previewMode == CoverPreviewMode.FRONT_COVER) ElectrumGold else Color.Transparent),
                             modifier = Modifier.clickable { previewMode = CoverPreviewMode.FRONT_COVER }
                         ) {
@@ -268,7 +268,7 @@ fun NovelCoverCreatorDialog(
 
                         Surface(
                             color = if (previewMode == CoverPreviewMode.FULL_DUST_JACKET) ElectrumGold.copy(alpha = 0.25f) else ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (previewMode == CoverPreviewMode.FULL_DUST_JACKET) ElectrumGold else Color.Transparent),
                             modifier = Modifier.clickable { previewMode = CoverPreviewMode.FULL_DUST_JACKET }
                         ) {
@@ -310,8 +310,8 @@ fun NovelCoverCreatorDialog(
                         modifier = Modifier
                             .weight(1.1f)
                             .fillMaxHeight()
-                            .background(ObsidianSurface, RoundedCornerShape(12.dp))
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(12.dp))
+                            .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             .padding(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -344,8 +344,8 @@ fun NovelCoverCreatorDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                                .background(Color(0xFF07090C), RoundedCornerShape(8.dp))
-                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                .background(Color(0xFF07090C), RoundedCornerShape(0.dp))
+                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -365,7 +365,7 @@ fun NovelCoverCreatorDialog(
                         // Print Dimensions Summary Banner
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -391,8 +391,8 @@ fun NovelCoverCreatorDialog(
                         modifier = Modifier
                             .weight(1.3f)
                             .fillMaxHeight()
-                            .background(ObsidianSurface, RoundedCornerShape(12.dp))
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(12.dp))
+                            .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             .padding(14.dp)
                     ) {
                         LazyColumn(
@@ -403,7 +403,7 @@ fun NovelCoverCreatorDialog(
                             item {
                                 Surface(
                                     color = ObsidianBlack,
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -470,7 +470,7 @@ fun NovelCoverCreatorDialog(
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color(0xFF0F1216)),
-                                                shape = RoundedCornerShape(6.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 enabled = !isGeneratingCopy,
                                                 modifier = Modifier.weight(1f)
                                             ) {
@@ -508,7 +508,7 @@ fun NovelCoverCreatorDialog(
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
-                                                shape = RoundedCornerShape(6.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 enabled = !isGeneratingArt,
                                                 modifier = Modifier.weight(1f)
                                             ) {
@@ -537,7 +537,7 @@ fun NovelCoverCreatorDialog(
                                                     contentColor = ElectrumGold
                                                 ),
                                                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f)),
-                                                shape = RoundedCornerShape(6.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 modifier = Modifier.weight(1f)
                                             ) {
                                                 Text("🖼️ Import Custom Image", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -554,7 +554,7 @@ fun NovelCoverCreatorDialog(
                                                         contentColor = Color(0xFFEF4444),
                                                         containerColor = Color(0xFFEF4444).copy(alpha = 0.1f)
                                                     ),
-                                                    shape = RoundedCornerShape(6.dp)
+                                                    shape = RoundedCornerShape(0.dp)
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.Close,
@@ -571,7 +571,7 @@ fun NovelCoverCreatorDialog(
                                             Spacer(modifier = Modifier.height(6.dp))
                                             Surface(
                                                 color = ObsidianSurface,
-                                                shape = RoundedCornerShape(4.dp),
+                                                shape = RoundedCornerShape(0.dp),
                                                 border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.35f)),
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
@@ -607,7 +607,7 @@ fun NovelCoverCreatorDialog(
                                         val isSel = design.themePreset == preset
                                         Surface(
                                             color = Color(android.graphics.Color.parseColor(preset.bgHex)),
-                                            shape = RoundedCornerShape(6.dp),
+                                            shape = RoundedCornerShape(0.dp),
                                             border = BorderStroke(1.5.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant),
                                             modifier = Modifier
                                                 .weight(1f)
@@ -620,7 +620,7 @@ fun NovelCoverCreatorDialog(
                                                 Box(
                                                     modifier = Modifier
                                                         .size(14.dp)
-                                                        .clip(CircleShape)
+                                                        .clip(RoundedCornerShape(0.dp))
                                                         .background(Color(android.graphics.Color.parseColor(preset.accentHex)))
                                                 )
                                             }
@@ -644,7 +644,7 @@ fun NovelCoverCreatorDialog(
                                         val isSel = design.paperType == paper
                                         Surface(
                                             color = if (isSel) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                            shape = RoundedCornerShape(6.dp),
+                                            shape = RoundedCornerShape(0.dp),
                                             border = BorderStroke(1.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant),
                                             modifier = Modifier
                                                 .weight(1f)
@@ -845,7 +845,7 @@ fun NovelCoverCreatorDialog(
                                 onDismiss()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color(0xFF0F1216)),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(0.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -884,7 +884,7 @@ fun NovelCoverCreatorDialog(
                     )
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -933,7 +933,7 @@ fun NovelCoverCreatorDialog(
                         containerColor = ElectrumGold,
                         contentColor = Color(0xFF0F1216)
                     ),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(0.dp)
                 ) {
                     Text("I Agree & Import", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
@@ -943,7 +943,7 @@ fun NovelCoverCreatorDialog(
                     onClick = { showLegalDisclaimer = false },
                     border = BorderStroke(1.dp, ScreenplayTextMuted.copy(alpha = 0.5f)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = ScreenplayTextMuted),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = RoundedCornerShape(0.dp)
                 ) {
                     Text("Cancel", fontSize = 12.sp)
                 }
@@ -977,8 +977,8 @@ private fun CoverTextField(
             cursorBrush = SolidColor(ElectrumGold),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                 .padding(horizontal = 8.dp, vertical = if (singleLine) 7.dp else 10.dp)
         )
     }

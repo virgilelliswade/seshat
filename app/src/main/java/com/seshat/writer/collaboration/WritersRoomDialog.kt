@@ -149,12 +149,12 @@ fun WritersRoomDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.88f)
-                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
         ) {
             Column(
                 modifier = Modifier
@@ -329,7 +329,7 @@ private fun LiveRoomContent(
         ) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.4f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -395,7 +395,7 @@ private fun LiveRoomContent(
                 items(members) { m ->
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -405,7 +405,7 @@ private fun LiveRoomContent(
                             Box(
                                 modifier = Modifier
                                     .size(8.dp)
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(0.dp))
                                     .background(if (m.isOnline) Color(0xFF10B981) else ScreenplayTextMuted)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -463,7 +463,7 @@ private fun LiveRoomContent(
 
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, badgeColor.copy(alpha = 0.35f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -476,7 +476,7 @@ private fun LiveRoomContent(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Surface(
                                         color = badgeColor.copy(alpha = 0.2f),
-                                        shape = RoundedCornerShape(4.dp)
+                                        shape = RoundedCornerShape(0.dp)
                                     ) {
                                         Text(
                                             text = p.category.uppercase(),
@@ -500,7 +500,7 @@ private fun LiveRoomContent(
 
                                 Surface(
                                     color = ObsidianSurfaceVariant,
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier.clickable { onPushPitchToBible(p) }
                                 ) {
                                     Text(
@@ -534,7 +534,7 @@ private fun LiveRoomContent(
             // Add Pitch Input Bar
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -547,7 +547,7 @@ private fun LiveRoomContent(
                             val isSelected = newPitchCategory == cat
                             Surface(
                                 color = if (isSelected) ElectrumGold else ObsidianSurfaceVariant,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier.clickable { onUpdateNewPitchCategory(cat) }
                             ) {
                                 Text(
@@ -588,7 +588,7 @@ private fun LiveRoomContent(
                         Button(
                             onClick = onAddPitch,
                             colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold),
-                            shape = RoundedCornerShape(6.dp)
+                            shape = RoundedCornerShape(0.dp)
                         ) {
                             Text("Post Pitch", color = Color(0xFF0F1216), fontWeight = FontWeight.Bold)
                         }
@@ -614,7 +614,7 @@ private fun CloudSyncContent(
     ) {
         Surface(
             color = ObsidianBlack,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.4f)),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -713,7 +713,7 @@ private fun CoWriterMergeContent(
     ) {
         Surface(
             color = ObsidianBlack,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(0.dp),
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.4f)),
             modifier = Modifier.fillMaxWidth()
         ) {

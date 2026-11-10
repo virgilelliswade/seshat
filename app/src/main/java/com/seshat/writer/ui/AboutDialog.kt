@@ -48,8 +48,8 @@ fun AboutDialog(onDismiss: () -> Unit) {
         Surface(
             modifier = Modifier
                 .width(460.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)), RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(0.dp))
+                .border(BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)), RoundedCornerShape(0.dp)),
             color = ObsidianSurface
         ) {
             Column(
@@ -76,7 +76,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 )
 
                 Text(
-                    text = "Version 2.3.0 • Studio & First Draft Engine",
+                    text = "Version 2.3.1 • Studio & First Draft Engine",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = ScreenplayTextMuted,
                         fontSize = 12.sp
@@ -88,8 +88,8 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(ObsidianBlack, RoundedCornerShape(8.dp))
-                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                        .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         .padding(14.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -123,7 +123,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color.Black),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Close", fontWeight = FontWeight.SemiBold)

@@ -161,7 +161,7 @@ fun DraftComparisonDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             color = ObsidianSurface,
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
             modifier = Modifier
@@ -205,7 +205,7 @@ fun DraftComparisonDialog(
                                 Toast.makeText(context, "Report copied to clipboard!", Toast.LENGTH_SHORT).show()
                             },
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f)),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(34.dp)
                         ) {
                             Text("Copy Report", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
@@ -222,7 +222,7 @@ fun DraftComparisonDialog(
                                 ScriptFileManager.shareFile(context, file, "application/pdf", "Draft Comparison Report")
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(34.dp)
                         ) {
                             Icon(imageVector = Icons.Default.Share, contentDescription = "Export PDF", tint = Color(0xFF0F1216), modifier = Modifier.size(14.dp))
@@ -243,7 +243,7 @@ fun DraftComparisonDialog(
                 // Draft Selector Bar
                 Card(
                     colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -413,7 +413,7 @@ fun DraftComparisonDialog(
                         },
                         modifier = Modifier
                             .width(420.dp)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                     ) {
                         Tab(selected = filterTab == 0, onClick = { filterTab = 0 }, text = { Text("ALL (${diffResult.sceneDiffs.size})", fontSize = 11.sp) })
                         Tab(selected = filterTab == 1, onClick = { filterTab = 1 }, text = { Text("CHANGES (${sum.scenesAdded + sum.scenesRemoved + sum.scenesModified})", fontSize = 11.sp) })
@@ -425,13 +425,13 @@ fun DraftComparisonDialog(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(ObsidianBlack)
                             .padding(4.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(if (!isSideBySideView) ElectrumGold.copy(alpha = 0.2f) else Color.Transparent)
                                 .clickable { isSideBySideView = false }
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -441,7 +441,7 @@ fun DraftComparisonDialog(
                         Spacer(modifier = Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(if (isSideBySideView) ElectrumGold.copy(alpha = 0.2f) else Color.Transparent)
                                 .clickable { isSideBySideView = true }
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -493,7 +493,7 @@ fun DraftComparisonDialog(
 private fun KpiChip(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(0.5.dp, color.copy(alpha = 0.3f)),
         modifier = modifier
     ) {
@@ -531,7 +531,7 @@ private fun SceneDiffCard(sceneDiff: SceneDiff, isSideBySide: Boolean) {
 
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, badgeColor.copy(alpha = 0.35f)),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -548,7 +548,7 @@ private fun SceneDiffCard(sceneDiff: SceneDiff, isSideBySide: Boolean) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(badgeColor.copy(alpha = 0.2f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -623,7 +623,7 @@ private fun UnifiedBlockView(diffs: List<BlockDiff>) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(Color(0xFF4CAF50).copy(alpha = 0.15f))
                             .padding(6.dp)
                     ) {
@@ -644,7 +644,7 @@ private fun UnifiedBlockView(diffs: List<BlockDiff>) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(Color(0xFFE57373).copy(alpha = 0.15f))
                             .padding(6.dp)
                     ) {
@@ -670,7 +670,7 @@ private fun UnifiedBlockView(diffs: List<BlockDiff>) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(ElectrumGold.copy(alpha = 0.1f))
                             .padding(6.dp)
                     ) {
@@ -719,7 +719,7 @@ private fun SideBySideBlockView(diffs: List<BlockDiff>) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
                             when (diff.type) {
                                 DiffType.REMOVED -> Color(0xFFE57373).copy(alpha = 0.15f)
@@ -744,7 +744,7 @@ private fun SideBySideBlockView(diffs: List<BlockDiff>) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
                             when (diff.type) {
                                 DiffType.ADDED -> Color(0xFF4CAF50).copy(alpha = 0.15f)

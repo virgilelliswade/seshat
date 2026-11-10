@@ -124,7 +124,7 @@ fun NovelCompilerDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.92f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.6f)),
             shadowElevation = 24.dp
@@ -143,7 +143,7 @@ fun NovelCompilerDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             color = ElectrumGold.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f))
                         ) {
                             Text(
@@ -200,7 +200,7 @@ fun NovelCompilerDialog(
                         val isSelected = selectedFormat == fmt
                         Surface(
                             color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(
                                 1.dp,
                                 if (isSelected) ElectrumGold else ObsidianSurfaceVariant
@@ -248,8 +248,8 @@ fun NovelCompilerDialog(
                         modifier = Modifier
                             .weight(1.1f)
                             .fillMaxHeight()
-                            .background(ObsidianSurface, RoundedCornerShape(12.dp))
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(12.dp))
+                            .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             .padding(14.dp)
                     ) {
                         // Sub-tabs: Front Matter | Back Matter | Fleurons
@@ -261,7 +261,7 @@ fun NovelCompilerDialog(
                                 val isTabSelected = activeSettingsTab == tabIdx
                                 Surface(
                                     color = if (isTabSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(
                                         1.dp,
                                         if (isTabSelected) ElectrumGold else ObsidianSurfaceVariant
@@ -339,8 +339,8 @@ fun NovelCompilerDialog(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(8.dp))
-                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                                                 .padding(10.dp)
                                         ) {
                                             Text("Year & Imprint:", style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted))
@@ -352,8 +352,8 @@ fun NovelCompilerDialog(
                                                     textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                     modifier = Modifier
                                                         .weight(1f)
-                                                        .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                        .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                         .padding(6.dp)
                                                 )
                                                 BasicTextField(
@@ -362,8 +362,8 @@ fun NovelCompilerDialog(
                                                     textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                     modifier = Modifier
                                                         .weight(2f)
-                                                        .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                        .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                         .padding(6.dp)
                                                 )
                                             }
@@ -376,8 +376,8 @@ fun NovelCompilerDialog(
                                                 textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                     .padding(6.dp)
                                             )
 
@@ -418,8 +418,8 @@ fun NovelCompilerDialog(
                                             cursorBrush = SolidColor(ElectrumGold),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                                                 .padding(8.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -443,8 +443,8 @@ fun NovelCompilerDialog(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(8.dp))
-                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                                                 .padding(10.dp)
                                         ) {
                                             Text("Quote:", style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted))
@@ -454,8 +454,8 @@ fun NovelCompilerDialog(
                                                 textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                     .padding(6.dp)
                                             )
                                             Spacer(modifier = Modifier.height(6.dp))
@@ -466,8 +466,8 @@ fun NovelCompilerDialog(
                                                 textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                     .padding(6.dp)
                                             )
                                         }
@@ -497,8 +497,8 @@ fun NovelCompilerDialog(
                                             cursorBrush = SolidColor(ElectrumGold),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                                                 .padding(8.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -525,8 +525,8 @@ fun NovelCompilerDialog(
                                             cursorBrush = SolidColor(ElectrumGold),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                                                 .padding(8.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -549,8 +549,8 @@ fun NovelCompilerDialog(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(8.dp))
-                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                                                 .padding(10.dp)
                                         ) {
                                             Text("Call to Action Pitch:", style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted))
@@ -560,8 +560,8 @@ fun NovelCompilerDialog(
                                                 textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                     .padding(6.dp)
                                             )
                                             Spacer(modifier = Modifier.height(6.dp))
@@ -572,8 +572,8 @@ fun NovelCompilerDialog(
                                                 textStyle = TextStyle(color = ElectrumGold, fontSize = 12.sp),
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianSurface, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                     .padding(6.dp)
                                             )
                                         }
@@ -601,8 +601,8 @@ fun NovelCompilerDialog(
                                             cursorBrush = SolidColor(ElectrumGold),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                                                 .padding(8.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -624,7 +624,7 @@ fun NovelCompilerDialog(
                                         val isSelected = selectedSceneBreakStyle == style
                                         Surface(
                                             color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                            shape = RoundedCornerShape(8.dp),
+                                            shape = RoundedCornerShape(0.dp),
                                             border = BorderStroke(
                                                 1.dp,
                                                 if (isSelected) ElectrumGold else ObsidianSurfaceVariant
@@ -667,7 +667,7 @@ fun NovelCompilerDialog(
                         // Open Cover Studio Button
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -697,7 +697,7 @@ fun NovelCompilerDialog(
                         // Stats Summary Box
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -731,8 +731,8 @@ fun NovelCompilerDialog(
                         modifier = Modifier
                             .weight(1.3f)
                             .fillMaxHeight()
-                            .background(ObsidianSurface, RoundedCornerShape(12.dp))
-                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(12.dp))
+                            .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                            .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             .padding(14.dp)
                     ) {
                         Row(
@@ -771,7 +771,7 @@ fun NovelCompilerDialog(
                                 val isChecked = selectedChapterIds.contains(ch.id)
                                 Surface(
                                     color = ObsidianBlack,
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(
                                         1.dp,
                                         if (isChecked) ElectrumGold.copy(alpha = 0.5f) else ObsidianSurfaceVariant
@@ -926,7 +926,7 @@ fun NovelCompilerDialog(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color(0xFF0F1216)),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(0.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(

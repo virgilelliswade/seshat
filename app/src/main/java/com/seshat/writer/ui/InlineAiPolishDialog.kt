@@ -132,8 +132,8 @@ fun InlineAiPolishDialog(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .fillMaxHeight(0.85f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    .clip(RoundedCornerShape(0.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp)),
                 color = ObsidianBlack
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -218,15 +218,15 @@ fun InlineAiPolishDialog(
                                 val isSelected = selectedStyle == style
                                 Surface(
                                     color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
                                         .weight(1f)
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .clip(RoundedCornerShape(0.dp))
                                         .clickable { runGeneration(style) }
                                         .border(
                                             1.dp,
                                             if (isSelected) ElectrumGold else ObsidianSurfaceVariant,
-                                            RoundedCornerShape(6.dp)
+                                            RoundedCornerShape(0.dp)
                                         )
                                 ) {
                                     Column(
@@ -267,10 +267,10 @@ fun InlineAiPolishDialog(
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Surface(
                                     color = ObsidianSurface,
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                                 ) {
                                     Text(
                                         text = targetBlock.text.ifBlank { "(Empty block)" },
@@ -297,10 +297,10 @@ fun InlineAiPolishDialog(
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Surface(
                                     color = ObsidianSurface,
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                        .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -368,14 +368,14 @@ fun InlineAiPolishDialog(
                             // Copy button
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable(enabled = suggestedText.isNotBlank()) {
                                         clipboardManager.setText(AnnotatedString(suggestedText))
                                         copyNotice = true
                                     }
-                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = "📋 COPY",
@@ -390,13 +390,13 @@ fun InlineAiPolishDialog(
                             // Try Another button
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable(enabled = !isLoading) {
                                         runGeneration(selectedStyle)
                                     }
-                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = "🔄 TRY ANOTHER",
@@ -413,11 +413,11 @@ fun InlineAiPolishDialog(
                             // Discard button
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable { onDismiss() }
-                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = "DISCARD",
@@ -432,9 +432,9 @@ fun InlineAiPolishDialog(
                             // Accept & Apply Button
                             Surface(
                                 color = ElectrumGold,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable(enabled = suggestedText.isNotBlank() && !isLoading) {
                                         onApplyReplacement(suggestedText)
                                         onDismiss()

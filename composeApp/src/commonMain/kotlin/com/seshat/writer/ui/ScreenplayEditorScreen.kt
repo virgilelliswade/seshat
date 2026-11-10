@@ -365,10 +365,10 @@ fun ScreenplayEditorScreen(
                             .padding(start = 14.dp, top = 8.dp, bottom = 12.dp, end = 6.dp)
                             .width(280.dp)
                             .fillMaxHeight()
-                            .shadow(16.dp, RoundedCornerShape(20.dp))
-                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(16.dp, RoundedCornerShape(0.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(opticalGlassBrush())
-                            .border(prismaticGlassBorder(), RoundedCornerShape(20.dp))
+                            .border(prismaticGlassBorder(), RoundedCornerShape(0.dp))
                     ) {
                         if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
                             TvEpisodeBinderPane(
@@ -877,7 +877,7 @@ private fun GlassEditorPillButton(
             if (badgeText != null) {
                 Surface(
                     color = if (isDark) Color(0x33FFFFFF) else Color(0x150F172A),
-                    shape = RoundedCornerShape(7.dp)
+                    shape = RoundedCornerShape(0.dp)
                 ) {
                     Text(
                         text = badgeText,
@@ -935,15 +935,15 @@ private fun SidebarPane(
                     modifier = Modifier
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 8.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 4.dp,
                             strokeWidth = 1.dp,
                             outerAlpha = 0.20f,
                             midAlpha = 0.40f
                         )
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(ScribeStarNeonRed.copy(alpha = 0.22f))
-                        .border(BorderStroke(1.dp, ScribeStarNeonRed), RoundedCornerShape(8.dp))
+                        .border(BorderStroke(1.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
@@ -1039,14 +1039,14 @@ private fun SidebarPane(
             )
             Surface(
                 color = if (uiState.isReorderMode) ScribeStarNeonRed.copy(alpha = 0.25f) else Color(0xFF0F172A),
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable { onToggleReorderMode() }
                     .border(
                         1.dp,
                         if (uiState.isReorderMode) ScribeStarNeonRed else Color(0xFF334155),
-                        RoundedCornerShape(6.dp)
+                        RoundedCornerShape(0.dp)
                     )
             ) {
                 Text(
@@ -1082,7 +1082,7 @@ private fun SidebarPane(
                             if (sceneLit) {
                                 Modifier.neonBloom(
                                     color = ScribeStarNeonRed,
-                                    cornerRadius = 8.dp,
+                                    cornerRadius = 0.dp,
                                     glowRadius = if (isSelected) 6.dp else 4.dp,
                                     strokeWidth = 1.2.dp,
                                     outerAlpha = if (isSelected) 0.30f else 0.16f,
@@ -1090,7 +1090,7 @@ private fun SidebarPane(
                                 )
                             } else Modifier
                         )
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
                             if (sceneLit) {
                                 Brush.horizontalGradient(listOf(Color(0x65450E1A), Color(0x7524050D)))
@@ -1103,7 +1103,7 @@ private fun SidebarPane(
                                 if (sceneLit) 1.3.dp else 1.dp,
                                 if (sceneLit) ScribeStarNeonRed else ScribeStarNeonRed.copy(alpha = 0.35f)
                             ),
-                            RoundedCornerShape(8.dp)
+                            RoundedCornerShape(0.dp)
                         )
                         .clickable(
                             interactionSource = sceneInteraction,
@@ -1125,10 +1125,10 @@ private fun SidebarPane(
                                     .height(20.dp)
                                     .neonBloom(
                                         color = ScribeStarNeonRed,
-                                        cornerRadius = 2.dp,
+                                        cornerRadius = 0.dp,
                                         glowRadius = 4.dp
                                     )
-                                    .clip(RoundedCornerShape(2.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .background(ScribeStarNeonRed)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1154,7 +1154,7 @@ private fun SidebarPane(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Surface(
                                     color = Color(0xFFC0392B).copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(3.dp)
+                                    shape = RoundedCornerShape(0.dp)
                                 ) {
                                     Text(
                                         text = "OMITTED",
@@ -1173,12 +1173,12 @@ private fun SidebarPane(
                         if (isSelected && !uiState.isReorderMode) {
                             Surface(
                                 color = Color(0xFF090D14),
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
                                     .padding(horizontal = 4.dp)
-                                    .clip(RoundedCornerShape(4.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .clickable { onToggleOmitScene(scene.blockId) }
-                                    .border(0.8.dp, if (scene.isOmitted) ScribeStarNeonRed else Color(0xFF475569), RoundedCornerShape(4.dp))
+                                    .border(0.8.dp, if (scene.isOmitted) ScribeStarNeonRed else Color(0xFF475569), RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = if (scene.isOmitted) "RESTORE" else "OMIT",
@@ -1202,9 +1202,9 @@ private fun SidebarPane(
                                 val canMoveUp = idx > 0
                                 Surface(
                                     color = Color.Transparent,
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
+                                        .clip(RoundedCornerShape(0.dp))
                                         .clickable(enabled = canMoveUp) {
                                             onMoveSceneUp(scene.index)
                                         }
@@ -1222,9 +1222,9 @@ private fun SidebarPane(
                                 val canMoveDown = idx < uiState.scenes.size - 1
                                 Surface(
                                     color = Color.Transparent,
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
+                                        .clip(RoundedCornerShape(0.dp))
                                         .clickable(enabled = canMoveDown) {
                                             onMoveSceneDown(scene.index)
                                         }
@@ -1256,9 +1256,9 @@ private fun StatCard(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(opticalGlassBrush(glassOpacity = 0.85f))
-            .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(10.dp))
+            .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1991,12 +1991,12 @@ private fun EditorCanvas(
                         val cardWidth = if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else (780 * zoom).dp
                         Card(
                             colors = CardDefaults.cardColors(containerColor = pageBgColor),
-                            shape = RoundedCornerShape(2.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                             modifier = Modifier
                                 .width(cardWidth)
                                 .defaultMinSize(minHeight = (980 * zoom).dp)
-                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(2.dp))
+                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(0.dp))
                                 .onGloballyPositioned { pageCardCoordinates = it }
                         ) {
                             Box(modifier = Modifier.fillMaxWidth()) {
@@ -2162,11 +2162,11 @@ private fun EditorCanvas(
                 val cardWidth = if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else (780 * zoom).dp
                 Card(
                     colors = CardDefaults.cardColors(containerColor = inlinePageBgColor),
-                    shape = RoundedCornerShape(2.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                     modifier = Modifier
                         .width(cardWidth)
-                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(2.dp))
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(0.dp))
                         .onGloballyPositioned { pageCardCoordinates = it }
                 ) {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -2422,7 +2422,7 @@ private fun SceneHeadingSmartBar(
             // Prominent Action Button: advance immediately to Action line
             Surface(
                 color = ElectrumGold,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier.clickable { onAdvanceToAction() }
             ) {
                 Row(
@@ -2457,7 +2457,7 @@ private fun SceneHeadingSmartBar(
                     prefixSuggestions.forEach { prefix ->
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, SluglineBlue.copy(alpha = 0.5f)),
                             modifier = Modifier.clickable { onSelectPrefix(prefix) }
                         ) {
@@ -2492,7 +2492,7 @@ private fun SceneHeadingSmartBar(
                     filteredLocations.forEach { loc ->
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, SluglineBlue.copy(alpha = 0.5f)),
                             modifier = Modifier.clickable { onSelectLocation(loc) }
                         ) {
@@ -2527,7 +2527,7 @@ private fun SceneHeadingSmartBar(
                         val isSelected = partialTime.equals(timeTag, ignoreCase = true)
                         Surface(
                             color = if (isSelected) SluglineBlue.copy(alpha = 0.2f) else ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(
                                 width = 1.dp,
                                 color = if (isSelected) SluglineBlue else SluglineBlue.copy(alpha = 0.5f)
@@ -2599,7 +2599,7 @@ private fun CharacterSmartBar(
                     suggestedCharacters.forEach { charName ->
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, CharacterGold.copy(alpha = 0.6f)),
                             modifier = Modifier.clickable { onSelectCharacter(charName) }
                         ) {
@@ -2639,7 +2639,7 @@ private fun CharacterSmartBar(
                     val isActive = currentText.contains(ext)
                     Surface(
                         color = if (isActive) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(
                             width = 1.dp,
                             color = if (isActive) ElectrumGold else ObsidianSurfaceVariant
@@ -2694,7 +2694,7 @@ private fun TransitionPresetBar(
                 val isSelected = currentText.equals(preset, ignoreCase = true)
                 Surface(
                     color = if (isSelected) TransitionPurple.copy(alpha = 0.2f) else ObsidianBlack,
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(
                         width = 1.dp,
                         color = if (isSelected) TransitionPurple else ObsidianSurfaceVariant
@@ -3462,7 +3462,7 @@ private fun InlinePageBreakMarker(
             )
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.45f)),
                 modifier = Modifier.padding(horizontal = (12 * zoom).dp)
             ) {
@@ -3560,8 +3560,8 @@ private fun DualDialogueRow(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .background(Color(0x06000000), RoundedCornerShape(6.dp))
-                    .border(BorderStroke(0.5.dp, Color(0x15000000)), RoundedCornerShape(6.dp))
+                    .background(Color(0x06000000), RoundedCornerShape(0.dp))
+                    .border(BorderStroke(0.5.dp, Color(0x15000000)), RoundedCornerShape(0.dp))
                     .padding(horizontal = if (isCompactScreen) (4 * zoom).dp else (10 * zoom).dp, vertical = (8 * zoom).dp)
             ) {
                 leftBlocks.forEachIndexed { idx, block ->
@@ -3595,8 +3595,8 @@ private fun DualDialogueRow(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .background(Color(0x06000000), RoundedCornerShape(6.dp))
-                    .border(BorderStroke(0.5.dp, Color(0x15000000)), RoundedCornerShape(6.dp))
+                    .background(Color(0x06000000), RoundedCornerShape(0.dp))
+                    .border(BorderStroke(0.5.dp, Color(0x15000000)), RoundedCornerShape(0.dp))
                     .padding(horizontal = if (isCompactScreen) (4 * zoom).dp else (10 * zoom).dp, vertical = (8 * zoom).dp)
             ) {
                 rightBlocks.forEachIndexed { idx, block ->
@@ -3643,7 +3643,7 @@ private fun DualDialogueActionBar(
 ) {
     Surface(
         color = ObsidianSurface,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.5.dp, if (canMakeDual) ElectrumGold else ObsidianSurfaceVariant),
         shadowElevation = 10.dp,
         modifier = modifier
@@ -3662,7 +3662,7 @@ private fun DualDialogueActionBar(
                 if (canMakeDual) {
                     Surface(
                         color = ElectrumGold,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.clickable { onMakeDual() }
                     ) {
                         Row(
@@ -3682,7 +3682,7 @@ private fun DualDialogueActionBar(
                 } else if (isAlreadyDual) {
                     Surface(
                         color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                         modifier = Modifier.clickable { onSeparateDual() }
                     ) {
@@ -3705,7 +3705,7 @@ private fun DualDialogueActionBar(
                 // Copy Selected Blocks
                 Surface(
                     color = ObsidianSurfaceVariant,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                     modifier = Modifier.clickable { onCopyHighlight() }
                 ) {
@@ -3727,7 +3727,7 @@ private fun DualDialogueActionBar(
                 // Delete Selected Blocks
                 Surface(
                     color = Color(0xFFC0392B).copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFFE74C3C).copy(alpha = 0.45f)),
                     modifier = Modifier.clickable { onDeleteHighlight() }
                 ) {
@@ -3781,7 +3781,7 @@ private fun WriterNoteCard(
 ) {
     Surface(
         color = Color(0xFFFFFBEA),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f)),
         shadowElevation = 2.dp,
         modifier = Modifier
@@ -4028,12 +4028,12 @@ private fun BlockGutterHandle(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size((14 * zoom).dp)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .pointerHoverIcon(PointerIcon.Hand)
                 .background(if (isHighlighted) ElectrumGold else Color(0x15000000))
                 .border(
                     BorderStroke(1.dp, if (isHighlighted) ElectrumGold else Color(0x25000000)),
-                    RoundedCornerShape(3.dp)
+                    RoundedCornerShape(0.dp)
                 )
                 .clickable { callbacks.onToggleHighlight(false) }
                 .pointerInput(blockId) {
@@ -4053,7 +4053,7 @@ private fun BlockGutterHandle(
                 Box(
                     modifier = Modifier
                         .size((6 * zoom).dp)
-                        .background(ObsidianBlack, RoundedCornerShape(1.dp))
+                        .background(ObsidianBlack, RoundedCornerShape(0.dp))
                 )
             }
         }
@@ -4088,7 +4088,7 @@ private fun BlockRevisionMarker(
             modifier = modifier
                 .then(if (!isDualColumn) Modifier.offset(x = (16 * zoom).dp) else Modifier.padding(end = (4 * zoom).dp))
                 .padding(top = topPadding)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .clickable { onToggleRevised() }
                 .padding(horizontal = 2.dp, vertical = 1.dp)
         ) {
@@ -4108,7 +4108,7 @@ private fun BlockRevisionMarker(
             modifier = modifier
                 .then(if (!isDualColumn) Modifier.offset(x = (16 * zoom).dp) else Modifier.padding(end = (4 * zoom).dp))
                 .padding(top = topPadding)
-                .clip(RoundedCornerShape(3.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .clickable { onToggleRevised() }
                 .padding(horizontal = 2.dp, vertical = 1.dp)
         ) {
@@ -4150,7 +4150,7 @@ private fun BlockNoteSection(
         ) {
             Surface(
                 color = Color(0x0C000000),
-                shape = RoundedCornerShape(3.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(0.5.dp, Color(0x20000000)),
                 modifier = Modifier.clickable { callbacks.onUpdateNote("") }
             ) {
@@ -4169,7 +4169,7 @@ private fun BlockNoteSection(
                 Spacer(modifier = Modifier.width((6 * config.zoom).dp))
                 Surface(
                     color = ElectrumGold.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(3.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.5f)),
                     modifier = Modifier.clickable { callbacks.onOpenAiPolish() }
                 ) {
@@ -4407,7 +4407,7 @@ private fun ScreenplayBlockItem(
         if (isHeading && block.isOmitted) {
             Surface(
                 color = Color(0xFFC0392B).copy(alpha = 0.15f),
-                shape = RoundedCornerShape(4.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(0.5.dp, Color(0xFFE74C3C).copy(alpha = 0.4f)),
                 modifier = Modifier
                     .padding(start = startIndent, bottom = (4 * config.zoom).dp)
@@ -4440,8 +4440,8 @@ private fun ScreenplayBlockItem(
                         top = topPadding,
                         bottom = bottomPadding
                     )
-                    .background(highlightBg, RoundedCornerShape(4.dp))
-                    .then(if (highlightBorder != null) Modifier.border(highlightBorder, RoundedCornerShape(4.dp)) else Modifier)
+                    .background(highlightBg, RoundedCornerShape(0.dp))
+                    .then(if (highlightBorder != null) Modifier.border(highlightBorder, RoundedCornerShape(0.dp)) else Modifier)
                     .padding(if (config.isHighlighted) 3.dp else 0.dp)
             ) {
                 // Left scene number (in left margin gutter, 1.0" from paper edge)
@@ -4586,7 +4586,7 @@ private fun ScreenplayBlockItem(
                 if (block.text.contains("[TK - FIX LATER]")) {
                     Surface(
                         color = Color(0xFF280811),
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ScribeStarNeonRed),
                         modifier = Modifier.padding(start = (6 * config.zoom).dp, top = (2 * config.zoom).dp)
                     ) {
@@ -4666,7 +4666,7 @@ private fun FindReplacePanel(
 ) {
     Surface(
         color = ObsidianSurface,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.4f)),
         shadowElevation = 6.dp,
         modifier = modifier
@@ -4691,7 +4691,7 @@ private fun FindReplacePanel(
                     // Find & Replace Tab
                     Surface(
                         color = if (uiState.findMode == FindMode.FIND_REPLACE) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, if (uiState.findMode == FindMode.FIND_REPLACE) ElectrumGold else ObsidianSurfaceVariant),
                         modifier = Modifier.clickable { onSetMode(FindMode.FIND_REPLACE) }
                     ) {
@@ -4708,7 +4708,7 @@ private fun FindReplacePanel(
                     // Rename Character Tab
                     Surface(
                         color = if (uiState.findMode == FindMode.RENAME_CHARACTER) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, if (uiState.findMode == FindMode.RENAME_CHARACTER) ElectrumGold else ObsidianSurfaceVariant),
                         modifier = Modifier.clickable { onSetMode(FindMode.RENAME_CHARACTER) }
                     ) {
@@ -4746,7 +4746,7 @@ private fun FindReplacePanel(
                         // Search text field
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (uiState.searchQuery.isNotEmpty()) ElectrumGold.copy(alpha = 0.6f) else ObsidianSurfaceVariant),
                             modifier = Modifier.weight(1f)
                         ) {
@@ -4779,7 +4779,7 @@ private fun FindReplacePanel(
                         if (matchText.isNotEmpty()) {
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, if (uiState.searchMatches.isNotEmpty()) ElectrumGold.copy(alpha = 0.4f) else Color.Red.copy(alpha = 0.4f))
                             ) {
                                 Text(
@@ -4797,7 +4797,7 @@ private fun FindReplacePanel(
                         // Prev / Next buttons
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onFindPrevious)
                         ) {
@@ -4811,7 +4811,7 @@ private fun FindReplacePanel(
 
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onFindNext)
                         ) {
@@ -4826,7 +4826,7 @@ private fun FindReplacePanel(
                         // Match Case chip
                         Surface(
                             color = if (uiState.matchCase) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (uiState.matchCase) ElectrumGold else ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onToggleMatchCase)
                         ) {
@@ -4843,7 +4843,7 @@ private fun FindReplacePanel(
                         // Whole Word chip
                         Surface(
                             color = if (uiState.matchWholeWord) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (uiState.matchWholeWord) ElectrumGold else ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onToggleMatchWholeWord)
                         ) {
@@ -4868,7 +4868,7 @@ private fun FindReplacePanel(
                     ) {
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                             modifier = Modifier.weight(1f)
                         ) {
@@ -4895,7 +4895,7 @@ private fun FindReplacePanel(
                         // Replace current button
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (uiState.searchMatches.isNotEmpty()) ElectrumGold.copy(alpha = 0.5f) else ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onReplaceCurrent)
                         ) {
@@ -4912,7 +4912,7 @@ private fun FindReplacePanel(
                         // Replace All button
                         Surface(
                             color = if (uiState.searchMatches.isNotEmpty()) ElectrumGold.copy(alpha = 0.25f) else ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (uiState.searchMatches.isNotEmpty()) ElectrumGold else ObsidianSurfaceVariant),
                             modifier = Modifier.clickable(onClick = onReplaceAll)
                         ) {
@@ -4952,7 +4952,7 @@ private fun FindReplacePanel(
                                     val isSelected = uiState.renameOldName.equals(charName, ignoreCase = true)
                                     Surface(
                                         color = if (isSelected) ElectrumGold.copy(alpha = 0.25f) else ObsidianBlack,
-                                        shape = RoundedCornerShape(4.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         border = BorderStroke(1.dp, if (isSelected) ElectrumGold else ObsidianSurfaceVariant),
                                         modifier = Modifier.clickable { onSetRenameOldName(charName) }
                                     ) {
@@ -4978,7 +4978,7 @@ private fun FindReplacePanel(
                             // Old Name
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -5005,7 +5005,7 @@ private fun FindReplacePanel(
                             // New Name
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, if (uiState.renameNewName.isNotEmpty()) ElectrumGold.copy(alpha = 0.7f) else ObsidianSurfaceVariant),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -5063,7 +5063,7 @@ private fun FindReplacePanel(
 
                             Surface(
                                 color = if (canRename) ElectrumGold else ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, if (canRename) ElectrumGold else ObsidianSurfaceVariant),
                                 modifier = Modifier.clickable(enabled = canRename, onClick = onRenameCharacter)
                             ) {

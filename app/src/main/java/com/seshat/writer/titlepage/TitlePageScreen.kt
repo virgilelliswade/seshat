@@ -114,10 +114,10 @@ fun TitlePageScreen(
                 // Done / Close Window Button
                 Surface(
                     color = ObsidianSurfaceVariant,
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .clickable(onClick = onCloseWindow)
-                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                        .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -187,12 +187,12 @@ fun TitlePageScreen(
         ) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAF7)),
-                shape = RoundedCornerShape(3.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .widthIn(min = 640.dp, max = 740.dp)
                     .fillMaxWidth(0.95f)
                     .defaultMinSize(minHeight = 920.dp)
-                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(3.dp))
+                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(0.dp))
             ) {
                 Column(
                     modifier = Modifier
@@ -398,10 +398,10 @@ private fun PresetChip(
 ) {
     Surface(
         color = ObsidianSurfaceVariant,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = modifier
             .clickable(onClick = onClick)
-            .border(1.dp, Color(0xFF30363D), RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFF30363D), RoundedCornerShape(0.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

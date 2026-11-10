@@ -48,11 +48,11 @@ fun FormattedPageCanvas(
         // Authentic US Letter Screenplay Paper Sheet (Final Draft White / Cream)
         Card(
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAF7)),
-            shape = RoundedCornerShape(2.dp),
+            shape = RoundedCornerShape(0.dp),
             modifier = Modifier
                 .widthIn(min = 600.dp, max = 750.dp)
                 .fillMaxWidth(0.92f)
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(2.dp))
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(0.dp))
         ) {
             BoxWithConstraints(
                 modifier = Modifier

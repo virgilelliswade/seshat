@@ -194,7 +194,7 @@ object ReceiptGenerator {
             }
 
             // Footer
-            canvas.drawText("SESHAT v2.3.0 • ANTI-PROCRASTINATION ENGINE", RECEIPT_WIDTH / 2f, 1810f, labelPaint)
+            canvas.drawText("SESHAT v2.3.1 • ANTI-PROCRASTINATION ENGINE", RECEIPT_WIDTH / 2f, 1810f, labelPaint)
 
             val dir = File(context.filesDir, RECEIPTS_DIR)
             if (!dir.exists()) dir.mkdirs()
@@ -263,13 +263,13 @@ fun AccountabilityReceiptModal(
                         .aspectRatio(9f / 16f)
                         .neonBloom(
                             color = ScribeStarNeonRed,
-                            cornerRadius = 22.dp,
+                            cornerRadius = 0.dp,
                             glowRadius = 18.dp,
                             strokeWidth = 2.dp,
                             outerAlpha = 0.50f,
                             midAlpha = 0.85f
                         )
-                        .clip(RoundedCornerShape(22.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(
                             if (isDecay) {
                                 Brush.verticalGradient(
@@ -281,7 +281,7 @@ fun AccountabilityReceiptModal(
                                 )
                             }
                         )
-                        .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(22.dp))
+                        .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                         .padding(22.dp)
                 ) {
                     Column(
@@ -409,7 +409,7 @@ fun AccountabilityReceiptModal(
                 ) {
                     Surface(
                         color = ScribeStarNeonRed,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .weight(1f)
                             .clickable { onShareClicked() }
@@ -429,7 +429,7 @@ fun AccountabilityReceiptModal(
 
                     Surface(
                         color = Color(0xFF1E293B),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFF475569)),
                         modifier = Modifier.clickable { onDismiss() }
                     ) {
@@ -460,9 +460,9 @@ private fun ReceiptMetricRow(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(Color(0x40000000))
-            .border(BorderStroke(0.8.dp, Color(0x30FFFFFF)), RoundedCornerShape(10.dp))
+            .border(BorderStroke(0.8.dp, Color(0x30FFFFFF)), RoundedCornerShape(0.dp))
             .padding(vertical = 8.dp, horizontal = 12.dp)
     ) {
         Text(

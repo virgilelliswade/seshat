@@ -234,8 +234,8 @@ fun NovelParagraphItem(
                 itemCoordinates = coords
                 onCoordinatesChanged(coords)
             }
-            .background(highlightBg, RoundedCornerShape(6.dp))
-            .then(if (highlightBorder != null) Modifier.border(highlightBorder, RoundedCornerShape(6.dp)) else Modifier)
+            .background(highlightBg, RoundedCornerShape(0.dp))
+            .then(if (highlightBorder != null) Modifier.border(highlightBorder, RoundedCornerShape(0.dp)) else Modifier)
             .padding(
                 start = if (isHighlighted) 6.dp else 2.dp,
                 end = if (isHighlighted) 6.dp else 2.dp,
@@ -269,12 +269,12 @@ fun NovelParagraphItem(
                         end = 8.dp
                     )
                     .size(14.dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .pointerHoverIcon(PointerIcon.Hand)
                     .background(if (isHighlighted) ElectrumGold else Color(0x18000000))
                     .border(
                         BorderStroke(1.dp, if (isHighlighted) ElectrumGold else Color(0x28000000)),
-                        RoundedCornerShape(3.dp)
+                        RoundedCornerShape(0.dp)
                     )
                     .clickable { onToggleHighlight(false) }
                     .pointerInput(paragraph.id) {
@@ -297,7 +297,7 @@ fun NovelParagraphItem(
                     Box(
                         modifier = Modifier
                             .size(6.dp)
-                            .background(ObsidianBlack, RoundedCornerShape(1.dp))
+                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
                     )
                 }
             }
@@ -693,7 +693,7 @@ private fun DialogueVerbBar(
 ) {
     Surface(
         color = ObsidianSurface,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
         shadowElevation = 4.dp,
         modifier = Modifier
@@ -708,7 +708,7 @@ private fun DialogueVerbBar(
         ) {
             Surface(
                 color = ElectrumGold.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(4.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f))
             ) {
                 Text(
@@ -734,7 +734,7 @@ private fun DialogueVerbBar(
                 verbs.forEach { verb ->
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                         modifier = Modifier.clickable { onSelectVerb(verb) }
                     ) {

@@ -73,9 +73,9 @@ fun CorkboardTemplateDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.88f)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(ambientWorkspaceBrush(isDark))
-                .border(prismaticGlassBorder(width = 1.2.dp), RoundedCornerShape(20.dp))
+                .border(prismaticGlassBorder(width = 1.2.dp), RoundedCornerShape(0.dp))
                 .padding(18.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -107,14 +107,14 @@ fun CorkboardTemplateDialog(
                         )
                     }
 
-                    // Floating Circular Dismiss Pill
+                    // Squared Dismiss Button
                     Surface(
-                        shape = CircleShape,
+                        shape = RoundedCornerShape(0.dp),
                         color = Color.Transparent,
                         modifier = Modifier
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(0.dp))
                             .background(opticalPillBrush())
-                            .border(prismaticGlassBorder(width = 1.dp), CircleShape)
+                            .border(prismaticGlassBorder(width = 1.dp), RoundedCornerShape(0.dp))
                             .size(38.dp)
                     ) {
                         IconButton(onClick = onDismiss, modifier = Modifier.size(38.dp)) {
@@ -151,7 +151,7 @@ fun CorkboardTemplateDialog(
                     // Clear / Blank Corkboard option
                     item(key = "clear_blank") {
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(0.dp),
                             color = if (isDark) ObsidianSurfaceVariant.copy(alpha = 0.5f) else Color(0xFFE2E8F0),
                             border = BorderStroke(1.dp, ScreenplayTextMuted.copy(alpha = 0.35f)),
                             modifier = Modifier
@@ -201,12 +201,12 @@ private fun TemplateCardItem(
     onClick: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(0.dp),
         color = Color.Transparent,
         border = BorderStroke(1.dp, template.badgeColor.copy(alpha = 0.45f)),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(opticalPillBrush())
             .clickable { onClick() }
     ) {
@@ -216,7 +216,7 @@ private fun TemplateCardItem(
         ) {
             // Icon Badge
             Surface(
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = template.badgeColor.copy(alpha = 0.18f),
                 border = BorderStroke(1.dp, template.badgeColor.copy(alpha = 0.6f)),
                 modifier = Modifier.size(46.dp)
@@ -245,7 +245,7 @@ private fun TemplateCardItem(
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         color = template.badgeColor.copy(alpha = 0.15f),
                         border = BorderStroke(0.8.dp, template.badgeColor.copy(alpha = 0.5f))
                     ) {

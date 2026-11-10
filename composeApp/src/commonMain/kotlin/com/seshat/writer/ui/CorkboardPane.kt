@@ -158,7 +158,7 @@ fun CorkboardPane(
                             val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "📚 Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "🎬 Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "🎬 Script"
                             Surface(
                                 color = ObsidianSurfaceVariant,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                                 modifier = Modifier.clickable { viewModel.closeCorkboard() }
                             ) {
@@ -176,7 +176,7 @@ fun CorkboardPane(
                             // Board (active)
                             Surface(
                                 color = ElectrumGold.copy(alpha = 0.25f),
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ElectrumGold)
                             ) {
                                 Text(
@@ -193,7 +193,7 @@ fun CorkboardPane(
                             // Lore
                             Surface(
                                 color = ObsidianSurfaceVariant,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                                 modifier = Modifier.clickable {
                                     viewModel.closeCorkboard()
@@ -216,7 +216,7 @@ fun CorkboardPane(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 color = ElectrumGold,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier.clickable { onSaveProject() }
                             ) {
                                 Text(
@@ -269,7 +269,7 @@ fun CorkboardPane(
                                 val isSelected = corkboard.actCount == actPreset
                                 Surface(
                                     color = if (isSelected) ElectrumGold.copy(alpha = 0.25f) else ObsidianBlack,
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(1.dp, if (isSelected) ElectrumGold else ObsidianSurfaceVariant),
                                     modifier = Modifier.clickable { viewModel.setCorkboardActCount(context, actPreset) }
                                 ) {
@@ -286,7 +286,7 @@ fun CorkboardPane(
 
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.clickable {
                                     if (corkboard.actCount < 9) {
@@ -306,7 +306,7 @@ fun CorkboardPane(
 
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                             modifier = Modifier.clickable { showTemplateDialog = true }
                         ) {
@@ -326,7 +326,7 @@ fun CorkboardPane(
                         val isAnyAiLoading = cards.any { it.isAiSummarizing }
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, LightGold.copy(alpha = 0.6f)),
                             modifier = Modifier.clickable(enabled = !isAnyAiLoading) {
                                 viewModel.summarizeAllSceneCardsWithAi(context)
@@ -375,7 +375,7 @@ fun CorkboardPane(
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(10.dp)
+                            shape = RoundedCornerShape(0.dp)
                         ) {
                             Text(
                                 text = "${cards.size} Scenes",
@@ -393,7 +393,7 @@ fun CorkboardPane(
                         val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "📚 Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "🎬 Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "🎬 Script"
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                             modifier = Modifier.clickable { viewModel.closeCorkboard() }
                         ) {
@@ -412,7 +412,7 @@ fun CorkboardPane(
 
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                             modifier = Modifier.clickable {
                                 viewModel.closeCorkboard()
@@ -446,7 +446,7 @@ fun CorkboardPane(
                             val isSelected = corkboard.actCount == actPreset
                             Surface(
                                 color = if (isSelected) ElectrumGold.copy(alpha = 0.25f) else ObsidianBlack,
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(
                                     1.dp,
                                     if (isSelected) ElectrumGold else ObsidianSurfaceVariant
@@ -468,7 +468,7 @@ fun CorkboardPane(
                         // Stepper for custom act counts (1..9)
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                             modifier = Modifier
                                 .clickable {
@@ -499,7 +499,7 @@ fun CorkboardPane(
                         val isAnyAiLoading = cards.any { it.isAiSummarizing }
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, LightGold.copy(alpha = 0.6f)),
                             modifier = Modifier
                                 .clickable(enabled = !isAnyAiLoading) {
@@ -538,7 +538,7 @@ fun CorkboardPane(
 
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f)),
                             modifier = Modifier.clickable { showTemplateDialog = true }
                         ) {
@@ -558,7 +558,7 @@ fun CorkboardPane(
                         // 1-Tap Save Button
                         Surface(
                             color = ElectrumGold.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold),
                             modifier = Modifier.clickable { onSaveProject() }
                         ) {
@@ -578,7 +578,7 @@ fun CorkboardPane(
                         // Split vs Full Toggle
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                             modifier = Modifier.clickable { viewModel.toggleCorkboardSideBySide() }
                         ) {
@@ -619,7 +619,7 @@ fun CorkboardPane(
             Surface(
                 color = if (!canEditOutline) Color(0xFF280811) else Color(0xFF0A2418),
                 border = BorderStroke(1.dp, if (!canEditOutline) Color(0xFFFF1E42) else Color(0xFF10B981)),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -781,7 +781,7 @@ private fun ActColumn(
 ) {
     Surface(
         color = ObsidianSurface,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
         modifier = modifier
     ) {
@@ -797,7 +797,8 @@ private fun ActColumn(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(ObsidianBlack, RoundedCornerShape(6.dp))
+                    .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                     .padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -849,7 +850,7 @@ private fun ActColumn(
                 ) {
                     Surface(
                         color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(0.dp)
                     ) {
                         Text(
                             text = "${cards.size}",
@@ -911,7 +912,7 @@ private fun ActColumn(
                         )
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
                             modifier = Modifier.clickable { onAddCard() }
                         ) {
@@ -948,9 +949,9 @@ private fun ActColumn(
                         val isFogged = globalIdx >= unlockedSceneSlots
                         if (isFogged) {
                             Surface(
-                                color = Color(0xFF0A0E17),
-                                shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, Color(0xFF334155)),
+                                color = ObsidianBlack,
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
@@ -1030,17 +1031,18 @@ private fun CorkboardSceneCard(
     var isColorPaletteOpen by remember { mutableStateOf(false) }
     var isActDropdownOpen by remember { mutableStateOf(false) }
 
+    val isDark = LocalSeshatDarkTheme.current
     Card(
         colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = Color(0xEE0E131C)
+            containerColor = if (isDark) ObsidianBlack else Color.White
         ),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, Color(0x25FFFFFF)),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = RoundedCornerShape(0.dp),
+        border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Glowing colored accent bar across top edge
+            // Colored accent bar across top edge
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1053,7 +1055,7 @@ private fun CorkboardSceneCard(
                     .fillMaxWidth()
                     .padding(10.dp)
             ) {
-                // Card Top Row: Scene/Beat number badge, Editable Heading, Color dot
+                // Card Top Row: Scene/Beat number badge, Editable Heading, Color swatch
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1065,7 +1067,7 @@ private fun CorkboardSceneCard(
                     ) {
                         Surface(
                             color = cardColor.copy(alpha = 0.22f),
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, cardColor.copy(alpha = 0.85f)),
                             modifier = Modifier.clickable { onSelectScene() }
                         ) {
@@ -1075,7 +1077,7 @@ private fun CorkboardSceneCard(
                                     fontFamily = ScreenplayCourierFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
-                                    color = Color.White
+                                    color = ScreenplayTextDark
                                 ),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -1130,15 +1132,15 @@ private fun CorkboardSceneCard(
                         }
                     }
 
-                    // Color accent picker dot
+                    // Color accent picker square swatch
                     Box {
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(cardColor)
                                 .clickable { isColorPaletteOpen = true }
-                                .border(1.dp, ObsidianBlack, CircleShape)
+                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         )
 
                         DropdownMenu(
@@ -1153,7 +1155,7 @@ private fun CorkboardSceneCard(
                                             Box(
                                                 modifier = Modifier
                                                     .size(16.dp)
-                                                    .clip(CircleShape)
+                                                    .clip(RoundedCornerShape(0.dp))
                                                     .background(color)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
@@ -1175,7 +1177,7 @@ private fun CorkboardSceneCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
                         color = ElectrumGold.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.25f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -1216,7 +1218,7 @@ private fun CorkboardSceneCard(
                             Text(
                                 text = "Write beat notes / scene summary...",
                                 style = MaterialTheme.typography.bodySmall.copy(
-                                    color = ScreenplayTextMuted.copy(alpha = 0.5f),
+                                    color = ScreenplayTextMuted.copy(alpha = 0.6f),
                                     fontSize = 11.sp
                                 )
                             )
@@ -1225,8 +1227,8 @@ private fun CorkboardSceneCard(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0x22000000), RoundedCornerShape(6.dp))
-                        .border(BorderStroke(0.5.dp, Color(0x1FFFFFFF)), RoundedCornerShape(6.dp))
+                        .background(if (isDark) ObsidianSurface else Color(0xFFF8FAFC), RoundedCornerShape(0.dp))
+                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
                         .padding(8.dp)
                 )
 
@@ -1240,9 +1242,9 @@ private fun CorkboardSceneCard(
                     ) {
                         card.charactersInScene.take(4).forEach { charName ->
                             Surface(
-                                color = ObsidianBlack,
-                                shape = RoundedCornerShape(3.dp),
-                                border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.3f))
+                                color = ObsidianSurface,
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.4f))
                             ) {
                                 Text(
                                     text = charName,
@@ -1267,7 +1269,7 @@ private fun CorkboardSceneCard(
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
-                HorizontalDivider(color = Color(0x20FFFFFF))
+                HorizontalDivider(color = ObsidianSurfaceVariant)
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Card Footer: Scene stats, AI summarize, Reorder up/down, Move to Act, Delete
@@ -1278,14 +1280,14 @@ private fun CorkboardSceneCard(
                 ) {
                     // Estimated time badge
                     Surface(
-                        color = Color(0x18FFFFFF),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(0.5.dp, Color(0x20FFFFFF))
+                        color = ObsidianSurface,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(0.5.dp, ObsidianSurfaceVariant)
                     ) {
                         Text(
                             text = "~${card.estimatedMinutes}m",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color(0xFFCBD5E1),
+                                color = ScreenplayTextMuted,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             ),
@@ -1339,8 +1341,8 @@ private fun CorkboardSceneCard(
                         // Move to Act Dropdown
                         Box {
                             Surface(
-                                color = ObsidianBlack,
-                                shape = RoundedCornerShape(3.dp),
+                                color = ObsidianSurface,
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(0.5.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.clickable { isActDropdownOpen = true }
                             ) {

@@ -113,11 +113,11 @@ fun ExportDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
         ) {
             Column(
                 modifier = Modifier
@@ -360,8 +360,8 @@ fun ExportDialog(
                                                 singleLine = true,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianBlack, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
@@ -373,7 +373,7 @@ fun ExportDialog(
                                                 for (preset in presets) {
                                                     Surface(
                                                         color = if (watermarkText.equals(preset, ignoreCase = true)) ElectrumGold.copy(alpha = 0.3f) else ObsidianSurfaceVariant,
-                                                        shape = RoundedCornerShape(4.dp),
+                                                        shape = RoundedCornerShape(0.dp),
                                                         border = BorderStroke(0.5.dp, ElectrumGold.copy(alpha = 0.4f)),
                                                         modifier = Modifier.clickable { watermarkText = preset }
                                                     ) {
@@ -404,8 +404,8 @@ fun ExportDialog(
                                                     Box(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .background(ObsidianBlack, RoundedCornerShape(4.dp))
-                                                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                                             .padding(horizontal = 8.dp, vertical = 5.dp)
                                                     ) {
                                                         if (watermarkRecipient.isEmpty()) {
@@ -443,7 +443,7 @@ fun ExportDialog(
                                                 for ((lbl, opVal) in opacityOptions) {
                                                     Surface(
                                                         color = if (watermarkOpacity == opVal) ElectrumGold.copy(alpha = 0.3f) else ObsidianSurfaceVariant,
-                                                        shape = RoundedCornerShape(4.dp),
+                                                        shape = RoundedCornerShape(0.dp),
                                                         border = BorderStroke(0.5.dp, if (watermarkOpacity == opVal) ElectrumGold else ElectrumGold.copy(alpha = 0.3f)),
                                                         modifier = Modifier.clickable { watermarkOpacity = opVal }
                                                     ) {
@@ -500,8 +500,8 @@ fun ExportDialog(
                                                 singleLine = true,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .background(ObsidianBlack, RoundedCornerShape(4.dp))
-                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                    .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                                             )
                                         }
@@ -676,7 +676,7 @@ fun ExportDialog(
                         // 4. Quick Save to Device Library
                         Surface(
                             color = ObsidianBlack,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -693,7 +693,7 @@ fun ExportDialog(
                                         Toast.makeText(context, "Save error: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                                .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                         ) {
                             Text(
                                 text = "💾 Save Current Script to Library",
@@ -715,14 +715,14 @@ fun ExportDialog(
                         ) {
                             Surface(
                                 color = ObsidianBlack,
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 modifier = Modifier
                                     .clickable {
                                         viewModel.newDocument()
                                         onDismiss()
                                         Toast.makeText(context, "New screenplay created", Toast.LENGTH_SHORT).show()
                                     }
-                                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                             ) {
                                 Text(
                                     text = "➕ New Script",
@@ -768,7 +768,7 @@ fun ExportDialog(
 
                                     Card(
                                         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
@@ -848,7 +848,7 @@ private fun ExportActionCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -875,10 +875,10 @@ private fun ExportActionCard(
 
                 Surface(
                     color = ObsidianSurfaceVariant,
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .clickable(onClick = onClick)
-                        .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                 ) {
                     Text(
                         text = buttonText,

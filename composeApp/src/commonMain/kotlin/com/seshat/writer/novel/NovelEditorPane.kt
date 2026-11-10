@@ -1766,8 +1766,8 @@ private fun NovelHighlightActionBar(
     Box(
         modifier = modifier
             .background(opticalGlassBrush(glassOpacity = 0.85f))
-            .border(prismaticGlassBorder(width = 1.2.dp, isLit = true), RoundedCornerShape(14.dp))
-            .clip(RoundedCornerShape(14.dp))
+            .border(prismaticGlassBorder(width = 1.2.dp, isLit = true), RoundedCornerShape(0.dp))
+            .clip(RoundedCornerShape(0.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -2285,7 +2285,7 @@ fun NovelFindReplaceDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.6f)),
             shadowElevation = 24.dp
@@ -2320,8 +2320,8 @@ fun NovelFindReplaceDialog(
                     cursorBrush = SolidColor(ElectrumGold),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(ObsidianSurface, RoundedCornerShape(8.dp))
-                        .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                        .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                        .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                         .padding(10.dp)
                 )
 
@@ -2336,8 +2336,8 @@ fun NovelFindReplaceDialog(
                     cursorBrush = SolidColor(ElectrumGold),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(ObsidianSurface, RoundedCornerShape(8.dp))
-                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                        .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                         .padding(10.dp)
                 )
 
@@ -2434,7 +2434,7 @@ fun NovelFindReplaceDialog(
                     Button(
                         onClick = { performReplace(allAcrossProject = true) },
                         colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = ObsidianBlack),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(0.dp),
                         enabled = searchQuery.isNotBlank() && matchCount > 0
                     ) {
                         Text("Replace All in Project", fontWeight = FontWeight.Bold)
@@ -2482,7 +2482,7 @@ fun NovelSprintTrackerDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.6f)),
             shadowElevation = 24.dp
@@ -2527,7 +2527,7 @@ fun NovelSprintTrackerDialog(
                         val isSel = dailyGoal == preset
                         Surface(
                             color = if (isSel) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             border = BorderStroke(1.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant),
                             modifier = Modifier
                                 .weight(1f)
@@ -2555,7 +2555,7 @@ fun NovelSprintTrackerDialog(
 
                 Surface(
                     color = ObsidianSurface,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -2588,7 +2588,7 @@ fun NovelSprintTrackerDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
+                                .clip(RoundedCornerShape(0.dp)),
                             color = ElectrumGold,
                             trackColor = ObsidianBlack
                         )
@@ -2621,7 +2621,7 @@ fun NovelSprintTrackerDialog(
 
                 Surface(
                     color = ObsidianSurface,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -2655,7 +2655,7 @@ fun NovelSprintTrackerDialog(
                             listOf(5, 10, 15, 20, 25).forEach { m ->
                                 Surface(
                                     color = if (sprintMinutes == m) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(0.dp),
                                     border = BorderStroke(1.dp, if (sprintMinutes == m) ElectrumGold else ObsidianSurfaceVariant),
                                     modifier = Modifier.clickable(enabled = !isTimerRunning) {
                                         sprintMinutes = m
@@ -2689,7 +2689,7 @@ fun NovelSprintTrackerDialog(
                                     containerColor = if (isTimerRunning) Color(0xFFEF4444) else ElectrumGold,
                                     contentColor = ObsidianBlack
                                 ),
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(0.dp)
                             ) {
                                 Text(
                                     text = if (isTimerRunning) "⏸ Pause" else "▶ Start Sprint",
@@ -2717,7 +2717,7 @@ fun NovelSprintTrackerDialog(
                     Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = ObsidianBlack),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(0.dp)
                     ) {
                         Text("Done", fontWeight = FontWeight.Bold)
                     }
@@ -2789,7 +2789,7 @@ fun ChapterSnapshotDialog(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.6f)),
             shadowElevation = 24.dp
@@ -2833,15 +2833,15 @@ fun ChapterSnapshotDialog(
                         cursorBrush = SolidColor(ElectrumGold),
                         modifier = Modifier
                             .weight(1f)
-                            .background(ObsidianSurface, RoundedCornerShape(8.dp))
-                            .border(1.dp, ElectrumGold.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                            .background(ObsidianSurface, RoundedCornerShape(0.dp))
+                            .border(1.dp, ElectrumGold.copy(alpha = 0.35f), RoundedCornerShape(0.dp))
                             .padding(10.dp)
                     )
 
                     Button(
                         onClick = { takeSnapshot() },
                         colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = ObsidianBlack),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(0.dp)
                     ) {
                         Text("📸 Take Snapshot", fontWeight = FontWeight.Bold)
                     }
@@ -2882,7 +2882,7 @@ fun ChapterSnapshotDialog(
                             val dateStr = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.US).format(Date(snap.timestamp))
                             Surface(
                                 color = ObsidianSurface,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -2973,7 +2973,7 @@ fun NovelScrapsGraveyardDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.88f)
-                .clip(RoundedCornerShape(16.dp)),
+                .clip(RoundedCornerShape(0.dp)),
             color = ObsidianBlack,
             border = BorderStroke(1.5.dp, ElectrumGold.copy(alpha = 0.6f)),
             shadowElevation = 24.dp
@@ -3027,7 +3027,7 @@ fun NovelScrapsGraveyardDialog(
                             val dateStr = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.US).format(Date(scrap.deletedAt))
                             Surface(
                                 color = ObsidianSurface,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -3067,7 +3067,7 @@ fun NovelScrapsGraveyardDialog(
 
                                     Surface(
                                         color = ObsidianBlack,
-                                        shape = RoundedCornerShape(6.dp),
+                                        shape = RoundedCornerShape(0.dp),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text(
@@ -3105,7 +3105,7 @@ fun NovelScrapsGraveyardDialog(
                                         Button(
                                             onClick = { restoreScrap(scrap) },
                                             colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = ObsidianBlack),
-                                            shape = RoundedCornerShape(6.dp)
+                                            shape = RoundedCornerShape(0.dp)
                                         ) {
                                             Text("↺ Restore to Chapter", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                                         }

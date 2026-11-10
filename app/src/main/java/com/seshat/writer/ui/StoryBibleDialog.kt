@@ -97,7 +97,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import android.graphics.BitmapFactory
-
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -371,17 +370,17 @@ fun StoryBibleDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(0.dp),
                             color = Color.Transparent,
                             modifier = Modifier
                                 .shadow(
-                                    elevation = 8.dp,
-                                    shape = CircleShape,
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(0.dp),
                                     spotColor = if (isDark) ScribeStarNeonRed.copy(alpha = 0.35f) else Color(0x3064748B)
                                 )
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(opticalPillBrush(isDark = isDark))
-                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), CircleShape)
+                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                                 .clickable(onClick = onDismiss)
                                 .size(42.dp)
                         ) {
@@ -396,17 +395,17 @@ fun StoryBibleDialog(
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(0.dp),
                             color = Color.Transparent,
                             modifier = Modifier
                                 .shadow(
-                                    elevation = 8.dp,
-                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = 4.dp,
+                                    shape = RoundedCornerShape(0.dp),
                                     spotColor = if (isDark) Color.Black else Color(0x3064748B)
                                 )
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(opticalPillBrush(isDark = isDark))
-                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(16.dp))
+                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
                         ) {
                             Box(
                                 contentAlignment = Alignment.Center,
@@ -492,15 +491,15 @@ fun StoryBibleDialog(
                                 }
                                 .defaultMinSize(minHeight = 42.dp, minWidth = if (isCompactScreen) 42.dp else 54.dp)
                                 .shadow(
-                                    elevation = if (isCopyLit) 8.dp else 4.dp,
-                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = if (isCopyLit) 6.dp else 2.dp,
+                                    shape = RoundedCornerShape(0.dp),
                                     spotColor = if (isCopyLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                                 )
                                 .then(
                                     if (isCopyLit) {
                                         Modifier.neonBloom(
                                             color = ScribeStarNeonRed,
-                                            cornerRadius = 16.dp,
+                                            cornerRadius = 0.dp,
                                             glowRadius = copyGlow,
                                             strokeWidth = copyStroke,
                                             outerAlpha = 0.45f,
@@ -508,7 +507,7 @@ fun StoryBibleDialog(
                                         )
                                     } else Modifier
                                 )
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .background(
                                     if (isCopyLit) SolidColor(ScribeStarNeonRed)
                                     else opticalPillBrush(isLit = isCopyLit, isPrimary = isCopyLit, isDark = isDark)
@@ -520,7 +519,7 @@ fun StoryBibleDialog(
                                         isLit = isCopyLit,
                                         isDark = isDark
                                     ),
-                                    RoundedCornerShape(16.dp)
+                                    RoundedCornerShape(0.dp)
                                 )
                                 .clickable(
                                     interactionSource = copyInteraction,
@@ -599,15 +598,15 @@ fun StoryBibleDialog(
                                     }
                                     .defaultMinSize(minHeight = 42.dp, minWidth = 54.dp)
                                     .shadow(
-                                        elevation = if (isSelected || isLit) 8.dp else 4.dp,
-                                        shape = RoundedCornerShape(16.dp),
+                                        elevation = if (isSelected || isLit) 6.dp else 2.dp,
+                                        shape = RoundedCornerShape(0.dp),
                                         spotColor = if (isSelected || isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                                     )
                                     .then(
                                         if (isLit) {
                                             Modifier.neonBloom(
                                                 color = ScribeStarNeonRed,
-                                                cornerRadius = 16.dp,
+                                                cornerRadius = 0.dp,
                                                 glowRadius = tabGlow,
                                                 strokeWidth = tabStroke,
                                                 outerAlpha = if (isSelected) 0.40f else 0.25f,
@@ -615,7 +614,7 @@ fun StoryBibleDialog(
                                             )
                                         } else Modifier
                                     )
-                                    .clip(RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(0.dp))
                                     .background(
                                         if (isSelected) SolidColor(ScribeStarNeonRed)
                                         else opticalPillBrush(isLit = isLit, isPrimary = isSelected, isDark = isDark)
@@ -627,7 +626,7 @@ fun StoryBibleDialog(
                                             isLit = isLit,
                                             isDark = isDark
                                         ),
-                                        shape = RoundedCornerShape(16.dp)
+                                        shape = RoundedCornerShape(0.dp)
                                     )
                                     .clickable(
                                         interactionSource = tabInteraction,
@@ -658,7 +657,7 @@ fun StoryBibleDialog(
                     Surface(
                         color = if (isReadOnlyAirlock) Color(0xFF280811) else Color(0xFF0A2418),
                         border = BorderStroke(1.dp, if (isReadOnlyAirlock) ScribeStarNeonRed else Color(0xFF10B981)),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 14.dp, vertical = 4.dp)
@@ -756,8 +755,8 @@ private fun GlassCardItem(
                 if (isHovered) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 12.dp,
-                        glowRadius = 6.dp,
+                        cornerRadius = 0.dp,
+                        glowRadius = 4.dp,
                         strokeWidth = 1.2.dp,
                         outerAlpha = if (isDark) 0.25f else 0.15f,
                         midAlpha = if (isDark) 0.45f else 0.30f
@@ -765,34 +764,18 @@ private fun GlassCardItem(
                 } else Modifier
             )
             .shadow(
-                elevation = if (isHovered) 8.dp else 4.dp,
-                shape = RoundedCornerShape(12.dp),
+                elevation = if (isHovered) 6.dp else 2.dp,
+                shape = RoundedCornerShape(0.dp),
                 spotColor = if (isDark) (if (isHovered) ScribeStarNeonRed else Color.Black) else Color(0x2564748B)
             )
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isDark) {
-                    Brush.verticalGradient(
-                        listOf(
-                            if (isHovered) Color(0x452E1018) else Color(0x35141C2A),
-                            if (isHovered) Color(0x5519060B) else Color(0x450C1019)
-                        )
-                    )
-                } else {
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFFFFFFF),
-                            Color(0xFFF8FAFC)
-                        )
-                    )
-                }
-            )
+            .clip(RoundedCornerShape(0.dp))
+            .background(smokedGlassBrush())
             .border(
                 BorderStroke(
                     if (isHovered) 1.5.dp else 1.dp,
-                    if (isHovered) ScribeStarNeonRed else if (isDark) ScribeStarNeonRed.copy(alpha = 0.35f) else Color(0xFFCBD5E1)
+                    if (isHovered) ScribeStarNeonRed else if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
                 ),
-                RoundedCornerShape(12.dp)
+                RoundedCornerShape(0.dp)
             )
     ) {
         content()
@@ -849,15 +832,15 @@ private fun GlassActionButton(
             }
             .defaultMinSize(minHeight = 42.dp, minWidth = 54.dp)
             .shadow(
-                elevation = if (isLit || isPrimary) 8.dp else 4.dp,
-                shape = RoundedCornerShape(16.dp),
+                elevation = if (isLit || isPrimary) 6.dp else 2.dp,
+                shape = RoundedCornerShape(0.dp),
                 spotColor = if (isLit || isPrimary) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
             )
             .then(
                 if (isLit || isPrimary) {
                     Modifier.neonBloom(
                         color = ScribeStarNeonRed,
-                        cornerRadius = 16.dp,
+                        cornerRadius = 0.dp,
                         glowRadius = glowRadius,
                         strokeWidth = strokeWidth,
                         outerAlpha = outerAlpha,
@@ -866,7 +849,7 @@ private fun GlassActionButton(
                     )
                 } else Modifier
             )
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(0.dp))
             .background(
                 if (isPrimary) SolidColor(ScribeStarNeonRed)
                 else opticalPillBrush(isLit = isLit, isPrimary = isPrimary, isDark = isDark)
@@ -878,7 +861,7 @@ private fun GlassActionButton(
                     isLit = isLit || isPrimary,
                     isDark = isDark
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(0.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -977,15 +960,15 @@ private fun LorePillarsSection(
                             }
                             .defaultMinSize(minHeight = 42.dp, minWidth = 54.dp)
                             .shadow(
-                                elevation = if (isSelected || isLit) 8.dp else 4.dp,
-                                shape = RoundedCornerShape(16.dp),
+                                elevation = if (isSelected || isLit) 6.dp else 2.dp,
+                                shape = RoundedCornerShape(0.dp),
                                 spotColor = if (isSelected || isLit) ScribeStarNeonRed else if (isDark) Color.Black else Color(0x3064748B)
                             )
                             .then(
                                 if (isLit) {
                                     Modifier.neonBloom(
                                         color = ScribeStarNeonRed,
-                                        cornerRadius = 16.dp,
+                                        cornerRadius = 0.dp,
                                         glowRadius = pillarGlow,
                                         strokeWidth = pillarStroke,
                                         outerAlpha = if (isSelected) 0.40f else 0.25f,
@@ -993,7 +976,7 @@ private fun LorePillarsSection(
                                     )
                                 } else Modifier
                             )
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(
                                 if (isSelected) SolidColor(ScribeStarNeonRed)
                                 else opticalPillBrush(isLit = isLit, isPrimary = isSelected, isDark = isDark)
@@ -1005,7 +988,7 @@ private fun LorePillarsSection(
                                     isLit = isLit,
                                     isDark = isDark
                                 ),
-                                RoundedCornerShape(16.dp)
+                                RoundedCornerShape(0.dp)
                             )
                             .clickable(
                                 interactionSource = subInteraction,
@@ -1128,12 +1111,12 @@ private fun LorePillarsSection(
             // White lore document writing surface (pure white in dark mode, crisp dark ink)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(4.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(4.dp))
+                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(0.dp))
             ) {
                 OutlinedTextField(
                     value = pillarContent,
@@ -1423,12 +1406,12 @@ private fun CharacterPortraitSection(
         Box(
             modifier = Modifier
                 .size(width = 76.dp, height = 96.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isDark) Color(0xFF1E1E28) else Color(0xFFF1F5F9))
+                .clip(RoundedCornerShape(0.dp))
+                .background(if (isDark) ObsidianBlack else Color(0xFFF1F5F9))
                 .border(
                     1.dp,
                     if (isDark) ScribeStarNeonRed.copy(alpha = 0.5f) else Color(0xFF991B1B).copy(alpha = 0.4f),
-                    RoundedCornerShape(8.dp)
+                    RoundedCornerShape(0.dp)
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -1444,7 +1427,7 @@ private fun CharacterPortraitSection(
                         .align(Alignment.TopEnd)
                         .padding(3.dp)
                         .size(22.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(0.dp))
                         .background(Color.Black.copy(alpha = 0.65f))
                         .clickable { onUpdate(character.copy(imageUrl = "")) },
                     contentAlignment = Alignment.Center
@@ -2320,11 +2303,11 @@ private fun SeriesHubFormatDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(if (isDark) Color(0xFF0F1522) else Color(0xFFFFFFFF))
+                .background(if (isDark) ObsidianSurface else Color(0xFFFFFFFF))
                 .border(
                     1.dp,
                     if (isDark) ScribeStarNeonRed.copy(alpha = 0.5f) else Color(0xFFCBD5E1),
-                    RoundedCornerShape(8.dp)
+                    RoundedCornerShape(0.dp)
                 )
         ) {
             options.forEach { option ->
@@ -2392,7 +2375,7 @@ private fun SeriesHubSection(
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Surface(color = if (isDark) Color(0xFF1565C0) else Color(0xFF1D4ED8), shape = RoundedCornerShape(4.dp)) {
+                    Surface(color = if (isDark) ScribeStarNeonRed else Color(0xFF1D4ED8), shape = RoundedCornerShape(0.dp)) {
                         Text(
                             text = "ROADMAP",
                             style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold),

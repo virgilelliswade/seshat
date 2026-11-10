@@ -46,8 +46,8 @@ fun ShortcutsDialog(onDismiss: () -> Unit) {
         Surface(
             modifier = Modifier
                 .width(560.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)), RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(0.dp))
+                .border(BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)), RoundedCornerShape(0.dp)),
             color = ObsidianSurface
         ) {
             Column(
@@ -147,7 +147,7 @@ fun ShortcutsDialog(onDismiss: () -> Unit) {
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color.Black),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Got It", fontWeight = FontWeight.SemiBold)
@@ -172,8 +172,8 @@ private fun ShortcutSection(title: String, shortcuts: List<Pair<String, String>>
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(ObsidianBlack, RoundedCornerShape(8.dp))
-                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp))
+                .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                 .padding(10.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -189,8 +189,8 @@ private fun ShortcutSection(title: String, shortcuts: List<Pair<String, String>>
                         )
                         Box(
                             modifier = Modifier
-                                .background(ObsidianSurfaceVariant, RoundedCornerShape(4.dp))
-                                .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                .background(ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                                .border(1.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(

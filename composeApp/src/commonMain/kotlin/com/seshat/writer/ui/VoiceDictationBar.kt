@@ -85,8 +85,8 @@ fun VoiceDictationBar(
     Surface(
         modifier = modifier
             .fillMaxWidth(0.96f)
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.5.dp, ElectrumGold.copy(alpha = 0.65f), RoundedCornerShape(16.dp)),
+            .clip(RoundedCornerShape(0.dp))
+            .border(1.5.dp, ElectrumGold.copy(alpha = 0.65f), RoundedCornerShape(0.dp)),
         color = ObsidianBlack.copy(alpha = 0.95f),
         shadowElevation = 12.dp
     ) {
@@ -106,7 +106,7 @@ fun VoiceDictationBar(
                     Box(
                         modifier = Modifier
                             .size(12.dp)
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(0.dp))
                             .background(
                                 if (isListening) Color(0xFFEF5350).copy(alpha = pulseAlpha)
                                 else if (isFormatting) ElectrumGold.copy(alpha = pulseAlpha)
@@ -143,7 +143,7 @@ fun VoiceDictationBar(
                                     modifier = Modifier
                                         .width(3.dp)
                                         .height(barHeight)
-                                        .clip(RoundedCornerShape(1.5.dp))
+                                        .clip(RoundedCornerShape(0.dp))
                                         .background(ElectrumGold)
                                 )
                             }
@@ -162,8 +162,8 @@ fun VoiceDictationBar(
 
                     Surface(
                         color = ObsidianSurface,
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                     ) {
                         Text(
                             text = "⚡ $modelLabel",
@@ -198,8 +198,8 @@ fun VoiceDictationBar(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(0.dp))
+                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp)),
                 color = ObsidianSurface.copy(alpha = 0.85f)
             ) {
                 Box(
@@ -281,9 +281,9 @@ fun VoiceDictationBar(
 
                     Surface(
                         color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable(enabled = transcribedText.isNotBlank()) {
                                 onInsertAsType(BlockType.ACTION)
                             }
@@ -300,9 +300,9 @@ fun VoiceDictationBar(
 
                     Surface(
                         color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable(enabled = transcribedText.isNotBlank()) {
                                 onInsertAsType(BlockType.DIALOGUE)
                             }
@@ -319,9 +319,9 @@ fun VoiceDictationBar(
 
                     Surface(
                         color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable(enabled = transcribedText.isNotBlank()) {
                                 onInsertAsType(BlockType.SCENE_HEADING)
                             }
@@ -345,9 +345,9 @@ fun VoiceDictationBar(
                     if (isListening) {
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { onStopListening() }
                         ) {
                             Text(
@@ -362,9 +362,9 @@ fun VoiceDictationBar(
                     } else {
                         Surface(
                             color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { onStartListening() }
                         ) {
                             Text(
@@ -381,9 +381,9 @@ fun VoiceDictationBar(
                     // Format and Insert Button (Gemini AI Powered)
                     Surface(
                         color = if (transcribedText.isNotBlank() && !isFormatting) ElectrumGold else ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable(enabled = transcribedText.isNotBlank() && !isFormatting) {
                                 onFormatAndInsert()
                             }

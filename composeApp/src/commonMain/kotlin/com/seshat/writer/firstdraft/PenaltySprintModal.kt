@@ -81,21 +81,21 @@ fun PenaltySprintModal(
                 .fillMaxWidth()
                 .neonBloom(
                     color = ScribeStarNeonRed,
-                    cornerRadius = 24.dp,
+                    cornerRadius = 0.dp,
                     glowRadius = 18.dp,
                     strokeWidth = 2.dp,
                     outerAlpha = 0.45f,
                     midAlpha = 0.75f
                 )
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(0.dp))
                 .background(Color(0xFF0B0D14))
-                .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(24.dp))
+                .border(BorderStroke(2.dp, ScribeStarNeonRed), RoundedCornerShape(0.dp))
                 .padding(28.dp)
         ) {
             // Penalty Header Badge
             Surface(
                 color = ScribeStarNeonRed.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ScribeStarNeonRed)
             ) {
                 Text(
@@ -147,7 +147,7 @@ fun PenaltySprintModal(
             ) {
                 Surface(
                     color = Color(0xFF161B26),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.7f))
                 ) {
                     Row(
@@ -177,7 +177,7 @@ fun PenaltySprintModal(
 
                 Surface(
                     color = Color(0xFF161B26),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.7f))
                 ) {
                     Row(
@@ -215,7 +215,7 @@ fun PenaltySprintModal(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(0.dp))
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -226,9 +226,9 @@ fun PenaltySprintModal(
                     .weight(1f, fill = false)
                     .height(280.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Color(0xFF06080C))
-                    .border(BorderStroke(1.2.dp, Color(0xFF334155)), RoundedCornerShape(14.dp))
+                    .border(BorderStroke(1.2.dp, Color(0xFF334155)), RoundedCornerShape(0.dp))
                     .padding(16.dp)
             ) {
                 if (state.penaltyScratchpadText.isEmpty()) {
@@ -266,7 +266,7 @@ fun PenaltySprintModal(
             ) {
                 Surface(
                     color = Color(0xFF28080E),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ScribeStarNeonRed),
                     modifier = Modifier.clickable { onOpenDecayReceipt() }
                 ) {
@@ -286,7 +286,7 @@ fun PenaltySprintModal(
                     Spacer(modifier = Modifier.width(12.dp))
                     Surface(
                         color = Color(0xFF0F2942),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, Color(0xFF38BDF8)),
                         modifier = Modifier.clickable { onUseFreezeToken() }
                     ) {

@@ -51,4 +51,6 @@ object DeviceEnvironment {
     }
 
     fun getDeviceNavLabel(context: Context): String = getDeviceLabel(context)
+
+    fun isMacBook(): Boolean = false
 }

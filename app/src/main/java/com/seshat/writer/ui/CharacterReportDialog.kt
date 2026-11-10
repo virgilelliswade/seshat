@@ -130,7 +130,7 @@ fun CharacterReportDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(0.dp),
             color = ObsidianSurface,
             border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.5f)),
             modifier = Modifier
@@ -192,7 +192,7 @@ fun CharacterReportDialog(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(0.dp))
                 ) {
                     Tab(
                         selected = selectedTab == 0,
@@ -374,8 +374,8 @@ private fun CharacterReportTabContent(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                             .padding(horizontal = 10.dp, vertical = 7.dp)
                     ) {
                         if (searchQuery.isEmpty()) {
@@ -419,10 +419,10 @@ private fun CharacterReportTabContent(
         ) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         val reportText = ScreenplayAnalyticsEngine.formatTextReport(analytics, scriptTitle)
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -430,7 +430,7 @@ private fun CharacterReportTabContent(
                         clipboard.setPrimaryClip(clip)
                         Toast.makeText(context, "Character Report copied to clipboard", Toast.LENGTH_SHORT).show()
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📋 COPY REPORT",
@@ -446,10 +446,10 @@ private fun CharacterReportTabContent(
 
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         try {
                             val pdfFile = ScriptFileManager.exportCharacterReport(context, analytics, scriptTitle)
@@ -459,7 +459,7 @@ private fun CharacterReportTabContent(
                             Toast.makeText(context, "Export error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📄 EXPORT PDF",
@@ -566,8 +566,8 @@ private fun LocationReportTabContent(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                            .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                             .padding(horizontal = 10.dp, vertical = 7.dp)
                     ) {
                         if (searchQuery.isEmpty()) {
@@ -611,10 +611,10 @@ private fun LocationReportTabContent(
         ) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         val reportText = ScreenplayAnalyticsEngine.formatLocationReportText(analytics, scriptTitle)
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -622,7 +622,7 @@ private fun LocationReportTabContent(
                         clipboard.setPrimaryClip(clip)
                         Toast.makeText(context, "Location Report copied to clipboard", Toast.LENGTH_SHORT).show()
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📋 COPY REPORT",
@@ -638,10 +638,10 @@ private fun LocationReportTabContent(
 
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         try {
                             val pdfFile = ScriptFileManager.exportLocationReport(context, analytics, scriptTitle)
@@ -651,7 +651,7 @@ private fun LocationReportTabContent(
                             Toast.makeText(context, "Export error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📄 EXPORT PDF",
@@ -715,12 +715,12 @@ private fun LocationCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .clickable { onToggleExpand() }
-            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Row(
@@ -755,7 +755,7 @@ private fun LocationCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         color = ElectrumGold.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(3.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier.padding(end = 6.dp)
                     ) {
                         Text(
@@ -828,7 +828,7 @@ private fun LocationCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp)
-                                .background(ObsidianSurface, RoundedCornerShape(4.dp))
+                                .background(ObsidianSurface, RoundedCornerShape(0.dp))
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -920,8 +920,8 @@ private fun CastMatrixTabContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(ObsidianBlack, RoundedCornerShape(6.dp))
-                        .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                        .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                        .border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
                         .padding(horizontal = 10.dp, vertical = 7.dp)
                 ) {
                     if (searchQuery.isEmpty()) {
@@ -947,10 +947,10 @@ private fun CastMatrixTabContent(
         ) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         val reportText = ScreenplayAnalyticsEngine.formatCastMatrixText(matrix, scriptTitle)
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -958,7 +958,7 @@ private fun CastMatrixTabContent(
                         clipboard.setPrimaryClip(clip)
                         Toast.makeText(context, "Cast Matrix copied to clipboard", Toast.LENGTH_SHORT).show()
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📋 COPY MATRIX",
@@ -974,10 +974,10 @@ private fun CastMatrixTabContent(
 
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .clickable {
                         try {
                             val pdfFile = ScriptFileManager.exportCastMatrix(context, matrix, scriptTitle)
@@ -987,7 +987,7 @@ private fun CastMatrixTabContent(
                             Toast.makeText(context, "Export error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                    .border(1.dp, ElectrumGold.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
             ) {
                 Text(
                     text = "📄 EXPORT PDF",
@@ -1027,10 +1027,10 @@ private fun CastMatrixTabContent(
                         colors = CardDefaults.cardColors(
                             containerColor = if (sc.isOmitted) ObsidianSurfaceVariant.copy(alpha = 0.5f) else ObsidianBlack
                         ),
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+                            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
                             Row(
@@ -1067,7 +1067,7 @@ private fun CastMatrixTabContent(
                                     if (sc.isOmitted) {
                                         Surface(
                                             color = Color(0xFFC0392B).copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(3.dp),
+                                            shape = RoundedCornerShape(0.dp),
                                             modifier = Modifier.padding(end = 4.dp)
                                         ) {
                                             Text(
@@ -1102,7 +1102,7 @@ private fun CastMatrixTabContent(
                                     sc.characters.forEach { charName ->
                                         Surface(
                                             color = ElectrumGold.copy(alpha = 0.12f),
-                                            shape = RoundedCornerShape(3.dp)
+                                            shape = RoundedCornerShape(0.dp)
                                         ) {
                                             Text(
                                                 text = charName,
@@ -1141,7 +1141,7 @@ private fun MetricChip(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = modifier
     ) {
         Column(
@@ -1175,14 +1175,14 @@ private fun SortButton(
 ) {
     Surface(
         color = if (isSelected) ElectrumGold.copy(alpha = 0.2f) else ObsidianBlack,
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(0.dp))
             .clickable { onClick() }
             .border(
                 0.5.dp,
                 if (isSelected) ElectrumGold else ElectrumGold.copy(alpha = 0.2f),
-                RoundedCornerShape(4.dp)
+                RoundedCornerShape(0.dp)
             )
     ) {
         Text(
@@ -1206,12 +1206,12 @@ private fun CharacterCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(0.dp))
             .clickable { onToggleExpand() }
-            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(6.dp))
+            .border(0.5.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             // Title Row
@@ -1310,7 +1310,7 @@ private fun CharacterCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                                .background(ObsidianSurface, RoundedCornerShape(4.dp))
+                                .background(ObsidianSurface, RoundedCornerShape(0.dp))
                                 .padding(8.dp)
                         ) {
                             Text(
@@ -1362,7 +1362,7 @@ private fun StudioCoverageTabContent(
         if (report == null) {
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1409,9 +1409,9 @@ private fun StudioCoverageTabContent(
                     } else {
                         Surface(
                             color = ElectrumGold,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(0.dp))
                                 .clickable { viewModel.generateStudioCoverage(context) }
                         ) {
                             Text(
@@ -1449,7 +1449,7 @@ private fun StudioCoverageTabContent(
                     }
                     Surface(
                         color = verdictBg,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, verdictColor)
                     ) {
                         Text(
@@ -1475,10 +1475,10 @@ private fun StudioCoverageTabContent(
                     // Export PDF
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ElectrumGold),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable {
                                 val file = viewModel.exportStudioCoveragePdf(context, report)
                                 if (file != null) {
@@ -1499,10 +1499,10 @@ private fun StudioCoverageTabContent(
                     // Copy text
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable {
                                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 cm.setPrimaryClip(ClipData.newPlainText("Studio Coverage", report.formatPlainText()))
@@ -1522,10 +1522,10 @@ private fun StudioCoverageTabContent(
                     // Re-generate
                     Surface(
                         color = ObsidianBlack,
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .clickable(enabled = !isLoading) {
                                 viewModel.generateStudioCoverage(context)
                             }
@@ -1555,7 +1555,7 @@ private fun StudioCoverageTabContent(
             if (report.characterArcs.isNotEmpty()) {
                 Surface(
                     color = ObsidianBlack,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 ) {
@@ -1587,7 +1587,7 @@ private fun StudioCoverageTabContent(
             // 4. Craft Review Card
             Surface(
                 color = ObsidianBlack,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(0.dp),
                 border = BorderStroke(1.dp, ObsidianSurfaceVariant),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
             ) {
@@ -1637,7 +1637,7 @@ private fun StudioCoverageTabContent(
 private fun CoverageSectionCard(title: String, content: String) {
     Surface(
         color = ObsidianBlack,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
@@ -1699,7 +1699,7 @@ private fun ProductionBreakdownTabContent(
                         Toast.makeText(context, "Breakdown report copied to clipboard!", Toast.LENGTH_SHORT).show()
                     },
                     border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.6f)),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text("Copy Report", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
@@ -1713,7 +1713,7 @@ private fun ProductionBreakdownTabContent(
                         ScriptFileManager.shareFile(context, file, "application/pdf", "Assistant Director Breakdown")
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     modifier = Modifier.height(32.dp)
                 ) {
                     Text("Export AD PDF", style = MaterialTheme.typography.labelSmall.copy(color = ObsidianBlack, fontWeight = FontWeight.Bold))
@@ -1758,7 +1758,7 @@ private fun ProductionBreakdownTabContent(
 private fun BreakdownKpiPill(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(0.5.dp, color.copy(alpha = 0.35f)),
         modifier = modifier
     ) {
@@ -1779,7 +1779,7 @@ private fun BreakdownKpiPill(label: String, count: Int, color: Color, modifier: 
 private fun SceneBreakdownCard(scene: SceneBreakdown) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ObsidianSurfaceVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -1797,7 +1797,7 @@ private fun SceneBreakdownCard(scene: SceneBreakdown) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(0.dp))
                             .background(ElectrumGold.copy(alpha = 0.2f))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
@@ -1910,9 +1910,9 @@ private fun CategoryTagRow(title: String, items: List<String>, tagColor: Color) 
             items.forEach { item ->
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
+                        .clip(RoundedCornerShape(0.dp))
                         .background(tagColor.copy(alpha = 0.15f))
-                        .border(0.5.dp, tagColor.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
+                        .border(0.5.dp, tagColor.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
@@ -1933,7 +1933,7 @@ private fun CategoryTagRow(title: String, items: List<String>, tagColor: Color) 
 private fun MasterInventoryCard(summary: ScriptBreakdownSummary) {
     Card(
         colors = CardDefaults.cardColors(containerColor = ObsidianBlack),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(0.dp),
         border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.4f)),
         modifier = Modifier.fillMaxWidth()
     ) {
