@@ -209,25 +209,25 @@ fun StartMenuScreen(
 
     val buttonsAlpha by animateFloatAsState(
         targetValue = if (areButtonsVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
         label = "StartMenuButtonsAlpha"
     )
 
     val buttonsOffsetY by animateDpAsState(
         targetValue = if (areButtonsVisible) 0.dp else 20.dp,
-        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
         label = "StartMenuButtonsOffsetY"
     )
 
     val splashBlur by animateDpAsState(
         targetValue = if (areButtonsVisible) 12.dp else 0.dp,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
         label = "StartMenuSplashBlur"
     )
 
     val scrimAlpha by animateFloatAsState(
         targetValue = if (areButtonsVisible) 0.52f else 0.0f,
-        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 5000, easing = FastOutSlowInEasing),
         label = "StartMenuScrimAlpha"
     )
 

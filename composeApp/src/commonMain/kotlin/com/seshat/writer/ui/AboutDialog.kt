@@ -80,7 +80,7 @@ fun AboutDialog(
                 )
 
                 Text(
-                    text = "Version 2.8.1 • Studio & First Draft Engine",
+                    text = "Version 2.8.2 • Studio & First Draft Engine",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = ScreenplayTextMuted,
                         fontSize = 12.sp
