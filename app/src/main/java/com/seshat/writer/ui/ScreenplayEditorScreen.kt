@@ -144,6 +144,7 @@ import com.seshat.writer.screenplay.ScreenplayViewModel
 import com.seshat.writer.screenplay.ScreenplayViewMode
 import com.seshat.writer.ui.theme.ScreenplayCourierFontFamily
 import com.seshat.writer.util.DeviceEnvironment
+import com.seshat.writer.util.rememberAudioPermissionLauncher
 import com.seshat.writer.ui.theme.CharacterGold
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.DeskBackground
@@ -207,6 +208,21 @@ fun ScreenplayEditorScreen(
     var showExportDialog by remember { mutableStateOf(false) }
     var aiConfig by remember { mutableStateOf(AiPreferences.load(context)) }
 
+    val requestMicPermissionAndStart = rememberAudioPermissionLauncher { granted ->
+        if (granted) {
+            viewModel.startDictation(context)
+        } else {
+            Toast.makeText(context, "Microphone permission is required for voice dictation", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val onToggleDictationWithPermission: () -> Unit = {
+        if (uiState.isDictating) {
+            viewModel.stopDictation()
+        } else {
+            requestMicPermissionAndStart()
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.bindAppContext(context)
         viewModel.initTheme(context)
@@ -264,18 +280,20 @@ fun ScreenplayEditorScreen(
                     uiState.wordCount
                 }
 
-                // Persistent First Draft Anti-Procrastination HUD Strip
-                FirstDraftControlStrip(
-                    state = uiState.firstDraftState,
-                    currentWordCount = totalProjectWords,
-                    onAdvanceStage = { viewModel.advanceFirstDraftStage(context) },
-                    onToggleSprint = { viewModel.toggleFirstDraftSprint() },
-                    onOpenXpShop = { viewModel.openXpShop() },
-                    onOpenDutyRoster = { viewModel.openDutyRoster() },
-                    onToggleReferenceDrawer = { viewModel.toggleReferenceDrawer() },
-                    onOpenDailyReceipt = { viewModel.openDailyReceiptModal(context) },
-                    onInsertTkToken = { viewModel.insertTkFixLaterToken(context) }
-                )
+                // Persistent First Draft Anti-Procrastination HUD Strip (Hidden in Distraction-Free Focus Mode)
+                if (!uiState.isZenMode) {
+                    FirstDraftControlStrip(
+                        state = uiState.firstDraftState,
+                        currentWordCount = totalProjectWords,
+                        onAdvanceStage = { viewModel.advanceFirstDraftStage(context) },
+                        onToggleSprint = { viewModel.toggleFirstDraftSprint() },
+                        onOpenXpShop = { viewModel.openXpShop() },
+                        onOpenDutyRoster = { viewModel.openDutyRoster() },
+                        onToggleReferenceDrawer = { viewModel.toggleReferenceDrawer() },
+                        onOpenDailyReceipt = { viewModel.openDailyReceiptModal(context) },
+                        onInsertTkToken = { viewModel.insertTkFixLaterToken(context) }
+                    )
+                }
 
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     if (uiState.firstDraftState.isFirstDraftMode &&
@@ -340,7 +358,7 @@ fun ScreenplayEditorScreen(
         } else {
             Row(modifier = Modifier.fillMaxSize()) {
                 // Split-Pane Read-Only Reference Drawer for sealed SPARK / BIBLE / OUTLINE
-                if (uiState.firstDraftState.isReferenceDrawerOpen) {
+                if (uiState.firstDraftState.isReferenceDrawerOpen && !uiState.isZenMode) {
                     ReadOnlyReferenceDrawer(
                         state = uiState.firstDraftState,
                         bible = uiState.storyBible,
@@ -416,7 +434,7 @@ fun ScreenplayEditorScreen(
                             onToggleCorkboard = { viewModel.toggleCorkboard(context) },
                             onOpenStoryBible = { viewModel.openStoryBible(context) },
                             onOpenStartMenu = { viewModel.openStartMenu() },
-                            onToggleDictation = { viewModel.toggleDictation(context) },
+                            onToggleDictation = onToggleDictationWithPermission,
                             onSaveProject = onSaveProject,
                             onOpenStudioDrawer = { viewModel.openStudioDrawer() },
                             modifier = Modifier
@@ -430,6 +448,7 @@ fun ScreenplayEditorScreen(
                             onOpenTitlePage = onOpenTitlePage,
                             onOpenFileExport = { showExportDialog = true },
                             onSaveProject = onSaveProject,
+                            onToggleDictation = onToggleDictationWithPermission,
                             isAiPolishEnabled = aiConfig.isEnabled && aiConfig.enableInlineAssistant,
                             isCompactScreen = isCompactScreen,
                             isKeyboardActive = isKeyboardActive,
@@ -467,12 +486,14 @@ fun ScreenplayEditorScreen(
         }
                 }
 
-                // Gemini AI Bouncer / 60s Idle Instigator Bottom Banner
-                IdleInstigatorBanner(
-                    promptText = uiState.firstDraftState.idleInstigatorPrompt,
-                    isLoading = uiState.firstDraftState.isIdleInstigatorLoading,
-                    onDismiss = { viewModel.dismissIdleInstigator() }
-                )
+                // Gemini AI Bouncer / 60s Idle Instigator Bottom Banner (Hidden in Focus Mode)
+                if (!uiState.isZenMode) {
+                    IdleInstigatorBanner(
+                        promptText = uiState.firstDraftState.idleInstigatorPrompt,
+                        isLoading = uiState.firstDraftState.isIdleInstigatorLoading,
+                        onDismiss = { viewModel.dismissIdleInstigator() }
+                    )
+                }
             }
 
             // Red Diagonal "ABANDONED DRAFT" Watermark when 48-Hour Decay is active
@@ -549,7 +570,7 @@ fun ScreenplayEditorScreen(
             onOpenTableRead = { viewModel.openTableRead(context) },
             onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
             onOpenFind = { viewModel.openFind() },
-            onToggleDictation = { viewModel.toggleDictation(context) },
+            onToggleDictation = onToggleDictationWithPermission,
             onOpenSettings = { viewModel.openSettingsDialog() }
         )
     }
@@ -737,7 +758,8 @@ fun ScreenplayEditorScreen(
         }
     }
 
-    if (uiState.isDictating || uiState.isDictationFormatting || uiState.dictationLiveText.isNotEmpty()) {
+    if (uiState.isDictationBarVisible || uiState.isDictating || uiState.isDictationFormatting || uiState.dictationLiveText.isNotEmpty()) {
+        val focusedBlockType = uiState.blocks.find { it.id == uiState.focusedBlockId }?.type ?: BlockType.ACTION
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -750,11 +772,16 @@ fun ScreenplayEditorScreen(
                 transcribedText = uiState.dictationLiveText,
                 audioRmsLevel = uiState.dictationAudioRms,
                 aiConfig = aiConfig,
+                isAutoInsert = uiState.isAutoInsertDictation,
+                activeCharacters = uiState.characters,
+                currentBlockType = focusedBlockType,
                 errorMessage = uiState.dictationError,
+                onTextChange = { viewModel.updateDictationLiveText(it) },
+                onToggleAutoInsert = { viewModel.toggleAutoInsertDictation() },
                 onFormatAndInsert = { viewModel.insertDictatedSpeech(context) },
                 onInsertAsType = { type -> viewModel.insertDictatedSpeechAsType(type) },
                 onStopListening = { viewModel.stopDictation() },
-                onStartListening = { viewModel.startDictation(context) },
+                onStartListening = requestMicPermissionAndStart,
                 onCancel = { viewModel.cancelDictation() }
             )
         }
@@ -1514,6 +1541,12 @@ private fun CompactScreenplayTopBar(
                 }
 
                 GlassEditorPillButton(
+                    text = if (uiState.isZenMode) "Exit Focus" else "Focus",
+                    onClick = actions::toggleZenMode,
+                    isHighlight = uiState.isZenMode
+                )
+
+                GlassEditorPillButton(
                     text = "⚙️ Settings",
                     onClick = actions::openSettings
                 )
@@ -1722,7 +1755,7 @@ private fun DesktopScreenplayTopBar(
                 )
 
                 GlassEditorPillButton(
-                    text = if (uiState.isZenMode) "Exit Zen" else "Zen",
+                    text = if (uiState.isZenMode) "Exit Focus" else "Focus",
                     onClick = actions::toggleZenMode,
                     isHighlight = uiState.isZenMode
                 )
@@ -1752,6 +1785,7 @@ private fun EditorCanvas(
     onOpenTitlePage: () -> Unit,
     onOpenFileExport: () -> Unit,
     onSaveProject: () -> Unit,
+    onToggleDictation: () -> Unit = { },
     isAiPolishEnabled: Boolean = false,
     isCompactScreen: Boolean = false,
     isKeyboardActive: Boolean = false,
@@ -1763,13 +1797,19 @@ private fun EditorCanvas(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
     val isGooglebook = remember { DeviceEnvironment.isGooglebook(context) }
-    val actions = remember(viewModel, context) { EditorCanvasActions(viewModel, context) }
+    val actions = remember(viewModel, context, onToggleDictation) {
+        EditorCanvasActions(viewModel, context, onToggleDictation)
+    }
     val formattingController = rememberEditorFormattingController()
 
     CompositionLocalProvider(LocalEditorFormattingController provides formattingController) {
-        Column(
+        Box(
             modifier = modifier
                 .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
+                .fillMaxSize()
+        ) {
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
                 .onPreviewKeyEvent { keyEvent ->
                     if (keyEvent.type == KeyEventType.KeyDown) {
@@ -1788,8 +1828,16 @@ private fun EditorCanvas(
                             actions.toggleDictation()
                             return@onPreviewKeyEvent true
                         }
+                        if (keyEvent.key == Key.F11) {
+                            actions.toggleZenMode()
+                            return@onPreviewKeyEvent true
+                        }
                         if (keyEvent.key == Key.Escape && uiState.isDictating) {
                             actions.cancelDictation()
+                            return@onPreviewKeyEvent true
+                        }
+                        if (keyEvent.key == Key.Escape && uiState.isZenMode && !uiState.isDictating) {
+                            actions.toggleZenMode()
                             return@onPreviewKeyEvent true
                         }
                         if (isCmdOrCtrl && keyEvent.isShiftPressed && keyEvent.key == Key.B) {
@@ -1808,28 +1856,30 @@ private fun EditorCanvas(
                 false
             }
     ) {
-        // Top Floating Action Bar (Bar-less Spatial Writing Studio)
-        if (isCompactScreen) {
-            CompactScreenplayTopBar(
-                uiState = uiState,
-                actions = actions,
-                onOpenTitlePage = onOpenTitlePage,
-                onOpenFileExport = onOpenFileExport,
-                onSaveProject = onSaveProject
-            )
-        } else {
-            DesktopScreenplayTopBar(
-                uiState = uiState,
-                actions = actions,
-                onOpenTitlePage = onOpenTitlePage,
-                onOpenFileExport = onOpenFileExport,
-                onSaveProject = onSaveProject
-            )
+        // Top Floating Action Bar (Hidden in Distraction-Free Focus Mode)
+        if (!uiState.isZenMode) {
+            if (isCompactScreen) {
+                CompactScreenplayTopBar(
+                    uiState = uiState,
+                    actions = actions,
+                    onOpenTitlePage = onOpenTitlePage,
+                    onOpenFileExport = onOpenFileExport,
+                    onSaveProject = onSaveProject
+                )
+            } else {
+                DesktopScreenplayTopBar(
+                    uiState = uiState,
+                    actions = actions,
+                    onOpenTitlePage = onOpenTitlePage,
+                    onOpenFileExport = onOpenFileExport,
+                    onSaveProject = onSaveProject
+                )
+            }
         }
 
-        // Floating Find & Replace / Character Rename Bar
+        // Floating Find & Replace / Character Rename Bar (Hidden in Focus Mode)
         AnimatedVisibility(
-            visible = uiState.isFindReplaceVisible,
+            visible = uiState.isFindReplaceVisible && !uiState.isZenMode,
             enter = fadeIn() + slideInVertically { -it / 2 },
             exit = fadeOut() + slideOutVertically { -it / 2 }
         ) {
@@ -1852,14 +1902,16 @@ private fun EditorCanvas(
             )
         }
 
-        // Top Screenplay Margin & Tab Ruler Bar (Final Draft / Fade In architectural precision)
-        val activeRulerBlockType = remember(uiState.focusedBlockId, uiState.blocks) {
-            uiState.blocks.find { it.id == uiState.focusedBlockId }?.type ?: BlockType.SCENE_HEADING
+        // Top Screenplay Margin & Tab Ruler Bar (Hidden in Distraction-Free Focus Mode)
+        if (!uiState.isZenMode) {
+            val activeRulerBlockType = remember(uiState.focusedBlockId, uiState.blocks) {
+                uiState.blocks.find { it.id == uiState.focusedBlockId }?.type ?: BlockType.SCENE_HEADING
+            }
+            ScreenplayMarginRulerBar(
+                activeBlockType = activeRulerBlockType,
+                isNovelMode = false
+            )
         }
-        ScreenplayMarginRulerBar(
-            activeBlockType = activeRulerBlockType,
-            isNovelMode = false
-        )
 
         // US Letter Screenplay Canvas with Zoom & View Mode Support
         val zoom = uiState.zoomLevel
@@ -2269,90 +2321,108 @@ private fun EditorCanvas(
 
         val focusedBlock = uiState.blocks.find { it.id == uiState.focusedBlockId }
 
-        // Scene Heading Smart Bar appears when focused block is SCENE_HEADING
-        AnimatedVisibility(
-            visible = focusedBlock?.type == BlockType.SCENE_HEADING
-        ) {
-            focusedBlock?.let { headingBlock ->
-                SceneHeadingSmartBar(
-                    currentText = headingBlock.text,
-                    locations = uiState.locations,
-                    onSelectPrefix = { prefix -> actions.applyScenePrefix(headingBlock.id, prefix) },
-                    onSelectLocation = { loc -> actions.applySceneLocation(headingBlock.id, loc) },
-                    onSelectTime = { time -> actions.applySceneTime(headingBlock.id, time) },
-                    onAdvanceToAction = { actions.enterPressed(headingBlock.id) }
+        if (!uiState.isZenMode) {
+            // Scene Heading Smart Bar appears when focused block is SCENE_HEADING
+            AnimatedVisibility(
+                visible = focusedBlock?.type == BlockType.SCENE_HEADING
+            ) {
+                focusedBlock?.let { headingBlock ->
+                    SceneHeadingSmartBar(
+                        currentText = headingBlock.text,
+                        locations = uiState.locations,
+                        onSelectPrefix = { prefix -> actions.applyScenePrefix(headingBlock.id, prefix) },
+                        onSelectLocation = { loc -> actions.applySceneLocation(headingBlock.id, loc) },
+                        onSelectTime = { time -> actions.applySceneTime(headingBlock.id, time) },
+                        onAdvanceToAction = { actions.enterPressed(headingBlock.id) }
+                    )
+                }
+            }
+
+            // Character Smart Bar appears when focused block is CHARACTER
+            AnimatedVisibility(
+                visible = focusedBlock?.type == BlockType.CHARACTER
+            ) {
+                focusedBlock?.let { charBlock ->
+                    CharacterSmartBar(
+                        currentText = charBlock.text,
+                        characters = uiState.characters,
+                        onSelectCharacter = { name -> actions.applyCharacterSuggestion(charBlock.id, name) },
+                        onToggleExtension = { ext -> actions.toggleExtension(charBlock.id, ext) }
+                    )
+                }
+            }
+
+            // Transition Preset Bar appears when focused block is TRANSITION
+            AnimatedVisibility(
+                visible = focusedBlock?.type == BlockType.TRANSITION
+            ) {
+                focusedBlock?.let { transBlock ->
+                    TransitionPresetBar(
+                        currentText = transBlock.text,
+                        onSelectPreset = { preset -> actions.setTransition(transBlock.id, preset) }
+                    )
+                }
+            }
+
+            // Dual Dialogue Contextual Action Bar appears when text/blocks are highlighted
+            val clipboardManager = LocalClipboardManager.current
+            AnimatedVisibility(
+                visible = uiState.highlightedBlockIds.isNotEmpty(),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 }
+            ) {
+                DualDialogueActionBar(
+                    uiState = uiState,
+                    canMakeDual = actions.isDualDialogueCandidate(uiState.highlightedBlockIds),
+                    isAlreadyDual = actions.isAlreadyDualDialogue(uiState.highlightedBlockIds),
+                    onMakeDual = actions::makeDualDialogue,
+                    onSeparateDual = actions::separateDualDialogue,
+                    onCopyHighlight = {
+                        val selBlocks = uiState.blocks.filter { uiState.highlightedBlockIds.contains(it.id) }
+                        val textToCopy = selBlocks.joinToString("\n\n") { it.text }
+                        clipboardManager.setText(AnnotatedString(textToCopy))
+                    },
+                    onDeleteHighlight = actions::deleteHighlight,
+                    onClearHighlight = actions::clearHighlight
                 )
             }
-        }
 
-        // Character Smart Bar appears when focused block is CHARACTER
-        AnimatedVisibility(
-            visible = focusedBlock?.type == BlockType.CHARACTER
-        ) {
-            focusedBlock?.let { charBlock ->
-                CharacterSmartBar(
-                    currentText = charBlock.text,
-                    characters = uiState.characters,
-                    onSelectCharacter = { name -> actions.applyCharacterSuggestion(charBlock.id, name) },
-                    onToggleExtension = { ext -> actions.toggleExtension(charBlock.id, ext) }
-                )
-            }
-        }
-
-        // Transition Preset Bar appears when focused block is TRANSITION
-        AnimatedVisibility(
-            visible = focusedBlock?.type == BlockType.TRANSITION
-        ) {
-            focusedBlock?.let { transBlock ->
-                TransitionPresetBar(
-                    currentText = transBlock.text,
-                    onSelectPreset = { preset -> actions.setTransition(transBlock.id, preset) }
-                )
-            }
-        }
-
-        // Dual Dialogue Contextual Action Bar appears when text/blocks are highlighted
-        val clipboardManager = LocalClipboardManager.current
-        AnimatedVisibility(
-            visible = uiState.highlightedBlockIds.isNotEmpty(),
-            enter = fadeIn() + slideInVertically { it / 2 },
-            exit = fadeOut() + slideOutVertically { it / 2 }
-        ) {
-            DualDialogueActionBar(
+            // Bottom HUD Floating Element Capsule Dock (Concept Mockup Big Button Dock)
+            BottomHud(
                 uiState = uiState,
-                canMakeDual = actions.isDualDialogueCandidate(uiState.highlightedBlockIds),
-                isAlreadyDual = actions.isAlreadyDualDialogue(uiState.highlightedBlockIds),
-                onMakeDual = actions::makeDualDialogue,
-                onSeparateDual = actions::separateDualDialogue,
-                onCopyHighlight = {
-                    val selBlocks = uiState.blocks.filter { uiState.highlightedBlockIds.contains(it.id) }
-                    val textToCopy = selBlocks.joinToString("\n\n") { it.text }
-                    clipboardManager.setText(AnnotatedString(textToCopy))
-                },
-                onDeleteHighlight = actions::deleteHighlight,
-                onClearHighlight = actions::clearHighlight
+                onChangeBlockType = actions::changeBlockType,
+                onInsertNewBlock = actions::insertNewBlock,
+                isCompactScreen = isCompactScreen,
+                isKeyboardActive = isKeyboardActive,
+                onToggleKeyboard = onToggleKeyboard,
+                onEnterPressed = actions::enterPressed,
+                onBackspaceEmpty = actions::backspaceEmpty,
+                onTabPressed = actions::tabPressed,
+                onSaveProject = onSaveProject,
+                onOpenScriptDoctor = actions::openScriptDoctor,
+                onToggleTheme = actions::toggleThemeMode,
+                onZoomIn = actions::zoomIn,
+                onZoomOut = actions::zoomOut,
+                onResetZoom = actions::resetZoom
             )
         }
+    } // End inner Column in Focus Mode wrapper Box
 
-        // Bottom HUD Floating Element Capsule Dock (Concept Mockup Big Button Dock)
-        BottomHud(
-            uiState = uiState,
-            onChangeBlockType = actions::changeBlockType,
-            onInsertNewBlock = actions::insertNewBlock,
-            isCompactScreen = isCompactScreen,
-            isKeyboardActive = isKeyboardActive,
-            onToggleKeyboard = onToggleKeyboard,
-            onEnterPressed = actions::enterPressed,
-            onBackspaceEmpty = actions::backspaceEmpty,
-            onTabPressed = actions::tabPressed,
-            onSaveProject = onSaveProject,
-            onOpenScriptDoctor = actions::openScriptDoctor,
-            onToggleTheme = actions::toggleThemeMode,
-            onZoomIn = actions::zoomIn,
-            onZoomOut = actions::zoomOut,
-            onResetZoom = actions::resetZoom
-        )
+    // Single Floating Focus Exit Pill when Distraction-Free Focus Mode is active
+    if (uiState.isZenMode) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 14.dp, end = 18.dp)
+        ) {
+            GlassEditorPillButton(
+                text = "✕ Exit Focus",
+                onClick = actions::toggleZenMode,
+                isHighlight = true
+            )
+        }
     }
+    } // End Focus Mode wrapper Box
 }
 }
 

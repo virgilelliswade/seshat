@@ -22,10 +22,12 @@ import androidx.lifecycle.viewModelScope
 import com.seshat.writer.ai.AiClient
 import com.seshat.writer.ai.AiConfig
 import com.seshat.writer.ai.AiPreferences
+import com.seshat.writer.ai.SmartDictationParser
 import com.seshat.writer.ai.StudioCoverageReport
 import com.seshat.writer.ai.StudioCoveragePdfExporter
 import com.seshat.writer.ai.TableReadManager
 import com.seshat.writer.dictation.ScreenplayDictationManager
+import kotlinx.coroutines.Job
 import com.seshat.writer.bible.StoryBible
 import com.seshat.writer.bible.StoryBibleRepository
 import com.seshat.writer.corkboard.CorkboardAct
@@ -165,6 +167,8 @@ data class ScreenplayUiState(
     val isDraftDiffOpen: Boolean = false,
     val isLibraryOpen: Boolean = false,
     val isDictating: Boolean = false,
+    val isDictationBarVisible: Boolean = false,
+    val isAutoInsertDictation: Boolean = true,
     val dictationLiveText: String = "",
     val dictationAudioRms: Float = 0f,
     val isDictationFormatting: Boolean = false,
@@ -2508,16 +2512,26 @@ class ScreenplayViewModel : ViewModel() {
     }
 
     // ==========================================
-    // 🎙️ GEMINI VOICE DICTATION SYSTEM
+    // 🎙️ GEMINI SMART VOICE DICTATION SYSTEM
     // ==========================================
 
     private var dictationManagerInstance: ScreenplayDictationManager? = null
+    private var dictationObserverJob: Job? = null
+    private var dictationAppContext: Context? = null
 
     fun getOrCreateDictationManager(context: Context): ScreenplayDictationManager {
+        dictationAppContext = context.applicationContext
         if (dictationManagerInstance == null) {
             dictationManagerInstance = ScreenplayDictationManager(context.applicationContext).apply {
                 onSpeechFinalized = { finalSpeech ->
-                    _uiState.update { it.copy(dictationLiveText = finalSpeech) }
+                    val ctx = dictationAppContext ?: context.applicationContext
+                    if (SmartDictationParser.isStopCommand(finalSpeech)) {
+                        stopDictation()
+                    } else if (_uiState.value.isAutoInsertDictation && finalSpeech.isNotBlank()) {
+                        insertDictatedSpeech(ctx, customText = finalSpeech, restartListeningAfter = true)
+                    } else {
+                        _uiState.update { it.copy(dictationLiveText = finalSpeech, isDictating = false) }
+                    }
                 }
             }
         }
@@ -2529,6 +2543,7 @@ class ScreenplayViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 isDictating = true,
+                isDictationBarVisible = true,
                 dictationLiveText = "",
                 dictationError = null,
                 isDictationFormatting = false
@@ -2536,19 +2551,27 @@ class ScreenplayViewModel : ViewModel() {
         }
         manager.startListening()
 
-        viewModelScope.launch {
-            manager.livePartialText.collect { partial ->
-                _uiState.update { it.copy(dictationLiveText = partial) }
+        dictationObserverJob?.cancel()
+        dictationObserverJob = viewModelScope.launch {
+            launch {
+                manager.isListening.collect { listening ->
+                    _uiState.update { it.copy(isDictating = listening) }
+                }
             }
-        }
-        viewModelScope.launch {
-            manager.audioRmsLevel.collect { rms ->
-                _uiState.update { it.copy(dictationAudioRms = rms) }
+            launch {
+                manager.livePartialText.collect { partial ->
+                    if (partial.isNotBlank()) {
+                        _uiState.update { it.copy(dictationLiveText = partial, dictationError = null) }
+                    }
+                }
             }
-        }
-        viewModelScope.launch {
-            manager.dictationError.collect { err ->
-                if (err != null) {
+            launch {
+                manager.audioRmsLevel.collect { rms ->
+                    _uiState.update { it.copy(dictationAudioRms = rms) }
+                }
+            }
+            launch {
+                manager.dictationError.collect { err ->
                     _uiState.update { it.copy(dictationError = err) }
                 }
             }
@@ -2561,10 +2584,13 @@ class ScreenplayViewModel : ViewModel() {
     }
 
     fun cancelDictation() {
+        dictationObserverJob?.cancel()
+        dictationObserverJob = null
         dictationManagerInstance?.cancelListening()
         _uiState.update {
             it.copy(
                 isDictating = false,
+                isDictationBarVisible = false,
                 dictationLiveText = "",
                 dictationAudioRms = 0f,
                 isDictationFormatting = false,
@@ -2581,20 +2607,41 @@ class ScreenplayViewModel : ViewModel() {
         }
     }
 
-    fun setSimulatedDictationText(text: String) {
-        dictationManagerInstance?.setSimulatedText(text)
-        _uiState.update { it.copy(dictationLiveText = text) }
+    fun toggleAutoInsertDictation() {
+        _uiState.update { it.copy(isAutoInsertDictation = !it.isAutoInsertDictation) }
     }
 
-    fun insertDictatedSpeech(context: Context, customText: String? = null) {
-        val speechText = customText ?: _uiState.value.dictationLiveText
-        if (speechText.isBlank()) {
-            cancelDictation()
+    fun updateDictationLiveText(text: String) {
+        dictationManagerInstance?.setSimulatedText(text)
+        _uiState.update { it.copy(dictationLiveText = text, dictationError = null) }
+    }
+
+    fun setSimulatedDictationText(text: String) {
+        updateDictationLiveText(text)
+    }
+
+    fun insertDictatedSpeech(
+        context: Context,
+        customText: String? = null,
+        restartListeningAfter: Boolean = false
+    ) {
+        val speechText = (customText ?: _uiState.value.dictationLiveText).trim()
+        val recordedWav = if (speechText.isBlank()) dictationManagerInstance?.consumeRecordedWavBytes() else null
+
+        if (speechText.isBlank() && recordedWav == null) {
+            if (!restartListeningAfter) {
+                cancelDictation()
+            }
+            return
+        }
+
+        if (SmartDictationParser.isStopCommand(speechText)) {
+            stopDictation()
             return
         }
 
         dictationManagerInstance?.stopListening()
-        _uiState.update { it.copy(isDictationFormatting = true) }
+        _uiState.update { it.copy(isDictationFormatting = true, dictationError = null) }
 
         viewModelScope.launch {
             val currentState = _uiState.value
@@ -2603,7 +2650,7 @@ class ScreenplayViewModel : ViewModel() {
                 val ms = currentState.novelManuscript
                 val chIndex = currentState.activeChapterIndex.coerceIn(0, (ms.chapters.size - 1).coerceAtLeast(0))
                 val ch = ms.chapters.getOrNull(chIndex)
-                if (ch != null) {
+                if (ch != null && speechText.isNotBlank()) {
                     val trimmed = speechText.trim()
                     val isQuote = trimmed.startsWith("“") || trimmed.startsWith("\"")
                     val clean = if (isQuote) {
@@ -2626,11 +2673,15 @@ class ScreenplayViewModel : ViewModel() {
                 _uiState.update {
                     it.copy(
                         isDictating = false,
+                        isDictationBarVisible = restartListeningAfter && it.isAutoInsertDictation,
                         isDictationFormatting = false,
                         dictationLiveText = "",
                         dictationAudioRms = 0f,
                         dictationError = null
                     )
+                }
+                if (restartListeningAfter && _uiState.value.isAutoInsertDictation) {
+                    startDictation(context)
                 }
                 return@launch
             }
@@ -2639,34 +2690,91 @@ class ScreenplayViewModel : ViewModel() {
 
             // Extract scene context: up to 8 blocks before focused block
             val focusIdx = currentState.blocks.indexOfFirst { it.id == currentState.focusedBlockId }
+            val focusedBlockType = currentState.blocks.getOrNull(focusIdx)?.type ?: BlockType.ACTION
             val startIdx = if (focusIdx > 8) focusIdx - 8 else 0
             val endIdx = if (focusIdx != -1) focusIdx else currentState.blocks.size
             val contextBlocks = currentState.blocks.subList(startIdx, endIdx.coerceAtMost(currentState.blocks.size))
             val sceneContext = contextBlocks.joinToString("\n") { "${it.type.name}: ${it.text}" }
 
-            val result = AiClient.formatDictatedSpeech(
-                config = config,
-                spokenText = speechText,
-                sceneContext = sceneContext,
-                activeCharacters = currentState.characters
-            )
+            if (speechText.isNotBlank()) {
+                val quickParse = SmartDictationParser.parseDetailed(
+                    spokenText = speechText,
+                    activeCharacters = currentState.characters,
+                    currentBlockType = focusedBlockType
+                )
 
-            val blocksToInsert = result.getOrElse {
-                AiClient.formatDictationOfflineFallback(speechText, currentState.characters)
+                // Handle standalone mode switch commands (e.g. "next line action", "action line", "next line dialogue")
+                if (quickParse.blocks.isEmpty() && quickParse.pendingBlockType != null) {
+                    insertNewBlock(afterId = currentState.focusedBlockId, type = quickParse.pendingBlockType)
+                    _uiState.update {
+                        it.copy(
+                            isDictating = false,
+                            isDictationBarVisible = restartListeningAfter && it.isAutoInsertDictation,
+                            isDictationFormatting = false,
+                            dictationLiveText = "",
+                            dictationAudioRms = 0f,
+                            dictationError = null
+                        )
+                    }
+                    if (restartListeningAfter && _uiState.value.isAutoInsertDictation) {
+                        startDictation(context)
+                    }
+                    return@launch
+                }
+
+                val result = AiClient.formatDictatedSpeech(
+                    config = config,
+                    spokenText = speechText,
+                    sceneContext = sceneContext,
+                    activeCharacters = currentState.characters,
+                    currentBlockType = focusedBlockType
+                )
+
+                val blocksToInsert = result.getOrElse { quickParse.blocks }
+                if (blocksToInsert.isNotEmpty()) {
+                    insertFormattedBlocks(currentState.focusedBlockId, blocksToInsert)
+                }
+                if (quickParse.pendingBlockType != null) {
+                    val newestId = _uiState.value.focusedBlockId
+                    insertNewBlock(afterId = newestId, type = quickParse.pendingBlockType)
+                }
+            } else if (recordedWav != null) {
+                val audioResult = AiClient.transcribeAndFormatAudio(
+                    config = config,
+                    wavBytes = recordedWav,
+                    sceneContext = sceneContext,
+                    activeCharacters = currentState.characters,
+                    currentBlockType = focusedBlockType
+                )
+                audioResult.onSuccess { blocks ->
+                    if (blocks.isNotEmpty()) {
+                        insertFormattedBlocks(currentState.focusedBlockId, blocks)
+                    }
+                }.onFailure { err ->
+                    _uiState.update {
+                        it.copy(
+                            isDictating = false,
+                            isDictationFormatting = false,
+                            dictationError = err.message ?: "Voice transcription failed. Type or use macOS Dictation (Fn Fn)."
+                        )
+                    }
+                    return@launch
+                }
             }
 
-            if (blocksToInsert.isNotEmpty()) {
-                insertFormattedBlocks(currentState.focusedBlockId, blocksToInsert)
-            }
-
+            val shouldKeepOpen = restartListeningAfter && _uiState.value.isAutoInsertDictation
             _uiState.update {
                 it.copy(
                     isDictating = false,
+                    isDictationBarVisible = shouldKeepOpen,
                     isDictationFormatting = false,
                     dictationLiveText = "",
                     dictationAudioRms = 0f,
                     dictationError = null
                 )
+            }
+            if (shouldKeepOpen) {
+                startDictation(context)
             }
         }
     }
@@ -2674,15 +2782,24 @@ class ScreenplayViewModel : ViewModel() {
     fun insertDictatedSpeechAsType(blockType: BlockType, customText: String? = null) {
         val speechText = customText ?: _uiState.value.dictationLiveText
         if (speechText.isBlank()) {
+            insertNewBlock(afterId = _uiState.value.focusedBlockId, type = blockType)
             cancelDictation()
             return
         }
 
         dictationManagerInstance?.stopListening()
 
+        val formattedText = when (blockType) {
+            BlockType.SCENE_HEADING -> SmartDictationParser.formatSceneHeading(speechText)
+            BlockType.CHARACTER -> speechText.trim().uppercase(Locale.US)
+            BlockType.PARENTHETICAL -> SmartDictationParser.formatParenthetical(speechText)
+            BlockType.TRANSITION -> SmartDictationParser.formatTransition(speechText)
+            else -> SmartDictationParser.formatProseSentence(speechText)
+        }
+
         val newBlock = ScreenplayBlock(
             type = blockType,
-            text = speechText.trim(),
+            text = formattedText,
             isRevised = _uiState.value.isRevisionTrackingEnabled,
             revisionColor = if (_uiState.value.isRevisionTrackingEnabled) _uiState.value.currentRevisionColor.name else null
         )
@@ -2692,6 +2809,7 @@ class ScreenplayViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 isDictating = false,
+                isDictationBarVisible = false,
                 isDictationFormatting = false,
                 dictationLiveText = "",
                 dictationAudioRms = 0f,

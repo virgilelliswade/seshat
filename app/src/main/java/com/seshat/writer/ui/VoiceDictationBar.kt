@@ -1,16 +1,12 @@
 package com.seshat.writer.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,8 +20,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,25 +33,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seshat.writer.ai.AiConfig
+import com.seshat.writer.ai.SmartDictationParser
 import com.seshat.writer.model.BlockType
 import com.seshat.writer.ui.theme.ElectrumGold
-import com.seshat.writer.ui.theme.LightGold
+import com.seshat.writer.ui.theme.LocalSeshatDarkTheme
+import com.seshat.writer.ui.theme.MainAppFontFamily
 import com.seshat.writer.ui.theme.ObsidianBlack
 import com.seshat.writer.ui.theme.ObsidianSurface
 import com.seshat.writer.ui.theme.ObsidianSurfaceVariant
+import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.ScreenplayCourierFontFamily
 import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
+import com.seshat.writer.ui.theme.floatingGlassIsland
+import com.seshat.writer.ui.theme.opticalGlassBrush
+import com.seshat.writer.ui.theme.opticalPillBrush
+import com.seshat.writer.ui.theme.prismaticGlassBorder
 
 @Composable
 fun VoiceDictationBar(
@@ -62,7 +75,12 @@ fun VoiceDictationBar(
     transcribedText: String,
     audioRmsLevel: Float,
     aiConfig: AiConfig,
+    isAutoInsert: Boolean = true,
+    activeCharacters: List<String> = emptyList(),
+    currentBlockType: BlockType = BlockType.ACTION,
     errorMessage: String? = null,
+    onTextChange: (String) -> Unit = {},
+    onToggleAutoInsert: () -> Unit = {},
     onFormatAndInsert: () -> Unit,
     onInsertAsType: (BlockType) -> Unit,
     onStopListening: () -> Unit,
@@ -70,6 +88,23 @@ fun VoiceDictationBar(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalSeshatDarkTheme.current
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        try {
+            focusRequester.requestFocus()
+        } catch (_: Throwable) {}
+    }
+
+    val liveParseResult = remember(transcribedText, activeCharacters, currentBlockType) {
+        if (transcribedText.isBlank()) null
+        else SmartDictationParser.parseDetailed(transcribedText, activeCharacters, currentBlockType)
+    }
+    val previewSummary = remember(liveParseResult) {
+        liveParseResult?.let { SmartDictationParser.formatPreviewTag(it) }.orEmpty()
+    }
+
     // Pulse animation for recording status dot
     val infiniteTransition = rememberInfiniteTransition(label = "dictation_pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -82,13 +117,15 @@ fun VoiceDictationBar(
         label = "pulse_alpha"
     )
 
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth(0.96f)
-            .clip(RoundedCornerShape(0.dp))
-            .border(1.5.dp, ElectrumGold.copy(alpha = 0.65f), RoundedCornerShape(0.dp)),
-        color = ObsidianBlack.copy(alpha = 0.95f),
-        shadowElevation = 12.dp
+            .floatingGlassIsland(
+                isDark = isDark,
+                elevation = 18.dp,
+                accentColor = ScribeStarNeonRed,
+                isHighlighted = isListening || isFormatting
+            )
     ) {
         Column(
             modifier = Modifier
@@ -102,34 +139,34 @@ fun VoiceDictationBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Pulsing recording indicator
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(10.dp)
                             .clip(RoundedCornerShape(0.dp))
                             .background(
-                                if (isListening) Color(0xFFEF5350).copy(alpha = pulseAlpha)
-                                else if (isFormatting) ElectrumGold.copy(alpha = pulseAlpha)
-                                else Color.Gray
+                                if (isListening) Color(0xFFEF4444).copy(alpha = pulseAlpha)
+                                else if (isFormatting) ScribeStarNeonRed.copy(alpha = pulseAlpha)
+                                else ScreenplayTextMuted
                             )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when {
-                            isFormatting -> "✨ FORMATTING WITH GEMINI..."
-                            isListening -> "🎙️ LIVE SCRIPT DICTATION"
-                            else -> "🎙️ DICTATION PAUSED"
+                            isFormatting -> "✨ SMART FORMATTING..."
+                            isListening -> "🎙️ SMART SCRIPT DICTATION (LIVE)"
+                            else -> "🎙️ SMART DICTATION READY"
                         },
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = if (isListening) Color(0xFFEF5350) else ElectrumGold,
+                            fontFamily = MainAppFontFamily,
+                            color = if (isListening) Color(0xFFEF4444) else ScribeStarNeonRed,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.8.sp
                         )
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    // Audio level waveform bars
+                    // Live Audio Waveform Bars
                     if (isListening) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -138,45 +175,67 @@ fun VoiceDictationBar(
                         ) {
                             val barFactors = listOf(0.4f, 0.7f, 1.0f, 0.85f, 0.5f)
                             for (factor in barFactors) {
-                                val barHeight = (4.dp + (14.dp * audioRmsLevel * factor)).coerceIn(3.dp, 16.dp)
+                                val barHeight = (3.dp + (13.dp * audioRmsLevel.coerceAtLeast(0.12f) * factor)).coerceIn(3.dp, 16.dp)
                                 Box(
                                     modifier = Modifier
                                         .width(3.dp)
                                         .height(barHeight)
                                         .clip(RoundedCornerShape(0.dp))
-                                        .background(ElectrumGold)
+                                        .background(ScribeStarNeonRed)
                                 )
                             }
                         }
                     }
                 }
 
-                // AI Model Tag & Close button
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Auto-Insert Toggle + AI Model Tag + Close button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .shadow(if (isAutoInsert) 4.dp else 1.dp, RoundedCornerShape(0.dp))
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(opticalPillBrush(isLit = isAutoInsert, isDark = isDark))
+                            .border(prismaticGlassBorder(width = 1.dp, isLit = isAutoInsert, isDark = isDark), RoundedCornerShape(0.dp))
+                            .clickable(onClick = onToggleAutoInsert)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (isAutoInsert) "🔁 Auto-Insert: ON" else "Auto-Insert: OFF",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontSize = 10.sp,
+                                color = if (isAutoInsert && !isDark) Color.White else if (isAutoInsert) Color.White else ScreenplayTextMuted,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+
                     val modelLabel = when {
-                        !aiConfig.isEnabled -> "Offline STT"
-                        aiConfig.modelName.contains("3.8") -> "Gemini 3.8 Flash"
-                        aiConfig.modelName.contains("4") -> "Gemini 4"
+                        !aiConfig.isEnabled || !aiConfig.isConfigured -> "Smart Offline"
+                        aiConfig.modelName.contains("3.8") -> "Gemini 3.8"
+                        aiConfig.modelName.contains("2.5") -> "Gemini 2.5"
                         else -> aiConfig.modelName
                     }
 
                     Surface(
                         color = ObsidianSurface,
                         shape = RoundedCornerShape(0.dp),
-                        modifier = Modifier.border(0.5.dp, ElectrumGold.copy(alpha = 0.3f), RoundedCornerShape(0.dp))
+                        border = BorderStroke(1.dp, ObsidianSurfaceVariant)
                     ) {
                         Text(
                             text = "⚡ $modelLabel",
                             style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
                                 fontSize = 10.sp,
-                                color = LightGold,
+                                color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A),
                                 fontWeight = FontWeight.Medium
                             ),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.width(8.dp))
 
                     IconButton(
                         onClick = onCancel,
@@ -194,58 +253,88 @@ fun VoiceDictationBar(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Main Transcription Display Area
-            Surface(
+            // Editable Live Transcription Display (Works with Android SpeechRecognizer, Gboard Voice, macOS Fn-Fn Dictation, or Mic Audio)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(0.dp))
-                    .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp)),
-                color = ObsidianSurface.copy(alpha = 0.85f)
+                    .background(ObsidianBlack.copy(alpha = if (isDark) 0.85f else 0.96f))
+                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    if (isFormatting) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = ElectrumGold,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Gemini is structuring dialogue, character cues, and action...",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = LightGold,
-                                    fontFamily = ScreenplayCourierFontFamily
-                                )
-                            )
-                        }
-                    } else if (transcribedText.isNotBlank()) {
-                        Text(
-                            text = transcribedText,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = ScreenplayTextDark,
-                                fontFamily = ScreenplayCourierFontFamily,
-                                lineHeight = 20.sp
-                            )
+                if (isFormatting) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = ScribeStarNeonRed,
+                            strokeWidth = 2.dp
                         )
-                    } else {
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = if (isListening) "Speak your scene... (e.g. 'Interior coffee shop day. Marcus says where is she?')" else "Microphone ready. Press Start or Googlebook Mic key to speak.",
+                            text = "Formatting speech into Fountain screenplay blocks...",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = ScreenplayTextMuted,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                color = ScreenplayTextDark,
                                 fontFamily = ScreenplayCourierFontFamily
                             )
                         )
                     }
+                } else {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        if (transcribedText.isEmpty()) {
+                            Text(
+                                text = "Speak or dictate (e.g. 'Interior, bedroom, night' · 'Next line action: Elena enters' · 'Marcus says hello')",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = ScreenplayTextMuted,
+                                    fontStyle = FontStyle.Italic,
+                                    fontFamily = ScreenplayCourierFontFamily
+                                )
+                            )
+                        }
+                        BasicTextField(
+                            value = transcribedText,
+                            onValueChange = onTextChange,
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                color = ScreenplayTextDark,
+                                fontFamily = ScreenplayCourierFontFamily,
+                                lineHeight = 20.sp
+                            ),
+                            cursorBrush = SolidColor(ScribeStarNeonRed),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { onFormatAndInsert() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                        )
+                    }
+                }
+            }
+
+            // Live Smart Parse Preview Strip
+            if (previewSummary.isNotBlank() && !isFormatting) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(ScribeStarNeonRed.copy(alpha = if (isDark) 0.14f else 0.08f))
+                        .border(BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.45f)), RoundedCornerShape(0.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        text = "⚡ SMART PARSE → $previewSummary",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = ScreenplayCourierFontFamily,
+                            color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
@@ -255,7 +344,7 @@ fun VoiceDictationBar(
                 Text(
                     text = "⚠️ $errorMessage",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFFEF5350),
+                        color = Color(0xFFEF4444),
                         fontSize = 11.sp
                     )
                 )
@@ -269,149 +358,113 @@ fun VoiceDictationBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Left: Quick Format Direct Type Chips
+                // Left: Quick Force-Element Override Chips
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Quick:",
+                        text = "Force:",
                         style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted, fontSize = 11.sp)
                     )
 
-                    Surface(
-                        color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(0.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(0.dp))
-                            .clickable(enabled = transcribedText.isNotBlank()) {
-                                onInsertAsType(BlockType.ACTION)
-                            }
-                    ) {
-                        Text(
-                            text = "Action",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (transcribedText.isNotBlank()) LightGold else ScreenplayTextMuted,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Surface(
-                        color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(0.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(0.dp))
-                            .clickable(enabled = transcribedText.isNotBlank()) {
-                                onInsertAsType(BlockType.DIALOGUE)
-                            }
-                    ) {
-                        Text(
-                            text = "Dialogue",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (transcribedText.isNotBlank()) LightGold else ScreenplayTextMuted,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Surface(
-                        color = ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(0.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(0.dp))
-                            .clickable(enabled = transcribedText.isNotBlank()) {
-                                onInsertAsType(BlockType.SCENE_HEADING)
-                            }
-                    ) {
-                        Text(
-                            text = "Slugline",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (transcribedText.isNotBlank()) LightGold else ScreenplayTextMuted,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                        )
+                    listOf(
+                        "Action" to BlockType.ACTION,
+                        "Dialogue" to BlockType.DIALOGUE,
+                        "Slugline" to BlockType.SCENE_HEADING
+                    ).forEach { (label, type) ->
+                        Box(
+                            modifier = Modifier
+                                .shadow(3.dp, RoundedCornerShape(0.dp))
+                                .clip(RoundedCornerShape(0.dp))
+                                .background(opticalGlassBrush(glassOpacity = if (isDark) 0.85f else 0.92f))
+                                .border(prismaticGlassBorder(width = 1.dp, isDark = isDark), RoundedCornerShape(0.dp))
+                                .clickable(enabled = !isFormatting) { onInsertAsType(type) }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
                     }
                 }
 
-                // Right: Primary Actions
+                // Right: Mic Control + Smart Insert CTA
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (isListening) {
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(0.dp))
-                                .clickable { onStopListening() }
-                        ) {
-                            Text(
-                                text = "⏹️ Pause Mic",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ScreenplayTextDark,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
-                        }
-                    } else {
-                        Surface(
-                            color = ObsidianSurfaceVariant,
-                            shape = RoundedCornerShape(0.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(0.dp))
-                                .clickable { onStartListening() }
-                        ) {
-                            Text(
-                                text = "🎙️ Resume Mic",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectrumGold,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-
-                    // Format and Insert Button (Gemini AI Powered)
-                    Surface(
-                        color = if (transcribedText.isNotBlank() && !isFormatting) ElectrumGold else ObsidianSurfaceVariant,
-                        shape = RoundedCornerShape(0.dp),
+                    Box(
                         modifier = Modifier
+                            .shadow(4.dp, RoundedCornerShape(0.dp))
                             .clip(RoundedCornerShape(0.dp))
-                            .clickable(enabled = transcribedText.isNotBlank() && !isFormatting) {
-                                onFormatAndInsert()
-                            }
+                            .background(opticalGlassBrush(glassOpacity = if (isDark) 0.85f else 0.92f))
+                            .border(prismaticGlassBorder(width = 1.dp, isLit = isListening, isDark = isDark), RoundedCornerShape(0.dp))
+                            .clickable { if (isListening) onStopListening() else onStartListening() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "✨ Format & Insert",
+                            text = if (isListening) "⏹️ Stop Mic" else "🎙️ Resume Mic",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (transcribedText.isNotBlank() && !isFormatting) ObsidianBlack else ScreenplayTextMuted,
+                                fontFamily = MainAppFontFamily,
+                                color = if (isDark) Color.White else Color(0xFF0F172A),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+
+                    // Smart Format and Insert Button
+                    val canInsert = (transcribedText.isNotBlank() || isListening) && !isFormatting
+                    Box(
+                        modifier = Modifier
+                            .shadow(if (canInsert) 7.dp else 2.dp, RoundedCornerShape(0.dp))
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(opticalPillBrush(isPrimary = canInsert, isDark = isDark))
+                            .border(prismaticGlassBorder(width = 1.dp, isLit = canInsert, isDark = isDark), RoundedCornerShape(0.dp))
+                            .clickable(enabled = canInsert) { onFormatAndInsert() }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "✨ Smart Insert",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                color = if (canInsert) Color.White else ScreenplayTextMuted,
                                 fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
-            // Keyboard shortcut hint
+            // Voice command & keyboard hint
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Googlebook Mic Key • Ctrl+D • Esc to dismiss",
+                    text = "Voice commands: 'Interior, bedroom, night' · 'Next line action' · 'Character Marcus' · 'Stop dictation'",
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = ScreenplayTextMuted,
-                        fontSize = 10.sp
+                        fontSize = 9.5.sp
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Mac ⌘D / Fn×2 • Esc",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = ScreenplayTextMuted,
+                        fontSize = 9.5.sp
                     )
                 )
             }

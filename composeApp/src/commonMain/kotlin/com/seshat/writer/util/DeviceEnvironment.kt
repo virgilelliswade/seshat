@@ -8,6 +8,11 @@ fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
     // Desktop handles Escape key via Window / onPreviewKeyEvent
 }
 
+@Composable
+fun rememberAudioPermissionLauncher(onPermissionResult: (Boolean) -> Unit): () -> Unit {
+    return { onPermissionResult(true) }
+}
+
 object DeviceEnvironment {
 
     val isMacOS: Boolean by lazy {

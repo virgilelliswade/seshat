@@ -444,19 +444,25 @@ object AiClient {
         config: AiConfig,
         spokenText: String,
         sceneContext: String = "",
-        activeCharacters: List<String> = emptyList()
+        activeCharacters: List<String> = emptyList(),
+        currentBlockType: BlockType = BlockType.ACTION
     ): Result<List<ScreenplayBlock>> = withContext(Dispatchers.IO) {
         val trimmedSpeech = spokenText.trim()
         if (trimmedSpeech.isBlank()) {
             return@withContext Result.success(emptyList())
         }
+        val heuristicResult = SmartDictationParser.parseDetailed(
+            spokenText = trimmedSpeech,
+            activeCharacters = activeCharacters,
+            currentBlockType = currentBlockType
+        )
         if (!config.isEnabled || !config.enableVoiceDictation || !config.isConfigured) {
-            // Offline / unconfigured fallback: format heuristically
-            return@withContext Result.success(formatDictationOfflineFallback(trimmedSpeech, activeCharacters))
+            return@withContext Result.success(heuristicResult.blocks)
         }
 
         val userPrompt = buildString {
             append("FORMAT THIS RAW DICTATED SPEECH INTO INDUSTRY-STANDARD FOUNTAIN SCREENPLAY BLOCKS.\n\n")
+            append("CURRENT CURSOR ELEMENT TYPE: ${currentBlockType.name}\n\n")
             if (sceneContext.isNotBlank()) {
                 append("PRECEDING SCRIPT CONTEXT:\n")
                 append(sceneContext.takeLast(1000))
@@ -470,14 +476,14 @@ object AiClient {
             append("RAW SPOKEN DICTATION:\n")
             append("\"").append(trimmedSpeech).append("\"\n\n")
             append("RULES:\n")
-            append("1. Parse spoken words into screenplay elements: Scene Headings (e.g. INT. COFFEE SHOP - DAY), Action lines, Character cues, Parentheticals, and Spoken Dialogue.\n")
+            append("1. Recognize natural screenplay dictation & element commands: e.g. 'interior, bedroom, night' MUST become 'INT. BEDROOM - NIGHT'. Words like 'action line:', 'next line: action', 'next line action', 'scene heading:', 'character:', 'dialogue:', 'parenthetical:', 'transition:' switch to that Fountain element on a new line/block (do NOT include the command words in the output).\n")
             append("2. When characters speak (e.g. 'Marcus says let's go' or 'Maya whispers don't look'), format character name in ALL CAPS on its own line, optional (parenthetical) on its own line, followed by the dialogue line.\n")
-            append("3. Scene headings must start with INT. or EXT. or I/E. and be in ALL CAPS.\n")
+            append("3. Scene headings must start with INT. or EXT. or I/E., be ALL CAPS, and separate location from time of day with ' - '.\n")
             append("4. Clean up speech artifacts, apply proper capitalization, punctuation, and contractions.\n")
             append("5. Output ONLY clean Fountain text. Do not output conversational commentary, markdown fences (no ```), or quotes.")
         }
 
-        val systemPrompt = "You are an elite Hollywood screenplay transcription engine for Seshat Studio. You convert raw spoken voice dictation into valid Fountain screenplay format with zero extra commentary."
+        val systemPrompt = "You are an elite Hollywood screenplay transcription engine for Seshat Studio. You convert raw spoken voice dictation and structural voice commands into valid Fountain screenplay format with zero extra commentary."
 
         val responseResult = callLlm(config, systemPrompt, userPrompt)
         responseResult.map { rawResponse ->
@@ -486,76 +492,94 @@ object AiClient {
             if (importedDoc.blocks.isNotEmpty()) {
                 importedDoc.blocks
             } else {
-                formatDictationOfflineFallback(trimmedSpeech, activeCharacters)
+                heuristicResult.blocks
             }
         }.recoverCatching {
-            // Network, timeout, or API failure fallback
-            formatDictationOfflineFallback(trimmedSpeech, activeCharacters)
+            heuristicResult.blocks
+        }
+    }
+
+    /**
+     * Transcribes and formats raw WAV microphone audio via Gemini Multimodal Audio (Desktop / fallback).
+     */
+    suspend fun transcribeAndFormatAudio(
+        config: AiConfig,
+        wavBytes: ByteArray,
+        sceneContext: String = "",
+        activeCharacters: List<String> = emptyList(),
+        currentBlockType: BlockType = BlockType.ACTION
+    ): Result<List<ScreenplayBlock>> = withContext(Dispatchers.IO) {
+        if (wavBytes.size < 1600 || !config.isEnabled || !config.isConfigured || config.provider != AiProvider.GOOGLE_GEMINI) {
+            return@withContext Result.failure(IllegalStateException("Gemini audio transcription requires an active Google Gemini API key."))
+        }
+        try {
+            val model = if (config.modelName.isNotBlank()) config.modelName else "gemini-2.5-flash"
+            val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=${config.apiKey.trim()}"
+
+            val prompt = buildString {
+                append("Listen to this spoken screenplay dictation audio and transcribe + format it directly into valid Fountain screenplay blocks.\n")
+                append("Current block type: ${currentBlockType.name}.\n")
+                if (activeCharacters.isNotEmpty()) {
+                    append("Known characters: ${activeCharacters.take(15).joinToString(", ")}.\n")
+                }
+                if (sceneContext.isNotBlank()) {
+                    append("Preceding context:\n${sceneContext.takeLast(600)}\n")
+                }
+                append("Rules: Recognize natural sluglines like 'interior, bedroom, night' -> 'INT. BEDROOM - NIGHT'. Honor spoken structural commands like 'action line', 'next line action', 'character', 'dialogue', 'parenthetical', 'transition' by switching elements without outputting the command words. Output ONLY valid Fountain text.")
+            }
+
+            val parts = JSONArray()
+                .put(JSONObject().put("text", prompt))
+                .put(
+                    JSONObject().put(
+                        "inline_data",
+                        JSONObject()
+                            .put("mime_type", "audio/wav")
+                            .put("data", Base64.encodeToString(wavBytes, Base64.NO_WRAP))
+                    )
+                )
+
+            val rootJson = JSONObject()
+                .put(
+                    "contents",
+                    JSONArray().put(
+                        JSONObject()
+                            .put("role", "user")
+                            .put("parts", parts)
+                    )
+                )
+
+            val (statusCode, responseText) = executeHttpPost(endpoint, rootJson.toString(), emptyMap())
+            if (statusCode !in 200..299) {
+                return@withContext Result.failure(Exception("Audio STT failed ($statusCode): ${extractErrorMessage(responseText)}"))
+            }
+            val parsedJson = JSONObject(responseText)
+            val textOut = parsedJson.optJSONArray("candidates")
+                ?.optJSONObject(0)
+                ?.optJSONObject("content")
+                ?.optJSONArray("parts")
+                ?.optJSONObject(0)
+                ?.optString("text", "")
+                ?.trim()
+                ?: ""
+
+            val cleaned = cleanGeneratedBlock(textOut)
+            val doc = FountainSerializer.importFromFountain(cleaned)
+            if (doc.blocks.isNotEmpty()) {
+                Result.success(doc.blocks)
+            } else {
+                Result.success(SmartDictationParser.parse(cleaned, activeCharacters, currentBlockType))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
     fun formatDictationOfflineFallback(
         spokenText: String,
-        activeCharacters: List<String> = emptyList()
-    ): List<ScreenplayBlock> {
-        val trimmed = spokenText.trim()
-        if (trimmed.isEmpty()) return emptyList()
-
-        val upper = trimmed.uppercase(Locale.US)
-
-        // 1. Scene Heading detection
-        if (upper.startsWith("INT.") || upper.startsWith("EXT.") || upper.startsWith("INT ") ||
-            upper.startsWith("EXT ") || upper.startsWith("I/E") || upper.startsWith("INTERIOR") ||
-            upper.startsWith("EXTERIOR")) {
-            val slug = when {
-                upper.startsWith("INTERIOR ") -> "INT. " + upper.removePrefix("INTERIOR ")
-                upper.startsWith("EXTERIOR ") -> "EXT. " + upper.removePrefix("EXTERIOR ")
-                upper.startsWith("INT ") -> "INT. " + upper.removePrefix("INT ")
-                upper.startsWith("EXT ") -> "EXT. " + upper.removePrefix("EXT ")
-                else -> upper
-            }
-            return listOf(ScreenplayBlock(type = BlockType.SCENE_HEADING, text = slug))
-        }
-
-        // 2. Character dialogue detection
-        for (char in activeCharacters) {
-            val charUpper = char.uppercase(Locale.US)
-            val colonPrefix = "$charUpper:"
-            val saysPrefix = "$charUpper SAYS"
-            val saidPrefix = "$charUpper SAID"
-
-            if (upper.startsWith(colonPrefix)) {
-                val dialogue = trimmed.drop(colonPrefix.length).trim()
-                return listOf(
-                    ScreenplayBlock(type = BlockType.CHARACTER, text = charUpper),
-                    ScreenplayBlock(type = BlockType.DIALOGUE, text = dialogue.replaceFirstChar { it.uppercase() })
-                )
-            }
-            if (upper.startsWith(saysPrefix)) {
-                val dialogue = trimmed.drop(saysPrefix.length).trim()
-                return listOf(
-                    ScreenplayBlock(type = BlockType.CHARACTER, text = charUpper),
-                    ScreenplayBlock(type = BlockType.DIALOGUE, text = dialogue.replaceFirstChar { it.uppercase() })
-                )
-            }
-            if (upper.startsWith(saidPrefix)) {
-                val dialogue = trimmed.drop(saidPrefix.length).trim()
-                return listOf(
-                    ScreenplayBlock(type = BlockType.CHARACTER, text = charUpper),
-                    ScreenplayBlock(type = BlockType.DIALOGUE, text = dialogue.replaceFirstChar { it.uppercase() })
-                )
-            }
-        }
-
-        // 3. Fallback: Action line with punctuation
-        val capitalized = trimmed.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
-        val withPeriod = if (!capitalized.endsWith(".") && !capitalized.endsWith("!") && !capitalized.endsWith("?")) {
-            "$capitalized."
-        } else {
-            capitalized
-        }
-        return listOf(ScreenplayBlock(type = BlockType.ACTION, text = withPeriod))
-    }
+        activeCharacters: List<String> = emptyList(),
+        currentBlockType: BlockType = BlockType.ACTION
+    ): List<ScreenplayBlock> = SmartDictationParser.parse(spokenText, activeCharacters, currentBlockType)
 
     // Core HTTP caller
     fun callLlm(config: AiConfig, systemPrompt: String, userPrompt: String): Result<String> {

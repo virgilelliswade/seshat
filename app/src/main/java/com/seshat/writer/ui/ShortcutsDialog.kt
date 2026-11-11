@@ -138,7 +138,7 @@ fun ShortcutsDialog(onDismiss: () -> Unit) {
                         "⌘ +" to "Zoom In Canvas",
                         "⌘ -" to "Zoom Out Canvas",
                         "⌘ 0" to "Reset Zoom to 100%",
-                        "F11" to "Toggle Zen Mode (Distraction-Free)"
+                        "F11" to "Toggle Focus Mode (Distraction-Free)"
                     ))
                 }
 

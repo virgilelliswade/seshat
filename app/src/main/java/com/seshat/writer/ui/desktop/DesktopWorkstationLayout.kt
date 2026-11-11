@@ -281,7 +281,7 @@ fun DesktopMenuBar(
                                     null
                                 ) { if (uiState.viewMode != ScreenplayViewMode.INLINE_VIEW) onToggleViewMode(); activeMenu = null }
                                 DesktopMenuItem(
-                                    if (uiState.isZenMode) "Exit Zen Mode" else "Distraction-Free Zen Mode",
+                                    if (uiState.isZenMode) "Exit Focus Mode" else "Distraction-Free Focus Mode",
                                     "F11"
                                 ) { onToggleZenMode(); activeMenu = null }
                                 HorizontalDivider(color = borderCol, modifier = Modifier.padding(vertical = 3.dp))

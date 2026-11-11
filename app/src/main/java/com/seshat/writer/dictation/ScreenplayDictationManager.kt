@@ -64,18 +64,19 @@ class ScreenplayDictationManager(private val context: Context) {
             }
 
             try {
-                if (speechRecognizer == null) {
-                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-                        setRecognitionListener(createRecognitionListener())
-                    }
+                speechRecognizer?.destroy()
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+                    setRecognitionListener(createRecognitionListener())
                 }
 
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-                    putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2800L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
                 }
 
                 speechRecognizer?.startListening(intent)
@@ -86,6 +87,8 @@ class ScreenplayDictationManager(private val context: Context) {
             }
         }
     }
+
+    fun consumeRecordedWavBytes(): ByteArray? = null
 
     fun stopListening() {
         mainHandler.post {
@@ -152,21 +155,28 @@ class ScreenplayDictationManager(private val context: Context) {
                 _isListening.value = false
                 _audioRmsLevel.value = 0f
 
+                val fallbackPartial = _livePartialText.value.trim()
+                if (fallbackPartial.isNotBlank() &&
+                    (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+                ) {
+                    onSpeechFinalized?.invoke(fallbackPartial)
+                    return
+                }
+
                 val errorDesc = when (error) {
                     SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
-                    SpeechRecognizer.ERROR_CLIENT -> "Client error"
+                    SpeechRecognizer.ERROR_CLIENT -> "Speech client reset — tap Resume Mic"
                     SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission required"
                     SpeechRecognizer.ERROR_NETWORK -> "Network error during speech recognition"
                     SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-                    SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized. Speak clearly into mic."
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Speech recognizer is busy"
-                    SpeechRecognizer.ERROR_SERVER -> "Server error"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
+                    SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized. Speak clearly or type below."
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Speech recognizer was busy — tap Resume Mic"
+                    SpeechRecognizer.ERROR_SERVER -> "Speech server unreachable"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Listening timed out — tap Resume Mic to continue"
                     else -> "Speech recognition error ($error)"
                 }
 
-                // If we already have partial text, don't discard what the writer spoke
-                if (_livePartialText.value.isBlank()) {
+                if (fallbackPartial.isBlank()) {
                     _dictationError.value = errorDesc
                 }
             }

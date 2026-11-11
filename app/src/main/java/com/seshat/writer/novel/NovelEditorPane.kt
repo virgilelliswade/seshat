@@ -253,11 +253,16 @@ fun NovelEditorPane(
             }?.id
     }
 
+    val isFocusMode = uiState.isZenMode
+
     CompositionLocalProvider(LocalEditorFormattingController provides formattingController) {
-        Column(
+        Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
+        ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
         // ==========================================
         // 1. TOP TOOLBAR
@@ -279,49 +284,55 @@ fun NovelEditorPane(
             }
         }
 
-        if (isCompactScreen) {
-            CompactNovelTopBar(
-                manuscript = manuscript,
-                isBinderVisible = isBinderVisible,
-                isTypewriterMode = isTypewriterMode,
-                isArcadeMode = uiState.firstDraftState.isArcadeLocked,
-                onToggleBinder = { isBinderVisible = !isBinderVisible },
-                onOpenStudioDrawer = onOpenStudioDrawer,
-                onToggleCorkboard = onToggleCorkboard,
-                onOpenStoryBible = onOpenStoryBible,
-                onOpenFindReplace = { showFindReplaceDialog = true },
-                onOpenSprint = { showSprintDialog = true },
-                onToggleTypewriter = onToggleTypewriterAction,
-                onOpenScraps = { showScrapsDialog = true },
-                onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject,
-                onOpenSettings = { viewModel.openSettingsDialog() }
-            )
-        } else {
-            DesktopNovelTopBar(
-                manuscript = manuscript,
-                isDictating = uiState.isDictating,
-                isCorkboardOpen = uiState.isCorkboardOpen,
-                isTypewriterMode = isTypewriterMode,
-                isArcadeMode = uiState.firstDraftState.isArcadeLocked,
-                onOpenStudioDrawer = onOpenStudioDrawer,
-                onToggleDictation = { onToggleDictation() },
-                onOpenStoryBible = onOpenStoryBible,
-                onToggleCorkboard = onToggleCorkboard,
-                onOpenFindReplace = { showFindReplaceDialog = true },
-                onOpenSprint = { showSprintDialog = true },
-                onToggleTypewriter = onToggleTypewriterAction,
-                onOpenScraps = { showScrapsDialog = true },
-                onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject,
-                onOpenSettings = { viewModel.openSettingsDialog() }
-            )
+        if (!isFocusMode) {
+            if (isCompactScreen) {
+                CompactNovelTopBar(
+                    manuscript = manuscript,
+                    isBinderVisible = isBinderVisible,
+                    isTypewriterMode = isTypewriterMode,
+                    isFocusMode = isFocusMode,
+                    isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                    onToggleBinder = { isBinderVisible = !isBinderVisible },
+                    onOpenStudioDrawer = onOpenStudioDrawer,
+                    onToggleCorkboard = onToggleCorkboard,
+                    onOpenStoryBible = onOpenStoryBible,
+                    onOpenFindReplace = { showFindReplaceDialog = true },
+                    onOpenSprint = { showSprintDialog = true },
+                    onToggleTypewriter = onToggleTypewriterAction,
+                    onToggleFocusMode = { viewModel.toggleZenMode() },
+                    onOpenScraps = { showScrapsDialog = true },
+                    onOpenCompiler = onOpenCompiler,
+                    onSaveProject = onSaveProject,
+                    onOpenSettings = { viewModel.openSettingsDialog() }
+                )
+            } else {
+                DesktopNovelTopBar(
+                    manuscript = manuscript,
+                    isDictating = uiState.isDictating,
+                    isCorkboardOpen = uiState.isCorkboardOpen,
+                    isTypewriterMode = isTypewriterMode,
+                    isFocusMode = isFocusMode,
+                    isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                    onOpenStudioDrawer = onOpenStudioDrawer,
+                    onToggleDictation = { onToggleDictation() },
+                    onOpenStoryBible = onOpenStoryBible,
+                    onToggleCorkboard = onToggleCorkboard,
+                    onOpenFindReplace = { showFindReplaceDialog = true },
+                    onOpenSprint = { showSprintDialog = true },
+                    onToggleTypewriter = onToggleTypewriterAction,
+                    onToggleFocusMode = { viewModel.toggleZenMode() },
+                    onOpenScraps = { showScrapsDialog = true },
+                    onOpenCompiler = onOpenCompiler,
+                    onSaveProject = onSaveProject,
+                    onOpenSettings = { viewModel.openSettingsDialog() }
+                )
+            }
         }
 
         // ==========================================
         // 2. MAIN WORKSPACE (BINDER + MANUSCRIPT)
         // ==========================================
-        if (isCompactScreen && isBinderVisible) {
+        if (isCompactScreen && isBinderVisible && !isFocusMode) {
             NovelBinderPane(
                 manuscript = manuscript,
                 selectedChapterIndex = activeChapterIndex,
@@ -373,8 +384,8 @@ fun NovelEditorPane(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // SCRIVENER-STYLE LEFT BINDER (Concept C Floating Glass Island)
-                AnimatedVisibility(visible = isBinderVisible && !isCompactScreen) {
+                // SCRIVENER-STYLE LEFT BINDER (Concept C Floating Glass Island, hidden in Focus Mode)
+                AnimatedVisibility(visible = isBinderVisible && !isCompactScreen && !isFocusMode) {
                     val isDarkBinder = LocalSeshatDarkTheme.current
                     Box(
                         modifier = Modifier
@@ -480,31 +491,33 @@ fun NovelEditorPane(
                         }
                     }
 
-                    // Chapter Header Bar
-                    NovelChapterHeaderBar(
-                        chapter = currentChapter,
-                        isTypewriterMode = isTypewriterMode,
-                        isArcadeMode = uiState.firstDraftState.isArcadeLocked,
-                        onOpenSnapshots = { showSnapshotDialog = true },
-                        onToggleTypewriter = onToggleTypewriterAction,
-                        onInsertSceneBreak = {
-                            if (!isChapterEditable) return@NovelChapterHeaderBar
-                            val breakP = NovelParagraph(
-                                type = NovelParagraphType.SCENE_BREAK,
-                                text = "* * *"
-                            )
-                            val nextP = NovelParagraph(
-                                type = NovelParagraphType.NARRATIVE,
-                                text = ""
-                            )
-                            val updatedList = currentChapter.paragraphs + listOf(breakP, nextP)
-                            val updatedCh = currentChapter.copy(paragraphs = updatedList)
-                            val updatedChapters = manuscript.chapters.mapIndexed { i, ch ->
-                                if (i == activeChapterIndex) updatedCh else ch
+                    // Chapter Header Bar (Hidden in Distraction-Free Focus Mode)
+                    if (!isFocusMode) {
+                        NovelChapterHeaderBar(
+                            chapter = currentChapter,
+                            isTypewriterMode = isTypewriterMode,
+                            isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                            onOpenSnapshots = { showSnapshotDialog = true },
+                            onToggleTypewriter = onToggleTypewriterAction,
+                            onInsertSceneBreak = {
+                                if (!isChapterEditable) return@NovelChapterHeaderBar
+                                val breakP = NovelParagraph(
+                                    type = NovelParagraphType.SCENE_BREAK,
+                                    text = "* * *"
+                                )
+                                val nextP = NovelParagraph(
+                                    type = NovelParagraphType.NARRATIVE,
+                                    text = ""
+                                )
+                                val updatedList = currentChapter.paragraphs + listOf(breakP, nextP)
+                                val updatedCh = currentChapter.copy(paragraphs = updatedList)
+                                val updatedChapters = manuscript.chapters.mapIndexed { i, ch ->
+                                    if (i == activeChapterIndex) updatedCh else ch
+                                }
+                                onUpdateManuscript(manuscript.copy(chapters = updatedChapters))
                             }
-                            onUpdateManuscript(manuscript.copy(chapters = updatedChapters))
-                        }
-                    )
+                        )
+                    }
 
                     // Book Page Sheet (Always crisp white physical writing surface, even in dark mode)
                     Card(
@@ -808,9 +821,10 @@ fun NovelEditorPane(
     }
 
         // ==========================================
-        // 3. NOVEL SMART BOTTOM HUD
+        // 3. NOVEL SMART BOTTOM HUD (Hidden in Focus Mode)
         // ==========================================
-        NovelBottomHud(
+        if (!isFocusMode) {
+            NovelBottomHud(
             isCompactScreen = isCompactScreen,
             currentChapter = currentChapter,
             focusedParagraph = currentChapter.paragraphs.find { it.id == focusedParagraphId } ?: currentChapter.paragraphs.firstOrNull(),
@@ -919,8 +933,25 @@ fun NovelEditorPane(
             onSaveProject = onSaveProject,
             onToggleTheme = { viewModel.toggleThemeMode(context) }
         )
+        }
+        } // End outer Column
+
+        // Single Floating Exit Focus Button when Distraction-Free Focus Mode is active
+        if (isFocusMode) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 14.dp, end = 18.dp)
+            ) {
+                NovelGlassPillButton(
+                    text = "✕ Exit Focus",
+                    onClick = { viewModel.toggleZenMode() },
+                    isHighlight = true
+                )
+            }
+        }
+        } // End Focus Mode wrapper Box
     }
-}
 
     if (isCoverCreatorOpen) {
         NovelCoverCreatorDialog(
@@ -976,6 +1007,7 @@ private fun CompactNovelTopBar(
     manuscript: NovelManuscript,
     isBinderVisible: Boolean,
     isTypewriterMode: Boolean,
+    isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
     onToggleBinder: () -> Unit,
     onOpenStudioDrawer: () -> Unit,
@@ -984,6 +1016,7 @@ private fun CompactNovelTopBar(
     onOpenFindReplace: () -> Unit,
     onOpenSprint: () -> Unit,
     onToggleTypewriter: () -> Unit,
+    onToggleFocusMode: () -> Unit = {},
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
@@ -1053,10 +1086,12 @@ private fun CompactNovelTopBar(
 
             CompactNovelTopBarTools(
                 isTypewriterMode = isTypewriterMode,
+                isFocusMode = isFocusMode,
                 isArcadeMode = isArcadeMode,
                 onOpenFindReplace = onOpenFindReplace,
                 onOpenSprint = onOpenSprint,
                 onToggleTypewriter = onToggleTypewriter,
+                onToggleFocusMode = onToggleFocusMode,
                 onOpenScraps = onOpenScraps,
                 onOpenCompiler = onOpenCompiler,
                 onSaveProject = onSaveProject,
@@ -1070,10 +1105,12 @@ private fun CompactNovelTopBar(
 @Composable
 private fun CompactNovelTopBarTools(
     isTypewriterMode: Boolean,
+    isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
     onOpenFindReplace: () -> Unit,
     onOpenSprint: () -> Unit,
     onToggleTypewriter: () -> Unit,
+    onToggleFocusMode: () -> Unit = {},
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
@@ -1089,6 +1126,11 @@ private fun CompactNovelTopBarTools(
             text = "📜 Type",
             onClick = onToggleTypewriter,
             isHighlight = isTypewriterMode
+        )
+        NovelGlassPillButton(
+            text = if (isFocusMode) "Exit Focus" else "Focus",
+            onClick = onToggleFocusMode,
+            isHighlight = isFocusMode
         )
         NovelGlassPillButton(text = "🪦 Scraps", onClick = onOpenScraps)
         if (!isArcadeMode) {
@@ -1112,6 +1154,7 @@ private fun DesktopNovelTopBar(
     isDictating: Boolean,
     isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
+    isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
     onOpenStudioDrawer: () -> Unit,
     onToggleDictation: () -> Unit,
@@ -1120,6 +1163,7 @@ private fun DesktopNovelTopBar(
     onOpenFindReplace: () -> Unit,
     onOpenSprint: () -> Unit,
     onToggleTypewriter: () -> Unit,
+    onToggleFocusMode: () -> Unit = {},
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
@@ -1203,6 +1247,7 @@ private fun DesktopNovelTopBar(
                 isDictating = isDictating,
                 isCorkboardOpen = isCorkboardOpen,
                 isTypewriterMode = isTypewriterMode,
+                isFocusMode = isFocusMode,
                 isArcadeMode = isArcadeMode,
                 onToggleDictation = onToggleDictation,
                 onOpenStoryBible = onOpenStoryBible,
@@ -1210,6 +1255,7 @@ private fun DesktopNovelTopBar(
                 onOpenFindReplace = onOpenFindReplace,
                 onOpenSprint = onOpenSprint,
                 onToggleTypewriter = onToggleTypewriter,
+                onToggleFocusMode = onToggleFocusMode,
                 onOpenScraps = onOpenScraps,
                 onOpenCompiler = onOpenCompiler,
                 onSaveProject = onSaveProject,
@@ -1226,6 +1272,7 @@ private fun DesktopNovelTopBarActions(
     isDictating: Boolean,
     isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
+    isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
     onToggleDictation: () -> Unit,
     onOpenStoryBible: () -> Unit,
@@ -1233,6 +1280,7 @@ private fun DesktopNovelTopBarActions(
     onOpenFindReplace: () -> Unit,
     onOpenSprint: () -> Unit,
     onToggleTypewriter: () -> Unit,
+    onToggleFocusMode: () -> Unit = {},
     onOpenScraps: () -> Unit,
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
@@ -1278,6 +1326,11 @@ private fun DesktopNovelTopBarActions(
             text = if (isDictating) "🔴 Recording" else "🎙️ Dictate",
             onClick = onToggleDictation,
             isAccent = isDictating
+        )
+        NovelGlassPillButton(
+            text = if (isFocusMode) "Exit Focus" else "Focus",
+            onClick = onToggleFocusMode,
+            isHighlight = isFocusMode
         )
         NovelGlassPillButton(
             text = "⚙️ Settings",

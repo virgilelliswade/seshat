@@ -281,18 +281,20 @@ fun StartMenuScreen(
             )
     ) {
         // =========================================================================
-        // FULLSCREEN CLEAN STUDIO BACKGROUND & SESHAT STATUE (NO UI / NO BUTTONS)
+        // FULLSCREEN CLEAN STUDIO BACKGROUND & SESHAT STATUE (DARK & LIGHT MARBLE)
         // =========================================================================
         Image(
-            painter = painterResource(id = R.drawable.seshat_studio_splash),
+            painter = painterResource(
+                id = if (isDark) R.drawable.seshat_studio_splash else R.drawable.seshat_studio_light_splash
+            ),
             contentDescription = "Goddess Seshat Studio - Mistress of the House of Books",
             contentScale = ContentScale.Crop,
             alignment = Alignment.Center,
             modifier = Modifier.fillMaxSize()
         )
 
-        // Concept C Frosted Atmospheric Scrim: Smoothly adapts to Dark/Light Mode + Active Studio Palette
-        // while keeping Goddess Seshat clearly visible beneath the floating glass islands
+        // Concept C Subtle Framing Scrim: Dark mode dims slightly for smoked-glass card contrast;
+        // Light mode lets the Carrara white marble temple, statue, and crimson laser trim shine with zero whitewash.
         val activePalette = com.seshat.writer.ui.theme.ActiveStudioPaletteState.value
         Box(
             modifier = Modifier
@@ -301,17 +303,17 @@ fun StartMenuScreen(
                     if (isDark) {
                         Brush.verticalGradient(
                             listOf(
-                                activePalette.darkBg.copy(alpha = (scrimAlpha + 0.12f).coerceAtMost(0.75f)),
-                                activePalette.darkAccent.copy(alpha = 0.08f),
-                                activePalette.darkBg.copy(alpha = (scrimAlpha + 0.15f).coerceAtMost(0.78f))
+                                activePalette.darkBg.copy(alpha = (scrimAlpha * 0.72f).coerceIn(0f, 0.45f)),
+                                activePalette.darkAccent.copy(alpha = 0.05f),
+                                activePalette.darkBg.copy(alpha = (scrimAlpha * 0.78f).coerceIn(0f, 0.50f))
                             )
                         )
                     } else {
                         Brush.verticalGradient(
                             listOf(
-                                activePalette.lightDesk.copy(alpha = 0.72f),
-                                activePalette.lightBg.copy(alpha = 0.54f),
-                                activePalette.lightDesk.copy(alpha = 0.76f)
+                                activePalette.lightBg.copy(alpha = 0.08f),
+                                Color.Transparent,
+                                activePalette.lightDesk.copy(alpha = 0.14f)
                             )
                         )
                     }

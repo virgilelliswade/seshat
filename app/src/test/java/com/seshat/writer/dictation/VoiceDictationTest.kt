@@ -30,17 +30,17 @@ class VoiceDictationTest {
         val interiorResult = AiClient.formatDictationOfflineFallback("interior coffee shop day", characters)
         assertEquals(1, interiorResult.size)
         assertEquals(BlockType.SCENE_HEADING, interiorResult[0].type)
-        assertEquals("INT. COFFEE SHOP DAY", interiorResult[0].text)
+        assertEquals("INT. COFFEE SHOP - DAY", interiorResult[0].text)
 
         val exteriorResult = AiClient.formatDictationOfflineFallback("exterior warehouse night", characters)
         assertEquals(1, exteriorResult.size)
         assertEquals(BlockType.SCENE_HEADING, exteriorResult[0].type)
-        assertEquals("EXT. WAREHOUSE NIGHT", exteriorResult[0].text)
+        assertEquals("EXT. WAREHOUSE - NIGHT", exteriorResult[0].text)
 
         val shortSlugResult = AiClient.formatDictationOfflineFallback("int. apartment bedroom morning", characters)
         assertEquals(1, shortSlugResult.size)
         assertEquals(BlockType.SCENE_HEADING, shortSlugResult[0].type)
-        assertEquals("INT. APARTMENT BEDROOM MORNING", shortSlugResult[0].text)
+        assertEquals("INT. APARTMENT BEDROOM - MORNING", shortSlugResult[0].text)
     }
 
     @Test

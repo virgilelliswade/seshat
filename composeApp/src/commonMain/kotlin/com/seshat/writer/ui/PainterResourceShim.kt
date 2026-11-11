@@ -17,6 +17,7 @@ fun painterResource(id: Int): Painter {
         R.drawable.seshat_studio_splash -> "seshat_studio_splash.jpg"
         R.drawable.seshat_light_splash -> "seshat_light_splash.png"
         R.drawable.ic_launcher_foreground -> "ic_launcher_foreground.png"
+        R.drawable.seshat_studio_light_splash -> "seshat_studio_light_splash.jpg"
         else -> "seshat_emblem_logo.png"
     }
     return androidx.compose.ui.res.painterResource(path)

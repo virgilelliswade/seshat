@@ -217,7 +217,7 @@ fun main() = application {
                 )
                 Separator()
                 Item(
-                    text = "Toggle Zen Mode (Distraction-Free)",
+                    text = "Toggle Focus Mode (Distraction-Free)",
                     shortcut = KeyShortcut(Key.F11),
                     onClick = { viewModel.toggleZenMode() }
                 )

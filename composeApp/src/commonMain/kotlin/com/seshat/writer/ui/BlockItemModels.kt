@@ -113,7 +113,8 @@ data class DualDialogueActions(
  */
 class EditorCanvasActions(
     val viewModel: com.seshat.writer.screenplay.ScreenplayViewModel,
-    val context: android.content.Context
+    val context: android.content.Context,
+    private val onRequestDictationToggle: (() -> Unit)? = null
 ) {
     fun updateBlock(id: String, text: String) = viewModel.updateBlockText(id, text)
     fun updateBlockFormats(id: String, formats: List<InlineFormatSpan>) = viewModel.updateBlockFormats(id, formats)
@@ -177,7 +178,13 @@ class EditorCanvasActions(
     fun renameCharacter() = viewModel.renameCharacter()
     fun toggleBlockRevised(id: String) = viewModel.toggleBlockRevised(id)
     fun openAiPolish(id: String) = viewModel.openInlineAiPolish(id)
-    fun toggleDictation() = viewModel.toggleDictation(context)
+    fun toggleDictation() {
+        if (onRequestDictationToggle != null) {
+            onRequestDictationToggle.invoke()
+        } else {
+            viewModel.toggleDictation(context)
+        }
+    }
     fun cancelDictation() = viewModel.cancelDictation()
     fun openStoryBible() = viewModel.openStoryBible(context)
     fun toggleCorkboard() = viewModel.toggleCorkboard(context)

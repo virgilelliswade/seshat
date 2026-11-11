@@ -11,5 +11,6 @@ object R {
         const val seshat_studio_splash = 7
         const val seshat_light_splash = 8
         const val ic_launcher_foreground = 9
+        const val seshat_studio_light_splash = 10
     }
 }
