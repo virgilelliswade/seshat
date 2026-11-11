@@ -594,7 +594,8 @@ fun ScreenplayEditorScreen(
             onOpenScriptDoctor = { viewModel.openScriptDoctorDialog() },
             onOpenFind = { viewModel.openFind() },
             onToggleDictation = onToggleDictationWithPermission,
-            onOpenSettings = { viewModel.openSettingsDialog() }
+            onOpenSettings = { viewModel.openSettingsDialog() },
+            onOpenWhatsNew = { viewModel.openWhatsNewDialog() }
         )
     }
 
@@ -639,7 +640,21 @@ fun ScreenplayEditorScreen(
 
     if (uiState.isAboutDialogOpen) {
         AboutDialog(
-            onDismiss = { viewModel.closeAboutDialog() }
+            onDismiss = { viewModel.closeAboutDialog() },
+            onOpenWhatsNew = {
+                viewModel.closeAboutDialog()
+                viewModel.openWhatsNewDialog()
+            }
+        )
+    }
+
+    if (uiState.isWhatsNewDialogOpen) {
+        WhatsNewDialog(
+            onDismiss = { viewModel.closeWhatsNewDialog() },
+            onOpenAiSettings = {
+                viewModel.closeWhatsNewDialog()
+                viewModel.openSettingsDialog()
+            }
         )
     }
 

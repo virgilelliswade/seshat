@@ -368,6 +368,10 @@ fun StartMenuScreen(
                         text = "⚙️ Settings",
                         onClick = { viewModel.openSettingsDialog() }
                     )
+                    StartMenuTopBarButton(
+                        text = "✨ What's New",
+                        onClick = { viewModel.openWhatsNewDialog() }
+                    )
                 }
 
                 // Return to Script button (crisp, light, high-contrast text)

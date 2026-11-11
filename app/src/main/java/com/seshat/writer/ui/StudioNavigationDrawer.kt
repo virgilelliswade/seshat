@@ -112,6 +112,7 @@ fun StudioNavigationDrawer(
     onOpenFind: () -> Unit,
     onToggleDictation: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenWhatsNew: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -542,6 +543,19 @@ fun StudioNavigationDrawer(
                             }
                         }
                     }
+
+                    HorizontalDivider(color = ObsidianSurfaceVariant, thickness = 1.dp)
+
+                    DrawerQuickButton(
+                        text = "✨ What's New in Seshat",
+                        onClick = {
+                            onCloseDrawer()
+                            onOpenWhatsNew()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    )
                 }
             }
         }

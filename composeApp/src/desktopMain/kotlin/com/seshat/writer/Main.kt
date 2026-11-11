@@ -331,6 +331,10 @@ fun main() = application {
                     shortcut = KeyShortcut(Key.Slash, meta = true),
                     onClick = { viewModel.openShortcutsDialog() }
                 )
+                Item(
+                    text = "What's New in Seshat...",
+                    onClick = { viewModel.openWhatsNewDialog() }
+                )
                 Separator()
                 Item(
                     text = "About Seshat Writing Studio...",

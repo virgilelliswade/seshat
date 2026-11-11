@@ -197,6 +197,7 @@ data class ScreenplayUiState(
     val isTitlePageOpen: Boolean = false,
     val isShortcutsDialogOpen: Boolean = false,
     val isAboutDialogOpen: Boolean = false,
+    val isWhatsNewDialogOpen: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
     val studioPalette: StudioColorPalette = StudioColorPalette.SCRIBESTAR_CRIMSON,
     val firstDraftState: FirstDraftState = FirstDraftController.createForStandardProject(
@@ -4132,6 +4133,14 @@ class ScreenplayViewModel : ViewModel() {
 
     fun closeAboutDialog() {
         _uiState.update { it.copy(isAboutDialogOpen = false) }
+    }
+
+    fun openWhatsNewDialog() {
+        _uiState.update { it.copy(isWhatsNewDialogOpen = true) }
+    }
+
+    fun closeWhatsNewDialog() {
+        _uiState.update { it.copy(isWhatsNewDialogOpen = false) }
     }
 
     // =========================================================================
