@@ -1,6 +1,8 @@
 package com.seshat.writer.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,6 +17,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -95,6 +99,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.seshat.writer.ai.AiPreferences
 import com.seshat.writer.ai.AiConfig
+import com.seshat.writer.universe.UniverseBinderPane
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -310,7 +315,16 @@ fun ScreenplayEditorScreen(
                         )
                     } else if (isCompactScreen && uiState.isSidebarExpanded && !uiState.isZenMode) {
             // Full-screen sidebar drawer on mobile
-            if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
+            if (uiState.blendedUniverseProject != null) {
+                UniverseBinderPane(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    universeProject = uiState.blendedUniverseProject!!,
+                    onCloseBinder = { viewModel.toggleSidebar() },
+                    onOpenStoryBible = { viewModel.openStoryBible(context) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
                 TvEpisodeBinderPane(
                     viewModel = viewModel,
                     uiState = uiState,
@@ -379,7 +393,16 @@ fun ScreenplayEditorScreen(
                             .fillMaxHeight()
                             .floatingGlassIsland(isDark = isDarkSidebar, elevation = 16.dp)
                     ) {
-                        if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
+                        if (uiState.blendedUniverseProject != null) {
+                            UniverseBinderPane(
+                                viewModel = viewModel,
+                                uiState = uiState,
+                                universeProject = uiState.blendedUniverseProject!!,
+                                onCloseBinder = { viewModel.toggleSidebar() },
+                                onOpenStoryBible = { viewModel.openStoryBible(context) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (uiState.projectFormat == ProjectFormat.TV_SERIES && uiState.tvSeriesProject != null) {
                             TvEpisodeBinderPane(
                                 viewModel = viewModel,
                                 uiState = uiState,
@@ -1408,6 +1431,151 @@ private fun buildDualBlockCallbacks(
 }
 
 @Composable
+private fun ScreenplayBinderPillLabel(uiState: ScreenplayUiState): String {
+    val activeSceneNumber = uiState.selectedSceneIndex + 1
+    return when {
+        uiState.blendedUniverseProject != null ->
+            "🪐 Universe (${uiState.blendedUniverseProject.assignments.size})"
+        uiState.projectFormat == ProjectFormat.TV_SERIES -> "📺 Episodes"
+        else -> "Scene $activeSceneNumber"
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScreenplayStudioToolsTray(
+    uiState: ScreenplayUiState,
+    actions: EditorCanvasActions,
+    onOpenFileExport: () -> Unit,
+    includeCompactExtras: Boolean
+) {
+    val isDark = LocalSeshatDarkTheme.current
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (isDark) ObsidianBlack.copy(alpha = 0.55f) else Color(0xFFF1F5F9).copy(alpha = 0.65f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (includeCompactExtras) {
+                GlassEditorPillButton(
+                    text = "📌 Corkboard",
+                    onClick = actions::toggleCorkboard,
+                    isHighlight = uiState.isCorkboardOpen
+                )
+                GlassEditorPillButton(
+                    text = "📖 Bible",
+                    onClick = actions::openStoryBible
+                )
+            }
+
+            if (uiState.firstDraftState.canUseAiDoctor()) {
+                GlassEditorPillButton(
+                    text = "🧠 Doctor",
+                    onClick = actions::openScriptDoctor
+                )
+            }
+
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = "🚀 Compile",
+                    onClick = onOpenFileExport
+                )
+                GlassEditorPillButton(
+                    text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
+                    onClick = actions::toggleViewMode
+                )
+            }
+
+            // Joined Segmented Zoom Strip: [ - | 100% | + ]
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(0.dp))
+                    .background(ObsidianBlack)
+                    .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
+            ) {
+                Text(
+                    text = "–",
+                    color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .clickable(onClick = actions::zoomOut)
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                )
+                Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                Text(
+                    text = "${(uiState.zoomLevel * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = StudioMonoFontFamily,
+                        color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .clickable(onClick = actions::resetZoom)
+                        .padding(horizontal = 7.dp, vertical = 5.dp)
+                )
+                Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
+                Text(
+                    text = "+",
+                    color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .clickable(onClick = actions::zoomIn)
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                )
+            }
+
+            if (!uiState.firstDraftState.isArcadeLocked) {
+                GlassEditorPillButton(
+                    text = "# Scene #s",
+                    onClick = actions::toggleSceneNumbers,
+                    isHighlight = uiState.showSceneNumbers
+                )
+            }
+
+            GlassEditorPillButton(
+                text = if (uiState.notesCount > 0) "📝 Notes (${uiState.notesCount})" else "📝 Notes",
+                onClick = actions::toggleWriterNotes,
+                isHighlight = uiState.showWriterNotes
+            )
+
+            GlassEditorPillButton(
+                text = "🔍 Find",
+                onClick = { if (uiState.isFindReplaceVisible) actions.closeFind() else actions.openFind(false) },
+                isHighlight = uiState.isFindReplaceVisible
+            )
+
+            if (includeCompactExtras) {
+                GlassEditorPillButton(
+                    text = if (uiState.isDictating) "🔴 Recording" else "🎙️ Dictate",
+                    onClick = actions::toggleDictation,
+                    isPrimary = uiState.isDictating
+                )
+                GlassEditorPillButton(
+                    text = if (uiState.isZenMode) "Exit Focus" else "Focus",
+                    onClick = actions::toggleZenMode,
+                    isHighlight = uiState.isZenMode
+                )
+                GlassEditorPillButton(
+                    text = "⚙️ Settings",
+                    onClick = actions::openSettings
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun CompactScreenplayTopBar(
     uiState: ScreenplayUiState,
     actions: EditorCanvasActions,
@@ -1417,6 +1585,8 @@ private fun CompactScreenplayTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
+    var isTopToolsOpen by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1427,15 +1597,15 @@ private fun CompactScreenplayTopBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Left: Squared Hamburger & Squared Logo+Title Chip
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.weight(1f, fill = false)
             ) {
-                val isDark = LocalSeshatDarkTheme.current
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -1479,76 +1649,26 @@ private fun CompactScreenplayTopBar(
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 110.dp)
+                        modifier = Modifier.widthIn(max = 104.dp)
                     )
                 }
             }
 
-            Box(modifier = Modifier.width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Right: Horizontally Scrollable Ghost Action Controls
+            // Right: Essential Controls + Collapsible Studio Tools Drawer Toggle
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .horizontalScroll(rememberScrollState())
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val activeSceneNumber = uiState.selectedSceneIndex + 1
                 GlassEditorPillButton(
-                    text = "Scene $activeSceneNumber",
+                    text = ScreenplayBinderPillLabel(uiState),
                     onClick = actions::toggleSidebar,
                     isHighlight = uiState.isSidebarExpanded
                 )
 
                 GlassEditorPillButton(
-                    text = "📌 Corkboard",
-                    onClick = actions::toggleCorkboard,
-                    isHighlight = uiState.isCorkboardOpen
-                )
-
-                GlassEditorPillButton(
-                    text = "📖 Bible",
-                    onClick = actions::openStoryBible
-                )
-
-                if (uiState.firstDraftState.canUseAiDoctor()) {
-                    GlassEditorPillButton(
-                        text = "🧠 Doctor",
-                        onClick = actions::openScriptDoctor
-                    )
-                }
-
-                if (!uiState.firstDraftState.isArcadeLocked) {
-                    GlassEditorPillButton(
-                        text = "🚀 Compile",
-                        onClick = onOpenFileExport
-                    )
-                }
-
-                if (uiState.isDictating) {
-                    GlassEditorPillButton(
-                        text = "🔴 Recording",
-                        onClick = actions::toggleDictation,
-                        isPrimary = true
-                    )
-                } else {
-                    GlassEditorPillButton(
-                        text = "🎙️ Dictate",
-                        onClick = actions::toggleDictation
-                    )
-                }
-
-                GlassEditorPillButton(
-                    text = if (uiState.isZenMode) "Exit Focus" else "Focus",
-                    onClick = actions::toggleZenMode,
-                    isHighlight = uiState.isZenMode
-                )
-
-                GlassEditorPillButton(
-                    text = "⚙️ Settings",
-                    onClick = actions::openSettings
+                    text = if (isTopToolsOpen) "🧰 Tools ▴" else "🧰 Tools ▾",
+                    onClick = { isTopToolsOpen = !isTopToolsOpen },
+                    isHighlight = isTopToolsOpen
                 )
 
                 GlassEditorPillButton(
@@ -1558,6 +1678,20 @@ private fun CompactScreenplayTopBar(
                 )
             }
         }
+
+        AnimatedVisibility(
+            visible = isTopToolsOpen,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            ScreenplayStudioToolsTray(
+                uiState = uiState,
+                actions = actions,
+                onOpenFileExport = onOpenFileExport,
+                includeCompactExtras = true
+            )
+        }
+
         HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
@@ -1572,6 +1706,8 @@ private fun DesktopScreenplayTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
+    var isTopToolsOpen by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1581,15 +1717,15 @@ private fun DesktopScreenplayTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left: Hamburger + Project Title + Docked Ghost Workspace Controls
+            // Left: Hamburger + Project Title + Core Binder/Corkboard/Bible
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.weight(1f, fill = false)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -1630,15 +1766,18 @@ private fun DesktopScreenplayTopBar(
                             letterSpacing = 0.6.sp,
                             color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
                             fontSize = 12.5.sp
-                        )
+                        ),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 175.dp)
                     )
                 }
 
                 Box(modifier = Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
 
-                val activeSceneNumber = uiState.selectedSceneIndex + 1
                 GlassEditorPillButton(
-                    text = "Scene $activeSceneNumber",
+                    text = ScreenplayBinderPillLabel(uiState),
                     onClick = actions::toggleSidebar,
                     isHighlight = uiState.isSidebarExpanded
                 )
@@ -1653,99 +1792,19 @@ private fun DesktopScreenplayTopBar(
                     text = "📖 Bible",
                     onClick = actions::openStoryBible
                 )
-
-                if (uiState.firstDraftState.canUseAiDoctor()) {
-                    GlassEditorPillButton(
-                        text = "🧠 Doctor",
-                        onClick = actions::openScriptDoctor
-                    )
-                }
-
-                if (!uiState.firstDraftState.isArcadeLocked) {
-                    GlassEditorPillButton(
-                        text = "🚀 Compile",
-                        onClick = onOpenFileExport
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            // Right: View Mode, Unified Zoom Strip, Scene #s, Notes, Find, Dictate, Zen, Settings, Save CTA
+            // Right: Tools Drawer Toggle + Core Capture/Focus/Settings/Save
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (!uiState.firstDraftState.isArcadeLocked) {
-                    GlassEditorPillButton(
-                        text = if (uiState.viewMode == ScreenplayViewMode.PAGE_VIEW) "📄 Page View" else "📜 Inline View",
-                        onClick = actions::toggleViewMode
-                    )
-                }
-
-                // Joined Segmented Zoom Strip: [ - | 100% | + ]
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(0.dp))
-                        .background(ObsidianBlack)
-                        .border(BorderStroke(1.dp, ObsidianSurfaceVariant), RoundedCornerShape(0.dp))
-                ) {
-                    Text(
-                        text = "–",
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .clickable(onClick = actions::zoomOut)
-                            .padding(horizontal = 8.dp, vertical = 5.dp)
-                    )
-                    Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
-                    Text(
-                        text = "${(uiState.zoomLevel * 100).toInt()}%",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = StudioMonoFontFamily,
-                            color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp
-                        ),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .clickable(onClick = actions::resetZoom)
-                            .padding(horizontal = 7.dp, vertical = 5.dp)
-                    )
-                    Box(modifier = Modifier.width(1.dp).height(22.dp).background(ObsidianSurfaceVariant))
-                    Text(
-                        text = "+",
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .clickable(onClick = actions::zoomIn)
-                            .padding(horizontal = 8.dp, vertical = 5.dp)
-                    )
-                }
-
-                if (!uiState.firstDraftState.isArcadeLocked) {
-                    GlassEditorPillButton(
-                        text = if (uiState.showSceneNumbers) "# Scene #s" else "# Scene #s",
-                        onClick = actions::toggleSceneNumbers,
-                        isHighlight = uiState.showSceneNumbers
-                    )
-                }
-
                 GlassEditorPillButton(
-                    text = if (uiState.notesCount > 0) "📝 Notes (${uiState.notesCount})" else "📝 Notes",
-                    onClick = actions::toggleWriterNotes,
-                    isHighlight = uiState.showWriterNotes
-                )
-
-                GlassEditorPillButton(
-                    text = "🔍 Find",
-                    onClick = { if (uiState.isFindReplaceVisible) actions.closeFind() else actions.openFind(false) },
-                    isHighlight = uiState.isFindReplaceVisible
+                    text = if (isTopToolsOpen) "🧰 Tools ▴" else "🧰 Tools ▾",
+                    onClick = { isTopToolsOpen = !isTopToolsOpen },
+                    isHighlight = isTopToolsOpen
                 )
 
                 GlassEditorPillButton(
@@ -1774,6 +1833,20 @@ private fun DesktopScreenplayTopBar(
                 )
             }
         }
+
+        AnimatedVisibility(
+            visible = isTopToolsOpen,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            ScreenplayStudioToolsTray(
+                uiState = uiState,
+                actions = actions,
+                onOpenFileExport = onOpenFileExport,
+                includeCompactExtras = false
+            )
+        }
+
         HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }

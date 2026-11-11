@@ -3,8 +3,10 @@ package com.seshat.writer.novel
 import android.widget.Toast
 import com.seshat.writer.ui.RichTextHelper
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
@@ -16,6 +18,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -27,6 +31,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -76,6 +82,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.seshat.writer.util.ProjectBackupManager
 import com.seshat.writer.util.DeviceEnvironment
+import com.seshat.writer.universe.UniverseBinderPane
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -284,16 +291,27 @@ fun NovelEditorPane(
             }
         }
 
+        val universeProject = uiState.blendedUniverseProject
+        val novelBinderLabel = if (universeProject != null) {
+            "🪐 Universe (${universeProject.assignments.size})"
+        } else {
+            "📑 Chapters (${manuscript.chapters.size})"
+        }
+
         if (!isFocusMode) {
             if (isCompactScreen) {
                 CompactNovelTopBar(
+                    binderLabel = novelBinderLabel,
                     manuscript = manuscript,
                     isBinderVisible = isBinderVisible,
+                    isDictating = uiState.isDictating,
+                    isCorkboardOpen = uiState.isCorkboardOpen,
                     isTypewriterMode = isTypewriterMode,
                     isFocusMode = isFocusMode,
                     isArcadeMode = uiState.firstDraftState.isArcadeLocked,
                     onToggleBinder = { isBinderVisible = !isBinderVisible },
                     onOpenStudioDrawer = onOpenStudioDrawer,
+                    onToggleDictation = { onToggleDictation() },
                     onToggleCorkboard = onToggleCorkboard,
                     onOpenStoryBible = onOpenStoryBible,
                     onOpenFindReplace = { showFindReplaceDialog = true },
@@ -307,12 +325,15 @@ fun NovelEditorPane(
                 )
             } else {
                 DesktopNovelTopBar(
+                    binderLabel = novelBinderLabel,
+                    isBinderVisible = isBinderVisible,
                     manuscript = manuscript,
                     isDictating = uiState.isDictating,
                     isCorkboardOpen = uiState.isCorkboardOpen,
                     isTypewriterMode = isTypewriterMode,
                     isFocusMode = isFocusMode,
                     isArcadeMode = uiState.firstDraftState.isArcadeLocked,
+                    onToggleBinder = { isBinderVisible = !isBinderVisible },
                     onOpenStudioDrawer = onOpenStudioDrawer,
                     onToggleDictation = { onToggleDictation() },
                     onOpenStoryBible = onOpenStoryBible,
@@ -333,46 +354,17 @@ fun NovelEditorPane(
         // 2. MAIN WORKSPACE (BINDER + MANUSCRIPT)
         // ==========================================
         if (isCompactScreen && isBinderVisible && !isFocusMode) {
-            NovelBinderPane(
+            NovelOrUniverseBinderContent(
+                viewModel = viewModel,
+                uiState = uiState,
                 manuscript = manuscript,
-                selectedChapterIndex = activeChapterIndex,
+                activeChapterIndex = activeChapterIndex,
                 onSelectChapter = { idx ->
                     onSelectChapter(idx)
                     isBinderVisible = false
                 },
-                onAddChapter = {
-                    val newNum = manuscript.chapters.size + 1
-                    val newChapter = NovelChapter(
-                        chapterNumber = newNum,
-                        title = "Chapter $newNum",
-                        actIndex = 0,
-                        paragraphs = NovelChapter.defaultParagraphs(newNum)
-                    )
-                    val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
-                    onUpdateManuscript(updated)
-                    onSelectChapter(manuscript.chapters.size)
-                    isBinderVisible = false
-                },
-                onMoveChapterUp = { idx ->
-                    if (idx > 0) {
-                        val list = manuscript.chapters.toMutableList()
-                        val temp = list[idx]
-                        list[idx] = list[idx - 1]
-                        list[idx - 1] = temp
-                        onUpdateManuscript(manuscript.copy(chapters = list))
-                        onSelectChapter(idx - 1)
-                    }
-                },
-                onMoveChapterDown = { idx ->
-                    if (idx < manuscript.chapters.lastIndex) {
-                        val list = manuscript.chapters.toMutableList()
-                        val temp = list[idx]
-                        list[idx] = list[idx + 1]
-                        list[idx + 1] = temp
-                        onUpdateManuscript(manuscript.copy(chapters = list))
-                        onSelectChapter(idx + 1)
-                    }
-                },
+                onUpdateManuscript = onUpdateManuscript,
+                onOpenStoryBible = onOpenStoryBible,
                 onCloseBinder = { isBinderVisible = false },
                 modifier = Modifier
                     .weight(1f)
@@ -394,42 +386,14 @@ fun NovelEditorPane(
                             .fillMaxHeight()
                             .floatingGlassIsland(isDark = isDarkBinder, elevation = 16.dp)
                     ) {
-                        NovelBinderPane(
+                        NovelOrUniverseBinderContent(
+                            viewModel = viewModel,
+                            uiState = uiState,
                             manuscript = manuscript,
-                            selectedChapterIndex = activeChapterIndex,
+                            activeChapterIndex = activeChapterIndex,
                             onSelectChapter = onSelectChapter,
-                            onAddChapter = {
-                                val newNum = manuscript.chapters.size + 1
-                                val newChapter = NovelChapter(
-                                    chapterNumber = newNum,
-                                    title = "Chapter $newNum",
-                                    actIndex = 0,
-                                    paragraphs = NovelChapter.defaultParagraphs(newNum)
-                                )
-                                val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
-                                onUpdateManuscript(updated)
-                                onSelectChapter(manuscript.chapters.size)
-                            },
-                            onMoveChapterUp = { idx ->
-                                if (idx > 0) {
-                                    val list = manuscript.chapters.toMutableList()
-                                    val temp = list[idx]
-                                    list[idx] = list[idx - 1]
-                                    list[idx - 1] = temp
-                                    onUpdateManuscript(manuscript.copy(chapters = list))
-                                    onSelectChapter(idx - 1)
-                                }
-                            },
-                            onMoveChapterDown = { idx ->
-                                if (idx < manuscript.chapters.lastIndex) {
-                                    val list = manuscript.chapters.toMutableList()
-                                    val temp = list[idx]
-                                    list[idx] = list[idx + 1]
-                                    list[idx + 1] = temp
-                                    onUpdateManuscript(manuscript.copy(chapters = list))
-                                    onSelectChapter(idx + 1)
-                                }
-                            },
+                            onUpdateManuscript = onUpdateManuscript,
+                            onOpenStoryBible = onOpenStoryBible,
                             onCloseBinder = { isBinderVisible = false },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -1003,14 +967,183 @@ fun NovelEditorPane(
 }
 
 @Composable
+private fun NovelOrUniverseBinderContent(
+    viewModel: ScreenplayViewModel,
+    uiState: ScreenplayUiState,
+    manuscript: NovelManuscript,
+    activeChapterIndex: Int,
+    onSelectChapter: (Int) -> Unit,
+    onUpdateManuscript: (NovelManuscript) -> Unit,
+    onOpenStoryBible: () -> Unit,
+    onCloseBinder: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val universe = uiState.blendedUniverseProject
+    var showUniverseTab by remember(universe?.id) { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        if (universe != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ObsidianBlack)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                NovelGlassPillButton(
+                    text = "📖 Chapters (${manuscript.chapters.size})",
+                    onClick = { showUniverseTab = false },
+                    isHighlight = !showUniverseTab,
+                    modifier = Modifier.weight(1f)
+                )
+                NovelGlassPillButton(
+                    text = "🪐 Universe (${universe.assignments.size})",
+                    onClick = { showUniverseTab = true },
+                    isHighlight = showUniverseTab,
+                    isAccent = showUniverseTab,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
+        }
+
+        if (universe != null && showUniverseTab) {
+            UniverseBinderPane(
+                viewModel = viewModel,
+                uiState = uiState,
+                universeProject = universe,
+                onCloseBinder = onCloseBinder,
+                onOpenStoryBible = onOpenStoryBible,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            )
+        } else {
+            NovelBinderPane(
+                manuscript = manuscript,
+                selectedChapterIndex = activeChapterIndex,
+                onSelectChapter = onSelectChapter,
+                onAddChapter = {
+                    val newNum = manuscript.chapters.size + 1
+                    val newChapter = NovelChapter(
+                        chapterNumber = newNum,
+                        title = "Chapter $newNum",
+                        actIndex = 0,
+                        paragraphs = NovelChapter.defaultParagraphs(newNum)
+                    )
+                    val updated = manuscript.copy(chapters = manuscript.chapters + newChapter)
+                    onUpdateManuscript(updated)
+                    onSelectChapter(manuscript.chapters.size)
+                },
+                onMoveChapterUp = { idx ->
+                    if (idx > 0) {
+                        val list = manuscript.chapters.toMutableList()
+                        val temp = list[idx]
+                        list[idx] = list[idx - 1]
+                        list[idx - 1] = temp
+                        onUpdateManuscript(manuscript.copy(chapters = list))
+                        onSelectChapter(idx - 1)
+                    }
+                },
+                onMoveChapterDown = { idx ->
+                    if (idx < manuscript.chapters.lastIndex) {
+                        val list = manuscript.chapters.toMutableList()
+                        val temp = list[idx]
+                        list[idx] = list[idx + 1]
+                        list[idx + 1] = temp
+                        onUpdateManuscript(manuscript.copy(chapters = list))
+                        onSelectChapter(idx + 1)
+                    }
+                },
+                onCloseBinder = onCloseBinder,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NovelStudioToolsTray(
+    scrapsCount: Int,
+    isCorkboardOpen: Boolean,
+    isTypewriterMode: Boolean,
+    isFocusMode: Boolean,
+    isArcadeMode: Boolean,
+    isDictating: Boolean,
+    onToggleCorkboard: () -> Unit,
+    onOpenStoryBible: () -> Unit,
+    onOpenFindReplace: () -> Unit,
+    onOpenSprint: () -> Unit,
+    onToggleTypewriter: () -> Unit,
+    onOpenScraps: () -> Unit,
+    onOpenCompiler: () -> Unit,
+    onToggleDictation: () -> Unit,
+    onToggleFocusMode: () -> Unit,
+    onOpenSettings: () -> Unit,
+    includeCompactExtras: Boolean
+) {
+    val isDark = LocalSeshatDarkTheme.current
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (isDark) ObsidianBlack.copy(alpha = 0.55f) else Color(0xFFF1F5F9).copy(alpha = 0.65f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (includeCompactExtras) {
+                NovelGlassPillButton(
+                    text = "📌 Board",
+                    onClick = onToggleCorkboard,
+                    isHighlight = isCorkboardOpen
+                )
+                NovelGlassPillButton(
+                    text = "📖 Lore",
+                    onClick = onOpenStoryBible
+                )
+            }
+            NovelGlassPillButton(text = "🔍 Find", onClick = onOpenFindReplace)
+            NovelGlassPillButton(text = "🎯 Sprint", onClick = onOpenSprint)
+            NovelGlassPillButton(
+                text = "📜 Typewriter",
+                onClick = onToggleTypewriter,
+                isHighlight = isTypewriterMode
+            )
+            NovelGlassPillButton(text = "🪦 Scraps ($scrapsCount)", onClick = onOpenScraps)
+            if (!isArcadeMode) {
+                NovelGlassPillButton(text = "🚀 Compile", onClick = onOpenCompiler)
+            }
+            if (includeCompactExtras) {
+                NovelGlassPillButton(
+                    text = if (isDictating) "🔴 Recording" else "🎙️ Dictate",
+                    onClick = onToggleDictation,
+                    isAccent = isDictating
+                )
+                NovelGlassPillButton(
+                    text = if (isFocusMode) "Exit Focus" else "Focus",
+                    onClick = onToggleFocusMode,
+                    isHighlight = isFocusMode
+                )
+                NovelGlassPillButton(text = "⚙️ Settings", onClick = onOpenSettings)
+            }
+        }
+    }
+}
+
+@Composable
 private fun CompactNovelTopBar(
+    binderLabel: String,
     manuscript: NovelManuscript,
     isBinderVisible: Boolean,
+    isDictating: Boolean,
+    isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
     isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
     onToggleBinder: () -> Unit,
     onOpenStudioDrawer: () -> Unit,
+    onToggleDictation: () -> Unit,
     onToggleCorkboard: () -> Unit,
     onOpenStoryBible: () -> Unit,
     onOpenFindReplace: () -> Unit,
@@ -1024,6 +1157,8 @@ private fun CompactNovelTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
+    var isTopToolsOpen by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1059,7 +1194,7 @@ private fun CompactNovelTopBar(
                 }
 
                 NovelGlassPillButton(
-                    text = "📑 Binder (${manuscript.chapters.size})",
+                    text = binderLabel,
                     onClick = onToggleBinder,
                     isHighlight = isBinderVisible
                 )
@@ -1067,95 +1202,62 @@ private fun CompactNovelTopBar(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 NovelGlassPillButton(
-                    text = "📚 Novel",
-                    onClick = {},
-                    isHighlight = true
+                    text = if (isTopToolsOpen) "🧰 Tools ▴" else "🧰 Tools ▾",
+                    onClick = { isTopToolsOpen = !isTopToolsOpen },
+                    isHighlight = isTopToolsOpen
                 )
                 NovelGlassPillButton(
-                    text = "📌 Board",
-                    onClick = onToggleCorkboard
-                )
-                NovelGlassPillButton(
-                    text = "📖 Lore",
-                    onClick = onOpenStoryBible
+                    text = "💾 Save",
+                    onClick = onSaveProject,
+                    isAccent = true
                 )
             }
+        }
 
-            CompactNovelTopBarTools(
+        AnimatedVisibility(
+            visible = isTopToolsOpen,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            NovelStudioToolsTray(
+                scrapsCount = manuscript.scraps.size,
+                isCorkboardOpen = isCorkboardOpen,
                 isTypewriterMode = isTypewriterMode,
                 isFocusMode = isFocusMode,
                 isArcadeMode = isArcadeMode,
+                isDictating = isDictating,
+                onToggleCorkboard = onToggleCorkboard,
+                onOpenStoryBible = onOpenStoryBible,
                 onOpenFindReplace = onOpenFindReplace,
                 onOpenSprint = onOpenSprint,
                 onToggleTypewriter = onToggleTypewriter,
-                onToggleFocusMode = onToggleFocusMode,
                 onOpenScraps = onOpenScraps,
                 onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject,
-                onOpenSettings = onOpenSettings
+                onToggleDictation = onToggleDictation,
+                onToggleFocusMode = onToggleFocusMode,
+                onOpenSettings = onOpenSettings,
+                includeCompactExtras = true
             )
         }
+
         HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 
 @Composable
-private fun CompactNovelTopBarTools(
-    isTypewriterMode: Boolean,
-    isFocusMode: Boolean = false,
-    isArcadeMode: Boolean = false,
-    onOpenFindReplace: () -> Unit,
-    onOpenSprint: () -> Unit,
-    onToggleTypewriter: () -> Unit,
-    onToggleFocusMode: () -> Unit = {},
-    onOpenScraps: () -> Unit,
-    onOpenCompiler: () -> Unit,
-    onSaveProject: () -> Unit,
-    onOpenSettings: () -> Unit = {}
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        NovelGlassPillButton(text = "🔍 Find", onClick = onOpenFindReplace)
-        NovelGlassPillButton(text = "🎯 Sprint", onClick = onOpenSprint)
-        NovelGlassPillButton(
-            text = "📜 Type",
-            onClick = onToggleTypewriter,
-            isHighlight = isTypewriterMode
-        )
-        NovelGlassPillButton(
-            text = if (isFocusMode) "Exit Focus" else "Focus",
-            onClick = onToggleFocusMode,
-            isHighlight = isFocusMode
-        )
-        NovelGlassPillButton(text = "🪦 Scraps", onClick = onOpenScraps)
-        if (!isArcadeMode) {
-            NovelGlassPillButton(text = "🚀 Compile", onClick = onOpenCompiler)
-        }
-        NovelGlassPillButton(
-            text = "⚙️",
-            onClick = onOpenSettings
-        )
-        NovelGlassPillButton(
-            text = "💾 Save",
-            onClick = onSaveProject,
-            isAccent = true
-        )
-    }
-}
-
-@Composable
 private fun DesktopNovelTopBar(
+    binderLabel: String,
+    isBinderVisible: Boolean,
     manuscript: NovelManuscript,
     isDictating: Boolean,
     isCorkboardOpen: Boolean,
     isTypewriterMode: Boolean,
     isFocusMode: Boolean = false,
     isArcadeMode: Boolean = false,
+    onToggleBinder: () -> Unit,
     onOpenStudioDrawer: () -> Unit,
     onToggleDictation: () -> Unit,
     onOpenStoryBible: () -> Unit,
@@ -1171,6 +1273,8 @@ private fun DesktopNovelTopBar(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
+    var isTopToolsOpen by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1180,14 +1284,14 @@ private fun DesktopNovelTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f, fill = false)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -1225,7 +1329,11 @@ private fun DesktopNovelTopBar(
                             letterSpacing = 0.6.sp,
                             color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
                             fontSize = 12.5.sp
-                        )
+                        ),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 175.dp)
                     )
                 }
 
@@ -1238,109 +1346,86 @@ private fun DesktopNovelTopBar(
                         color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.5.sp
-                    )
+                    ),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 
-            DesktopNovelTopBarActions(
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                NovelGlassPillButton(
+                    text = binderLabel,
+                    onClick = onToggleBinder,
+                    isHighlight = isBinderVisible
+                )
+                NovelGlassPillButton(
+                    text = "📌 Corkboard",
+                    onClick = onToggleCorkboard,
+                    isHighlight = isCorkboardOpen
+                )
+                NovelGlassPillButton(
+                    text = "📖 Bible",
+                    onClick = onOpenStoryBible
+                )
+                NovelGlassPillButton(
+                    text = if (isTopToolsOpen) "🧰 Tools ▴" else "🧰 Tools ▾",
+                    onClick = { isTopToolsOpen = !isTopToolsOpen },
+                    isHighlight = isTopToolsOpen
+                )
+                NovelGlassPillButton(
+                    text = if (isDictating) "🔴 Recording" else "🎙️ Dictate",
+                    onClick = onToggleDictation,
+                    isAccent = isDictating
+                )
+                NovelGlassPillButton(
+                    text = if (isFocusMode) "Exit Focus" else "Focus",
+                    onClick = onToggleFocusMode,
+                    isHighlight = isFocusMode
+                )
+                NovelGlassPillButton(
+                    text = "⚙️ Settings",
+                    onClick = onOpenSettings
+                )
+                NovelGlassPillButton(
+                    text = "💾 Save",
+                    onClick = onSaveProject,
+                    isAccent = true
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isTopToolsOpen,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            NovelStudioToolsTray(
                 scrapsCount = manuscript.scraps.size,
-                isDictating = isDictating,
                 isCorkboardOpen = isCorkboardOpen,
                 isTypewriterMode = isTypewriterMode,
                 isFocusMode = isFocusMode,
                 isArcadeMode = isArcadeMode,
-                onToggleDictation = onToggleDictation,
-                onOpenStoryBible = onOpenStoryBible,
+                isDictating = isDictating,
                 onToggleCorkboard = onToggleCorkboard,
+                onOpenStoryBible = onOpenStoryBible,
                 onOpenFindReplace = onOpenFindReplace,
                 onOpenSprint = onOpenSprint,
                 onToggleTypewriter = onToggleTypewriter,
-                onToggleFocusMode = onToggleFocusMode,
                 onOpenScraps = onOpenScraps,
                 onOpenCompiler = onOpenCompiler,
-                onSaveProject = onSaveProject,
-                onOpenSettings = onOpenSettings
+                onToggleDictation = onToggleDictation,
+                onToggleFocusMode = onToggleFocusMode,
+                onOpenSettings = onOpenSettings,
+                includeCompactExtras = false
             )
         }
-        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
-    }
-}
 
-@Composable
-private fun DesktopNovelTopBarActions(
-    scrapsCount: Int,
-    isDictating: Boolean,
-    isCorkboardOpen: Boolean,
-    isTypewriterMode: Boolean,
-    isFocusMode: Boolean = false,
-    isArcadeMode: Boolean = false,
-    onToggleDictation: () -> Unit,
-    onOpenStoryBible: () -> Unit,
-    onToggleCorkboard: () -> Unit,
-    onOpenFindReplace: () -> Unit,
-    onOpenSprint: () -> Unit,
-    onToggleTypewriter: () -> Unit,
-    onToggleFocusMode: () -> Unit = {},
-    onOpenScraps: () -> Unit,
-    onOpenCompiler: () -> Unit,
-    onSaveProject: () -> Unit,
-    onOpenSettings: () -> Unit = {}
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        NovelGlassPillButton(
-            text = "📌 Corkboard",
-            onClick = onToggleCorkboard,
-            isHighlight = isCorkboardOpen
-        )
-        NovelGlassPillButton(
-            text = "📖 Bible",
-            onClick = onOpenStoryBible
-        )
-        NovelGlassPillButton(
-            text = "🔍 Find",
-            onClick = onOpenFindReplace
-        )
-        NovelGlassPillButton(
-            text = "🎯 Sprint",
-            onClick = onOpenSprint
-        )
-        NovelGlassPillButton(
-            text = "📜 Typewriter",
-            onClick = onToggleTypewriter,
-            isHighlight = isTypewriterMode
-        )
-        NovelGlassPillButton(
-            text = "🪦 Scraps ($scrapsCount)",
-            onClick = onOpenScraps
-        )
-        if (!isArcadeMode) {
-            NovelGlassPillButton(
-                text = "🚀 Compile",
-                onClick = onOpenCompiler
-            )
-        }
-        NovelGlassPillButton(
-            text = if (isDictating) "🔴 Recording" else "🎙️ Dictate",
-            onClick = onToggleDictation,
-            isAccent = isDictating
-        )
-        NovelGlassPillButton(
-            text = if (isFocusMode) "Exit Focus" else "Focus",
-            onClick = onToggleFocusMode,
-            isHighlight = isFocusMode
-        )
-        NovelGlassPillButton(
-            text = "⚙️ Settings",
-            onClick = onOpenSettings
-        )
-        NovelGlassPillButton(
-            text = "💾 Save",
-            onClick = onSaveProject,
-            isAccent = true
-        )
+        HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
     }
 }
 

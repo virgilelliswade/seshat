@@ -50,6 +50,9 @@ import com.seshat.writer.library.InitialWorkspaceView
 import com.seshat.writer.library.ProjectFormat
 import com.seshat.writer.library.ScreenplayType
 import com.seshat.writer.library.ScriptLibraryManager
+import com.seshat.writer.universe.BlendedAssignment
+import com.seshat.writer.universe.BlendedUniverseProject
+import com.seshat.writer.universe.UniverseRepository
 import com.seshat.writer.library.ScriptTemplate
 import com.seshat.writer.importer.ScriptImporter
 import com.seshat.writer.novel.NovelChapter
@@ -186,6 +189,7 @@ data class ScreenplayUiState(
     val activeChapterIndex: Int = 0,
     val isCompilerDialogOpen: Boolean = false,
     val tvSeriesProject: TvSeriesProject? = null,
+    val blendedUniverseProject: BlendedUniverseProject? = null,
     val isWritersRoomOpen: Boolean = false,
     val isStudioDrawerOpen: Boolean = false,
     val isCoverCreatorOpen: Boolean = false,
@@ -2873,16 +2877,23 @@ class ScreenplayViewModel : ViewModel() {
                 seriesBible = updatedBible,
                 lastModified = System.currentTimeMillis()
             )
+            val updatedUniverse = current.blendedUniverseProject?.copy(
+                universeBible = updatedBible,
+                lastModified = System.currentTimeMillis()
+            )
             current.copy(
                 storyBible = updatedBible,
-                tvSeriesProject = updatedTv ?: current.tvSeriesProject
+                tvSeriesProject = updatedTv ?: current.tvSeriesProject,
+                blendedUniverseProject = updatedUniverse ?: current.blendedUniverseProject
             )
         }
         StoryBibleRepository.saveBible(context, updatedBible)
         _uiState.value.tvSeriesProject?.let { TvSeriesRepository.saveProject(context, it) }
+        _uiState.value.blendedUniverseProject?.let { UniverseRepository.saveProject(context, it) }
     }
 
     fun loadStoryBibleIfPresent(context: Context) {
+        if (_uiState.value.blendedUniverseProject != null) return
         val title = _uiState.value.title.ifBlank { "UNTITLED SCREENPLAY" }
         val loaded = StoryBibleRepository.loadBible(context, title)
         _uiState.update { it.copy(storyBible = loaded) }
@@ -2920,6 +2931,26 @@ class ScreenplayViewModel : ViewModel() {
                 )
                 TvSeriesRepository.saveProject(context, updatedProject)
                 _uiState.update { it.copy(tvSeriesProject = updatedProject) }
+            } else if (_uiState.value.blendedUniverseProject != null) {
+                val currentBlended = _uiState.value.blendedUniverseProject!!
+                val activeIdx = currentBlended.activeAssignmentIndex.coerceIn(0, (currentBlended.assignments.size - 1).coerceAtLeast(0))
+                val updatedAssignments = currentBlended.assignments.toMutableList()
+                if (activeIdx in updatedAssignments.indices) {
+                    val curAssign = updatedAssignments[activeIdx]
+                    updatedAssignments[activeIdx] = curAssign.copy(
+                        blocks = _uiState.value.blocks,
+                        novelManuscript = _uiState.value.novelManuscript,
+                        corkboard = _uiState.value.corkboardDoc,
+                        lastModified = System.currentTimeMillis()
+                    )
+                }
+                val syncedBlended = currentBlended.copy(
+                    universeBible = _uiState.value.storyBible,
+                    assignments = updatedAssignments,
+                    lastModified = System.currentTimeMillis()
+                )
+                UniverseRepository.saveProject(context, syncedBlended)
+                _uiState.update { it.copy(blendedUniverseProject = syncedBlended) }
             } else {
                 val storeTitle = ScreenplayDocumentStore.titlePage.value
                 val currentTitleData = if (storeTitle.title.isNotBlank()) {
@@ -3437,6 +3468,8 @@ class ScreenplayViewModel : ViewModel() {
                 isStartMenuOpen = false,
                 projectFormat = format,
                 screenplayType = screenplayType ?: ScreenplayType.FEATURE,
+                tvSeriesProject = null,
+                blendedUniverseProject = null,
                 corkboardDoc = initialCorkboard,
                 storyBible = initialBible,
                 novelManuscript = starterManuscript,
@@ -3446,6 +3479,177 @@ class ScreenplayViewModel : ViewModel() {
                 isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
                 isCorkboardSideBySide = false,
                 firstDraftState = newFirstDraft
+            )
+        }
+    }
+
+    /**
+     * Launches a Blended Multi-Medium Universe Project sharing a single Master Story Bible
+     * where writing assignments can be Film, TV, Novel, Comic Book, or Stage Play.
+     */
+    fun startNewBlendedUniverseProject(
+        context: Context,
+        universeTitle: String,
+        starterFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
+        starterScreenplayType: ScreenplayType = ScreenplayType.FEATURE,
+        initialWorkspaceView: InitialWorkspaceView = InitialWorkspaceView.LORE_DOC,
+        enableSparkMode: Boolean = false,
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
+    ) {
+        val resolvedTitle = universeTitle.ifBlank { "Untitled Blended Universe" }
+        val starterAssignment = BlendedAssignment.defaultAssignment(
+            title = "Assignment 1 (${starterFormat.displayName})",
+            format = starterFormat,
+            screenplayType = starterScreenplayType
+        )
+        val bible = StoryBible(scriptTitle = resolvedTitle)
+        val blendedProject = BlendedUniverseProject(
+            title = resolvedTitle,
+            universeBible = bible,
+            assignments = listOf(starterAssignment),
+            activeAssignmentIndex = 0
+        )
+        StoryBibleRepository.saveBible(context, bible)
+        CorkboardRepository.saveCorkboard(context, starterAssignment.corkboard)
+        UniverseRepository.saveProject(context, blendedProject)
+
+        latestAppContext = context.applicationContext
+        val newFirstDraft = if (enableSparkMode) {
+            FirstDraftController.createForNewProject(
+                format = starterFormat,
+                screenplayType = starterScreenplayType,
+                projectTitle = resolvedTitle,
+                campaignGenre = campaignGenre
+            )
+        } else {
+            FirstDraftController.createForStandardProject(
+                format = starterFormat,
+                screenplayType = starterScreenplayType,
+                projectTitle = resolvedTitle
+            )
+        }
+        FirstDraftController.saveState(context, resolvedTitle, newFirstDraft)
+
+        _uiState.update { current ->
+            buildUpdatedState(
+                current.copy(
+                    isStartMenuOpen = false,
+                    isSidebarExpanded = true,
+                    projectFormat = starterAssignment.format,
+                    screenplayType = starterAssignment.screenplayType,
+                    tvSeriesProject = null,
+                    blendedUniverseProject = blendedProject,
+                    title = "${resolvedTitle} — ${starterAssignment.title}",
+                    blocks = starterAssignment.blocks,
+                    focusedBlockId = starterAssignment.blocks.firstOrNull()?.id ?: "",
+                    corkboardDoc = starterAssignment.corkboard,
+                    storyBible = bible,
+                    novelManuscript = starterAssignment.novelManuscript,
+                    activeChapterIndex = 0,
+                    isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
+                    isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                    isCorkboardSideBySide = false,
+                    firstDraftState = newFirstDraft
+                ),
+                starterAssignment.blocks,
+                focusedBlockId = starterAssignment.blocks.firstOrNull()?.id ?: ""
+            )
+        }
+    }
+
+    fun selectBlendedAssignment(context: Context, index: Int) {
+        val currentProject = _uiState.value.blendedUniverseProject ?: return
+        if (index !in currentProject.assignments.indices || index == currentProject.activeAssignmentIndex) return
+
+        // Snapshot current assignment state first
+        val oldIdx = currentProject.activeAssignmentIndex
+        val mutable = currentProject.assignments.toMutableList()
+        if (oldIdx in mutable.indices) {
+            mutable[oldIdx] = mutable[oldIdx].copy(
+                blocks = _uiState.value.blocks,
+                novelManuscript = _uiState.value.novelManuscript,
+                corkboard = _uiState.value.corkboardDoc,
+                lastModified = System.currentTimeMillis()
+            )
+        }
+
+        val target = mutable[index]
+        val updatedProject = currentProject.copy(
+            universeBible = _uiState.value.storyBible,
+            assignments = mutable,
+            activeAssignmentIndex = index,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updatedProject)
+
+        _uiState.update { current ->
+            buildUpdatedState(
+                current.copy(
+                    projectFormat = target.format,
+                    screenplayType = target.screenplayType,
+                    blendedUniverseProject = updatedProject,
+                    title = "${updatedProject.title} — ${target.title}",
+                    blocks = target.blocks,
+                    focusedBlockId = target.blocks.firstOrNull()?.id ?: "",
+                    corkboardDoc = target.corkboard,
+                    novelManuscript = target.novelManuscript,
+                    activeChapterIndex = 0
+                ),
+                target.blocks,
+                focusedBlockId = target.blocks.firstOrNull()?.id ?: ""
+            )
+        }
+    }
+
+    fun addBlendedAssignment(
+        context: Context,
+        assignmentTitle: String,
+        format: ProjectFormat,
+        screenplayType: ScreenplayType = ScreenplayType.FEATURE
+    ) {
+        val currentProject = _uiState.value.blendedUniverseProject ?: return
+        val oldIdx = currentProject.activeAssignmentIndex
+        val mutable = currentProject.assignments.toMutableList()
+        if (oldIdx in mutable.indices) {
+            mutable[oldIdx] = mutable[oldIdx].copy(
+                blocks = _uiState.value.blocks,
+                novelManuscript = _uiState.value.novelManuscript,
+                corkboard = _uiState.value.corkboardDoc,
+                lastModified = System.currentTimeMillis()
+            )
+        }
+
+        val newAssignment = BlendedAssignment.defaultAssignment(
+            title = assignmentTitle,
+            format = format,
+            screenplayType = screenplayType
+        )
+        mutable.add(newAssignment)
+        val newIndex = mutable.lastIndex
+
+        val updatedProject = currentProject.copy(
+            universeBible = _uiState.value.storyBible,
+            assignments = mutable,
+            activeAssignmentIndex = newIndex,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updatedProject)
+
+        _uiState.update { current ->
+            buildUpdatedState(
+                current.copy(
+                    projectFormat = newAssignment.format,
+                    screenplayType = newAssignment.screenplayType,
+                    blendedUniverseProject = updatedProject,
+                    title = "${updatedProject.title} — ${newAssignment.title}",
+                    blocks = newAssignment.blocks,
+                    focusedBlockId = newAssignment.blocks.firstOrNull()?.id ?: "",
+                    corkboardDoc = newAssignment.corkboard,
+                    novelManuscript = newAssignment.novelManuscript,
+                    activeChapterIndex = 0
+                ),
+                newAssignment.blocks,
+                focusedBlockId = newAssignment.blocks.firstOrNull()?.id ?: ""
             )
         }
     }

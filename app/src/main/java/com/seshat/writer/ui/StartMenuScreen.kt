@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -140,7 +141,8 @@ private data class PendingCampaignLaunch(
     val format: ProjectFormat,
     val screenplayType: ScreenplayType?,
     val genre: CampaignGenre,
-    val title: String
+    val title: String,
+    val isBlendedUniverse: Boolean = false
 )
 
 /**
@@ -148,15 +150,15 @@ private data class PendingCampaignLaunch(
  */
 enum class StartMenuStep {
     SPLASH_DISSOLVE,   // Kept for backward compatibility
-    TOP_LEVEL,         // [Start New Project] vs [Open Existing Project] vs [Continue Writing]
-    FORMAT_SELECT,     // Level 1: [Single Screenplay] vs [Screenplay Universe] vs [Stage Play] vs [Comic Book] vs [Novel]
-    UNIVERSE_SELECT,   // Level 2 (Universe Sub-menu): [Cinematic Universe (Features)] vs [Television Universe]
-    NOVEL_SELECT,      // Level 2 (Novel Sub-menu): [Single Novel] vs [Novel Series]
-    SCREENPLAY_TYPE,   // Level 2 (TV Series Only): [1-Hour Drama Show] vs [30-Min Comedy Show]
-    TEMPLATE_SELECT,   // Level 3: [Blank (Default)] vs [Template 1] vs [Template 2]...
-    WORKSPACE_VIEW,    // Level 4: [Lore Doc & Story Bible] vs [Corkboard Outline] vs [Drafting Canvas]
-    SPARK_HUB,         // Dedicated Spark Mode Hub: [New Spark] vs [Continue Existing Spark]
-    SPARK_NEW_SETUP    // New Spark Project Setup (Title + Medium Selection)
+    TOP_LEVEL,         // Concept C Two-Column Hub
+    FORMAT_SELECT,     // Level 1 fallback medium picker
+    SCREENPLAY_BRANCH, // Level 2 (Screenplay Sub-menu): [Film] vs [Television]
+    UNIVERSE_SELECT,   // Level 2 (Universe Sub-menu): [Cinematic] vs [Television] vs [Novel] vs [Blended]
+    SCREENPLAY_TYPE,   // Level 3 (TV Only): [1-Hour Drama Show] vs [30-Min Comedy Show]
+    TEMPLATE_SELECT,   // Templates
+    WORKSPACE_VIEW,    // Starting Workspace: [Lore Doc & Story Bible] vs [Corkboard Outline] vs [Drafting Canvas]
+    SPARK_HUB,         // Dedicated Writing Challenge Hub: [New Challenge] vs [Continue Existing Challenge]
+    SPARK_NEW_SETUP    // New Writing Challenge Setup (Genre + Title + Launch)
 }
 
 @Composable
@@ -167,7 +169,7 @@ fun StartMenuScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var areButtonsVisible by remember { mutableStateOf(true) }
+    var areButtonsVisible by remember { mutableStateOf(false) }
     var navigationStack by remember { mutableStateOf(listOf(StartMenuStep.TOP_LEVEL)) }
     val currentStep = navigationStack.lastOrNull() ?: StartMenuStep.TOP_LEVEL
     var selectedFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
@@ -176,7 +178,16 @@ fun StartMenuScreen(
     var projectTitleInput by remember { mutableStateOf("") }
     var showLibraryDialog by remember { mutableStateOf(false) }
     var isUniverseMode by remember { mutableStateOf(false) }
+    var isBlendedUniverseMode by remember { mutableStateOf(false) }
+    var isChallengeFlow by remember { mutableStateOf(false) }
     var pendingCampaignLaunch by remember { mutableStateOf<PendingCampaignLaunch?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (!areButtonsVisible) {
+            delay(5000L)
+            areButtonsVisible = true
+        }
+    }
 
     val navigateTo: (StartMenuStep) -> Unit = { step ->
         if (navigationStack.lastOrNull() != step) {
@@ -198,19 +209,25 @@ fun StartMenuScreen(
 
     val buttonsAlpha by animateFloatAsState(
         targetValue = if (areButtonsVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
         label = "StartMenuButtonsAlpha"
     )
 
     val buttonsOffsetY by animateDpAsState(
         targetValue = if (areButtonsVisible) 0.dp else 20.dp,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
         label = "StartMenuButtonsOffsetY"
     )
 
+    val splashBlur by animateDpAsState(
+        targetValue = if (areButtonsVisible) 12.dp else 0.dp,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "StartMenuSplashBlur"
+    )
+
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (areButtonsVisible) 0.45f else 0.0f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        targetValue = if (areButtonsVisible) 0.52f else 0.0f,
+        animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing),
         label = "StartMenuScrimAlpha"
     )
 
@@ -218,6 +235,9 @@ fun StartMenuScreen(
         ScriptLibraryDialog(
             viewModel = viewModel,
             onDismiss = {
+                showLibraryDialog = false
+            },
+            onProjectOpened = {
                 showLibraryDialog = false
                 onCloseMenu()
             }
@@ -290,7 +310,9 @@ fun StartMenuScreen(
             contentDescription = "Goddess Seshat Studio - Mistress of the House of Books",
             contentScale = ContentScale.Crop,
             alignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(splashBlur)
         )
 
         // Concept C Subtle Framing Scrim: Dark mode dims slightly for smoked-glass card contrast;
@@ -311,9 +333,9 @@ fun StartMenuScreen(
                     } else {
                         Brush.verticalGradient(
                             listOf(
-                                activePalette.lightBg.copy(alpha = 0.08f),
+                                activePalette.lightBg.copy(alpha = (scrimAlpha * 0.35f).coerceIn(0f, 0.22f)),
                                 Color.Transparent,
-                                activePalette.lightDesk.copy(alpha = 0.14f)
+                                activePalette.lightDesk.copy(alpha = (scrimAlpha * 0.45f).coerceIn(0f, 0.28f))
                             )
                         )
                     }
@@ -332,7 +354,7 @@ fun StartMenuScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .graphicsLayer {
-                        alpha = if (areButtonsVisible) 1f else 0.4f
+                        alpha = buttonsAlpha
                     },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -366,6 +388,10 @@ fun StartMenuScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 2.dp, bottom = 6.dp)
+                    .graphicsLayer {
+                        alpha = buttonsAlpha
+                        translationY = buttonsOffsetY.toPx()
+                    }
             ) {
                 BoxWithConstraints(
                     modifier = Modifier.fillMaxWidth(),
@@ -456,37 +482,63 @@ fun StartMenuScreen(
                                     GlassStartMenuHub(
                                         hasActiveProject = hasActiveProject,
                                         activeTitle = uiState.title,
+                                        onSelectScreenplayBranch = {
+                                            isUniverseMode = false
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = false
+                                            projectTitleInput = ""
+                                            navigateTo(StartMenuStep.SCREENPLAY_BRANCH)
+                                        },
                                         onSelectFormat = { format, type ->
-                                            if (format == ProjectFormat.NOVEL) {
-                                                projectTitleInput = ""
-                                                isUniverseMode = false
-                                                navigateTo(StartMenuStep.NOVEL_SELECT)
-                                            } else {
-                                                selectedFormat = format
-                                                selectedScreenplayType = type
-                                                selectedTemplate = TemplateRegistry.getBlankTemplate(format, type)
-                                                isUniverseMode = false
-                                                navigateTo(StartMenuStep.WORKSPACE_VIEW)
-                                            }
+                                            selectedFormat = format
+                                            selectedScreenplayType = type
+                                            selectedTemplate = TemplateRegistry.getBlankTemplate(format, type)
+                                            isUniverseMode = false
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = false
+                                            projectTitleInput = ""
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                         },
                                         onSelectUniverse = {
                                             isUniverseMode = true
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = false
+                                            projectTitleInput = ""
                                             navigateTo(StartMenuStep.UNIVERSE_SELECT)
+                                        },
+                                        onSelectSparkScreenplayBranch = {
+                                            isUniverseMode = false
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = true
+                                            projectTitleInput = ""
+                                            navigateTo(StartMenuStep.SCREENPLAY_BRANCH)
                                         },
                                         onSelectSparkFormat = { format, type, isUniverse ->
                                             selectedFormat = format
                                             selectedScreenplayType = type
                                             isUniverseMode = isUniverse
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = true
                                             projectTitleInput = ""
                                             navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                        },
+                                        onSelectSparkUniverse = {
+                                            isUniverseMode = true
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = true
+                                            projectTitleInput = ""
+                                            navigateTo(StartMenuStep.UNIVERSE_SELECT)
                                         },
                                         onNewProject = {
                                             projectTitleInput = ""
                                             isUniverseMode = false
+                                            isBlendedUniverseMode = false
+                                            isChallengeFlow = false
                                             navigateTo(StartMenuStep.FORMAT_SELECT)
                                         },
                                         onOpenSparkMode = {
                                             projectTitleInput = ""
+                                            isChallengeFlow = true
                                             navigateTo(StartMenuStep.SPARK_HUB)
                                         },
                                         onOpenLibrary = {
@@ -515,22 +567,19 @@ fun StartMenuScreen(
 
                             StartMenuStep.FORMAT_SELECT -> {
                                 FormatSelectContent(
-                                    onSelectSingleScreenplay = {
-                                        selectedFormat = ProjectFormat.SCREENPLAY
-                                        selectedScreenplayType = ScreenplayType.FEATURE
-                                        selectedTemplate = TemplateRegistry.BLANK_FEATURE
+                                    onSelectScreenplayBranch = {
                                         isUniverseMode = false
-                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        isBlendedUniverseMode = false
+                                        isChallengeFlow = false
+                                        navigateTo(StartMenuStep.SCREENPLAY_BRANCH)
                                     },
-                                    onSelectUniverse = {
-                                        isUniverseMode = true
-                                        navigateTo(StartMenuStep.UNIVERSE_SELECT)
-                                    },
-                                    onSelectStagePlay = {
-                                        selectedFormat = ProjectFormat.STAGE_PLAY
+                                    onSelectNovel = {
+                                        selectedFormat = ProjectFormat.NOVEL
                                         selectedScreenplayType = null
-                                        selectedTemplate = TemplateRegistry.BLANK_STAGE_PLAY
+                                        selectedTemplate = TemplateRegistry.BLANK_NOVEL
                                         isUniverseMode = false
+                                        isBlendedUniverseMode = false
+                                        isChallengeFlow = false
                                         navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
                                     onSelectComicBook = {
@@ -538,11 +587,50 @@ fun StartMenuScreen(
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_COMIC_BOOK
                                         isUniverseMode = false
+                                        isBlendedUniverseMode = false
+                                        isChallengeFlow = false
                                         navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
-                                    onSelectNovel = {
-                                        projectTitleInput = ""
-                                        navigateTo(StartMenuStep.NOVEL_SELECT)
+                                    onSelectStagePlay = {
+                                        selectedFormat = ProjectFormat.STAGE_PLAY
+                                        selectedScreenplayType = null
+                                        selectedTemplate = TemplateRegistry.BLANK_STAGE_PLAY
+                                        isUniverseMode = false
+                                        isBlendedUniverseMode = false
+                                        isChallengeFlow = false
+                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                    },
+                                    onSelectUniverse = {
+                                        isUniverseMode = true
+                                        isBlendedUniverseMode = false
+                                        isChallengeFlow = false
+                                        navigateTo(StartMenuStep.UNIVERSE_SELECT)
+                                    },
+                                    onBack = navigateBack
+                                )
+                            }
+
+                            StartMenuStep.SCREENPLAY_BRANCH -> {
+                                ScreenplayBranchContent(
+                                    isChallengeMode = isChallengeFlow,
+                                    onSelectFilm = {
+                                        selectedFormat = ProjectFormat.SCREENPLAY
+                                        selectedScreenplayType = ScreenplayType.FEATURE
+                                        selectedTemplate = TemplateRegistry.BLANK_FEATURE
+                                        isUniverseMode = false
+                                        isBlendedUniverseMode = false
+                                        if (isChallengeFlow) {
+                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                        } else {
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        }
+                                    },
+                                    onSelectTelevision = {
+                                        selectedFormat = ProjectFormat.TV_SERIES
+                                        selectedTemplate = TemplateRegistry.BLANK_TV
+                                        isUniverseMode = false
+                                        isBlendedUniverseMode = false
+                                        navigateTo(StartMenuStep.SCREENPLAY_TYPE)
                                     },
                                     onBack = navigateBack
                                 )
@@ -550,39 +638,50 @@ fun StartMenuScreen(
 
                             StartMenuStep.UNIVERSE_SELECT -> {
                                 UniverseSelectContent(
+                                    isChallengeMode = isChallengeFlow,
                                     onSelectCinematicFeatures = {
                                         selectedFormat = ProjectFormat.SCREENPLAY
                                         selectedScreenplayType = ScreenplayType.FEATURE
                                         selectedTemplate = TemplateRegistry.BLANK_FEATURE
                                         isUniverseMode = true
-                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        isBlendedUniverseMode = false
+                                        if (isChallengeFlow) {
+                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                        } else {
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        }
                                     },
                                     onSelectTelevisionUniverse = {
                                         selectedFormat = ProjectFormat.TV_SERIES
                                         selectedScreenplayType = ScreenplayType.TV_HOUR_DRAMA
                                         selectedTemplate = TemplateRegistry.BLANK_TV
                                         isUniverseMode = true
-                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        isBlendedUniverseMode = false
+                                        navigateTo(StartMenuStep.SCREENPLAY_TYPE)
                                     },
-                                    onBack = navigateBack
-                                )
-                            }
-
-                            StartMenuStep.NOVEL_SELECT -> {
-                                NovelSelectContent(
-                                    onSelectSingleNovel = {
-                                        selectedFormat = ProjectFormat.NOVEL
-                                        selectedScreenplayType = null
-                                        selectedTemplate = TemplateRegistry.BLANK_NOVEL
-                                        isUniverseMode = false
-                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
-                                    },
-                                    onSelectNovelSeries = {
+                                    onSelectNovelUniverse = {
                                         selectedFormat = ProjectFormat.NOVEL
                                         selectedScreenplayType = null
                                         selectedTemplate = TemplateRegistry.BLANK_NOVEL
                                         isUniverseMode = true
-                                        navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        isBlendedUniverseMode = false
+                                        if (isChallengeFlow) {
+                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                        } else {
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        }
+                                    },
+                                    onSelectBlendedUniverse = {
+                                        selectedFormat = ProjectFormat.SCREENPLAY
+                                        selectedScreenplayType = ScreenplayType.FEATURE
+                                        selectedTemplate = TemplateRegistry.BLANK_FEATURE
+                                        isUniverseMode = true
+                                        isBlendedUniverseMode = true
+                                        if (isChallengeFlow) {
+                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                        } else {
+                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                        }
                                     },
                                     onBack = navigateBack
                                 )
@@ -590,8 +689,8 @@ fun StartMenuScreen(
 
                             StartMenuStep.SCREENPLAY_TYPE -> {
                                 StartMenuLayout(
-                                    headerTitle = "TELEVISION SERIES FORMAT",
-                                    headerSubtitle = "Select your show pacing, episodic deck structure, and seasonal arc",
+                                    headerTitle = if (isUniverseMode) "TELEVISION UNIVERSE FORMAT" else "TELEVISION SCRIPT FORMAT",
+                                    headerSubtitle = "Select your show pacing, episodic deck structure, and act architecture",
                                     showBackButton = true,
                                     onBack = navigateBack
                                 ) {
@@ -601,9 +700,14 @@ fun StartMenuScreen(
                                         subtitle = "Prestige, cable & serialized drama (~50–60 min) • 5 Acts + Teaser, episodic deck & seasonal arc",
                                         badgeColor = Color(0xFF3B82F6),
                                         onClick = {
+                                            selectedFormat = ProjectFormat.TV_SERIES
                                             selectedScreenplayType = ScreenplayType.TV_HOUR_DRAMA
                                             selectedTemplate = TemplateRegistry.BLANK_TV
-                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                            if (isChallengeFlow) {
+                                                navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                            } else {
+                                                navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                            }
                                         }
                                     )
 
@@ -615,9 +719,14 @@ fun StartMenuScreen(
                                         subtitle = "Multi-cam or single-cam sitcom (~25–35 min) • 2–3 Acts + Cold Open & Tag, episodic deck",
                                         badgeColor = Color(0xFFEC4899),
                                         onClick = {
+                                            selectedFormat = ProjectFormat.TV_SERIES
                                             selectedScreenplayType = ScreenplayType.TV_HALF_HOUR_COMEDY
                                             selectedTemplate = TemplateRegistry.BLANK_TV
-                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                            if (isChallengeFlow) {
+                                                navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                            } else {
+                                                navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                            }
                                         }
                                     )
                                 }
@@ -661,19 +770,35 @@ fun StartMenuScreen(
                                     selectedFormat = selectedFormat,
                                     selectedScreenplayType = selectedScreenplayType,
                                     isUniverseMode = isUniverseMode,
+                                    isBlendedUniverseMode = isBlendedUniverseMode,
+                                    onBlendedStarterChange = { fmt, sType ->
+                                        selectedFormat = fmt
+                                        selectedScreenplayType = sType
+                                    },
                                     projectTitleInput = projectTitleInput,
                                     onTitleChange = { projectTitleInput = it },
                                     isDark = isDark,
                                     onSelectView = { view ->
-                                        viewModel.startNewProject(
-                                            context = context,
-                                            format = selectedFormat,
-                                            screenplayType = selectedScreenplayType,
-                                            initialWorkspaceView = view,
-                                            customTitle = projectTitleInput,
-                                            template = selectedTemplate,
-                                            enableSparkMode = false
-                                        )
+                                        if (isBlendedUniverseMode) {
+                                            viewModel.startNewBlendedUniverseProject(
+                                                context = context,
+                                                universeTitle = projectTitleInput,
+                                                starterFormat = selectedFormat,
+                                                starterScreenplayType = selectedScreenplayType ?: ScreenplayType.FEATURE,
+                                                initialWorkspaceView = view,
+                                                enableSparkMode = false
+                                            )
+                                        } else {
+                                            viewModel.startNewProject(
+                                                context = context,
+                                                format = selectedFormat,
+                                                screenplayType = selectedScreenplayType,
+                                                initialWorkspaceView = view,
+                                                customTitle = projectTitleInput,
+                                                template = selectedTemplate,
+                                                enableSparkMode = false
+                                            )
+                                        }
                                         onCloseMenu()
                                     },
                                     onBack = navigateBack
@@ -690,6 +815,7 @@ fun StartMenuScreen(
                                     savedSparkProjects = savedSparkProjects,
                                     onStartNewSpark = {
                                         projectTitleInput = ""
+                                        isBlendedUniverseMode = false
                                         navigateTo(StartMenuStep.SPARK_NEW_SETUP)
                                     },
                                     onContinueActiveSpark = {
@@ -708,6 +834,11 @@ fun StartMenuScreen(
                                     selectedFormat = selectedFormat,
                                     selectedScreenplayType = selectedScreenplayType,
                                     isUniverseMode = isUniverseMode,
+                                    isBlendedUniverseMode = isBlendedUniverseMode,
+                                    onBlendedStarterChange = { fmt, sType ->
+                                        selectedFormat = fmt
+                                        selectedScreenplayType = sType
+                                    },
                                     projectTitleInput = projectTitleInput,
                                     onTitleChange = { projectTitleInput = it },
                                     isDark = isDark,
@@ -716,7 +847,8 @@ fun StartMenuScreen(
                                             format = format,
                                             screenplayType = sType,
                                             genre = genre,
-                                            title = projectTitleInput
+                                            title = projectTitleInput,
+                                            isBlendedUniverse = isBlendedUniverseMode
                                         )
                                     },
                                     onBack = navigateBack
@@ -735,16 +867,28 @@ fun StartMenuScreen(
                     projectTitle = activeLaunch.title,
                     onFinished = {
                         pendingCampaignLaunch = null
-                        viewModel.startNewProject(
-                            context = context,
-                            format = activeLaunch.format,
-                            screenplayType = activeLaunch.screenplayType,
-                            initialWorkspaceView = InitialWorkspaceView.EDITOR,
-                            customTitle = activeLaunch.title,
-                            template = TemplateRegistry.getBlankTemplate(activeLaunch.format, activeLaunch.screenplayType),
-                            enableSparkMode = true,
-                            campaignGenre = activeLaunch.genre
-                        )
+                        if (activeLaunch.isBlendedUniverse) {
+                            viewModel.startNewBlendedUniverseProject(
+                                context = context,
+                                universeTitle = activeLaunch.title,
+                                starterFormat = activeLaunch.format,
+                                starterScreenplayType = activeLaunch.screenplayType ?: ScreenplayType.FEATURE,
+                                initialWorkspaceView = InitialWorkspaceView.EDITOR,
+                                enableSparkMode = true,
+                                campaignGenre = activeLaunch.genre
+                            )
+                        } else {
+                            viewModel.startNewProject(
+                                context = context,
+                                format = activeLaunch.format,
+                                screenplayType = activeLaunch.screenplayType,
+                                initialWorkspaceView = InitialWorkspaceView.EDITOR,
+                                customTitle = activeLaunch.title,
+                                template = TemplateRegistry.getBlankTemplate(activeLaunch.format, activeLaunch.screenplayType),
+                                enableSparkMode = true,
+                                campaignGenre = activeLaunch.genre
+                            )
+                        }
                         onCloseMenu()
                     },
                     modifier = Modifier.fillMaxSize()
@@ -756,11 +900,11 @@ fun StartMenuScreen(
 
 @Composable
 private fun FormatSelectContent(
-    onSelectSingleScreenplay: () -> Unit,
-    onSelectUniverse: () -> Unit,
-    onSelectStagePlay: () -> Unit,
-    onSelectComicBook: () -> Unit,
+    onSelectScreenplayBranch: () -> Unit,
     onSelectNovel: () -> Unit,
+    onSelectComicBook: () -> Unit,
+    onSelectStagePlay: () -> Unit,
+    onSelectUniverse: () -> Unit,
     onBack: () -> Unit
 ) {
     StartMenuLayout(
@@ -769,126 +913,223 @@ private fun FormatSelectContent(
         showBackButton = true,
         onBack = onBack
     ) {
-        // 1. SINGLE SCREENPLAY
+        // 1. SCREENPLAY (Branches to Film vs TV)
         StartMenuBigButton(
             badgeText = "🎬",
-            title = "SINGLE SCREENPLAY",
-            subtitle = "Standalone feature film or individual script (~90–120 min) • Industry standard Courier 12pt",
+            title = "SCREENPLAY",
+            subtitle = "Feature Film or Television Script • Industry standard Courier 12pt",
             badgeColor = ElectrumGold,
-            onClick = onSelectSingleScreenplay
+            onClick = onSelectScreenplayBranch
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 2. SCREENPLAY UNIVERSE
+        // 2. NOVEL
         StartMenuBigButton(
-            badgeText = "🪐",
-            title = "SCREENPLAY UNIVERSE",
-            subtitle = "Multi-script story universe • Interconnected Cinematic Universes (Features) & Serialized Television Universes with shared Lore Bible & continuity",
-            badgeColor = ScribeStarNeonRed,
-            onClick = onSelectUniverse
+            badgeText = "📖",
+            title = "NOVEL",
+            subtitle = "Prose book manuscript, chapter binder, and long-form narrative fiction",
+            badgeColor = Color(0xFF8B5CF6),
+            onClick = onSelectNovel
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 3. THEATRICAL STAGE PLAY
-        StartMenuBigButton(
-            badgeText = "🎭",
-            title = "THEATRICAL STAGE PLAY",
-            subtitle = "Proscenium, black box & musical theatre • Acts, scenes, stage directions & rapid dialogue switching",
-            badgeColor = ElectrumGold,
-            onClick = onSelectStagePlay
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 4. COMIC BOOK SCRIPT
+        // 3. COMIC BOOK
         StartMenuBigButton(
             badgeText = "💥",
-            title = "COMIC BOOK SCRIPT",
-            subtitle = "Standard comic page & panel scripting • Page headings, panel descriptions, art notes, lettering & sound effects",
+            title = "COMIC BOOK",
+            subtitle = "Standard comic page & panel scripting • Page headings, panel descriptions, art notes & SFX",
             badgeColor = ScribeStarNeonRed,
             onClick = onSelectComicBook
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 5. NOVEL
+        // 4. STAGE PLAY
         StartMenuBigButton(
-            badgeText = "📖",
-            title = "NOVEL",
-            subtitle = "Prose book manuscripts, chapter-based structures, and long-form narrative fiction",
-            badgeColor = Color(0xFF8B5CF6),
-            onClick = onSelectNovel
+            badgeText = "🎭",
+            title = "STAGE PLAY",
+            subtitle = "Proscenium, black box & musical theatre • Acts, scenes, stage directions & rapid dialogue",
+            badgeColor = ElectrumGold,
+            onClick = onSelectStagePlay
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 5. CREATE A UNIVERSE
+        StartMenuBigButton(
+            badgeText = "🪐",
+            title = "CREATE A UNIVERSE",
+            subtitle = "Build a Cinematic, Television, Novel, or Blended multi-medium story universe with a shared Lore Bible",
+            badgeColor = ScribeStarNeonRed,
+            onClick = onSelectUniverse
+        )
+    }
+}
+
+@Composable
+private fun ScreenplayBranchContent(
+    isChallengeMode: Boolean,
+    onSelectFilm: () -> Unit,
+    onSelectTelevision: () -> Unit,
+    onBack: () -> Unit
+) {
+    StartMenuLayout(
+        headerTitle = if (isChallengeMode) "🏆 SCREENPLAY CHALLENGE" else "🎬 SCREENPLAY",
+        headerSubtitle = "Choose whether you are writing a Feature Film or Television Script",
+        showBackButton = true,
+        onBack = onBack
+    ) {
+        StartMenuBigButton(
+            badgeText = "🎬",
+            title = if (isChallengeMode) "FILM CHALLENGE (90P FEATURE)" else "FILM (FEATURE SCREENPLAY)",
+            subtitle = "Standalone motion picture script (~90–120 pages) • Industry standard Courier 12pt",
+            badgeColor = ElectrumGold,
+            onClick = onSelectFilm
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        StartMenuBigButton(
+            badgeText = "📺",
+            title = if (isChallengeMode) "TV SCRIPT CHALLENGE (PILOT)" else "TELEVISION (TV SCRIPT)",
+            subtitle = "1-Hour Drama (60m) or 30-Min Comedy (30m) • Episodic structure, cold open & teaser acts",
+            badgeColor = Color(0xFF3B82F6),
+            onClick = onSelectTelevision
         )
     }
 }
 
 @Composable
 private fun UniverseSelectContent(
+    isChallengeMode: Boolean,
     onSelectCinematicFeatures: () -> Unit,
     onSelectTelevisionUniverse: () -> Unit,
+    onSelectNovelUniverse: () -> Unit,
+    onSelectBlendedUniverse: () -> Unit,
     onBack: () -> Unit
 ) {
     StartMenuLayout(
-        headerTitle = "SCREENPLAY UNIVERSE",
-        headerSubtitle = "Select your interconnected storytelling medium",
+        headerTitle = if (isChallengeMode) "🏆 UNIVERSE CHALLENGE" else "🪐 CREATE A UNIVERSE",
+        headerSubtitle = "Choose the interconnected scope of your story world",
         showBackButton = true,
         onBack = onBack
     ) {
-        // Option 1: Cinematic Universe (Features)
         StartMenuBigButton(
             badgeText = "🎬",
-            title = "CINEMATIC UNIVERSE (FEATURES)",
-            subtitle = "Multi-film franchise, trilogy, or connected cinematic universe • Shared Master Lore Bible, installment arcs, and sequel/prequel continuity",
+            title = if (isChallengeMode) "CINEMATIC UNIVERSE CHALLENGE" else "CINEMATIC UNIVERSE",
+            subtitle = "Multi-film franchise, trilogy, or connected features • Shared Master Lore Bible & continuity",
             badgeColor = ElectrumGold,
             onClick = onSelectCinematicFeatures
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Option 2: Television Universe
         StartMenuBigButton(
             badgeText = "📺",
-            title = "TELEVISION UNIVERSE",
-            subtitle = "Serialized TV show, multi-season universe, or episodic anthology • Episode binders (101, 102...), seasonal arcs, and unified Series Lore Bible",
+            title = if (isChallengeMode) "TELEVISION UNIVERSE CHALLENGE" else "TELEVISION UNIVERSE",
+            subtitle = "Serialized multi-season TV show • Episode binders (101, 102...), writers room & Series Lore Bible",
             badgeColor = Color(0xFF3B82F6),
             onClick = onSelectTelevisionUniverse
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        StartMenuBigButton(
+            badgeText = "📚",
+            title = if (isChallengeMode) "NOVEL UNIVERSE CHALLENGE" else "NOVEL UNIVERSE",
+            subtitle = "Multi-book saga, trilogy, or interconnected prose world • Master Lore Bible & chapter binders",
+            badgeColor = Color(0xFF8B5CF6),
+            onClick = onSelectNovelUniverse
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        StartMenuBigButton(
+            badgeText = "🪐",
+            title = if (isChallengeMode) "BLENDED UNIVERSE CHALLENGE" else "BLENDED UNIVERSE",
+            subtitle = "Combine Films, TV Series, Novels, Comic Books & Stage Plays inside one universe • Add any assignment medium anytime",
+            badgeColor = ScribeStarNeonRed,
+            onClick = onSelectBlendedUniverse
         )
     }
 }
 
 @Composable
-private fun NovelSelectContent(
-    onSelectSingleNovel: () -> Unit,
-    onSelectNovelSeries: () -> Unit,
-    onBack: () -> Unit
+private fun BlendedStarterFormatPicker(
+    selectedFormat: ProjectFormat,
+    selectedScreenplayType: ScreenplayType?,
+    isDark: Boolean,
+    onSelect: (ProjectFormat, ScreenplayType?) -> Unit
 ) {
-    StartMenuLayout(
-        headerTitle = "NOVEL ARCHITECTURE",
-        headerSubtitle = "Are you crafting a standalone book or an interconnected series?",
-        showBackButton = true,
-        onBack = onBack
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 14.dp)
+            .floatingGlassIsland(
+                isDark = isDark,
+                elevation = 10.dp,
+                accentColor = ElectrumGold,
+                isHighlighted = true
+            )
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Choice 1: Single Novel
-        StartMenuBigButton(
-            badgeText = "📖",
-            title = "SINGLE NOVEL",
-            subtitle = "Standalone prose manuscript, novel or book • Dedicated World Lore Bible, chapter corkboard & draft manuscript",
-            badgeColor = Color(0xFF8B5CF6),
-            onClick = onSelectSingleNovel
+        Text(
+            text = "🪐 FIRST UNIVERSE ASSIGNMENT FORMAT",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = MainAppFontFamily,
+                color = ElectrumGold,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.2.sp
+            )
         )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Choice 2: Novel Series
-        StartMenuBigButton(
-            badgeText = "📚",
-            title = "NOVEL SERIES",
-            subtitle = "Multi-book saga, trilogy, or interconnected prose universe • Unified Series Master Lore Bible, multi-book swimlanes & saga continuity",
-            badgeColor = ScribeStarNeonRed,
-            onClick = onSelectNovelSeries
+        Text(
+            text = "Pick what medium Assignment #1 starts in (you can add Film, TV, Novel, Comic, or Stage assignments later from the Universe Binder):",
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontFamily = MainAppFontFamily,
+                color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
+                fontSize = 11.sp
+            )
         )
+        val options = listOf(
+            Triple("🎬 Film", ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE),
+            Triple("📺 TV", ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA),
+            Triple("📖 Novel", ProjectFormat.NOVEL, null),
+            Triple("💥 Comic", ProjectFormat.COMIC_BOOK, null),
+            Triple("🎭 Stage", ProjectFormat.STAGE_PLAY, null)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            options.forEach { (label, fmt, sType) ->
+                val isSelected = selectedFormat == fmt && (fmt != ProjectFormat.SCREENPLAY || selectedScreenplayType == sType)
+                Surface(
+                    color = if (isSelected) ScribeStarNeonRed.copy(alpha = 0.22f) else (if (isDark) Color(0xFF0F172A) else Color(0xFFF1F5F9)),
+                    shape = RoundedCornerShape(0.dp),
+                    border = BorderStroke(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) ScribeStarNeonRed else ObsidianSurfaceVariant
+                    ),
+                    modifier = Modifier.clickable { onSelect(fmt, sType) }
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected || isDark) Color.White else Color(0xFF0F172A),
+                            fontSize = 11.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -897,6 +1138,8 @@ private fun WorkspaceViewContent(
     selectedFormat: ProjectFormat,
     selectedScreenplayType: ScreenplayType?,
     isUniverseMode: Boolean,
+    isBlendedUniverseMode: Boolean = false,
+    onBlendedStarterChange: (ProjectFormat, ScreenplayType?) -> Unit = { _, _ -> },
     projectTitleInput: String,
     onTitleChange: (String) -> Unit,
     isDark: Boolean,
@@ -904,17 +1147,18 @@ private fun WorkspaceViewContent(
     onBack: () -> Unit
 ) {
     val formatLabel = when {
-        isUniverseMode && selectedFormat == ProjectFormat.SCREENPLAY -> "CINEMATIC UNIVERSE (FEATURES)"
+        isBlendedUniverseMode -> "BLENDED UNIVERSE (MULTI-MEDIUM)"
+        isUniverseMode && selectedFormat == ProjectFormat.SCREENPLAY -> "CINEMATIC UNIVERSE"
         isUniverseMode && selectedFormat == ProjectFormat.TV_SERIES -> "TELEVISION UNIVERSE"
-        isUniverseMode && selectedFormat == ProjectFormat.NOVEL -> "NOVEL SERIES"
-        selectedFormat == ProjectFormat.NOVEL -> "SINGLE NOVEL"
+        isUniverseMode && selectedFormat == ProjectFormat.NOVEL -> "NOVEL UNIVERSE"
+        selectedFormat == ProjectFormat.NOVEL -> "NOVEL"
         selectedFormat == ProjectFormat.STAGE_PLAY -> "STAGE PLAY"
         selectedFormat == ProjectFormat.COMIC_BOOK -> "COMIC BOOK"
         selectedFormat == ProjectFormat.TV_SERIES -> when (selectedScreenplayType) {
             ScreenplayType.TV_HALF_HOUR_COMEDY -> "TV COMEDY SHOW"
             else -> "TV DRAMA SHOW"
         }
-        else -> "SINGLE SCREENPLAY"
+        else -> "FILM SCREENPLAY"
     }
 
     StartMenuLayout(
@@ -923,6 +1167,15 @@ private fun WorkspaceViewContent(
         showBackButton = true,
         onBack = onBack
     ) {
+        if (isBlendedUniverseMode) {
+            BlendedStarterFormatPicker(
+                selectedFormat = selectedFormat,
+                selectedScreenplayType = selectedScreenplayType,
+                isDark = isDark,
+                onSelect = onBlendedStarterChange
+            )
+        }
+
         // Optional Project Title Input - Concept C Floating Glass Island with Drop Shadow
         Box(
             modifier = Modifier
@@ -936,15 +1189,13 @@ private fun WorkspaceViewContent(
                 )
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
-                val titleLabel = if (isUniverseMode) {
-                    when (selectedFormat) {
-                        ProjectFormat.TV_SERIES -> "TELEVISION UNIVERSE TITLE (OPTIONAL)"
-                        ProjectFormat.NOVEL -> "NOVEL SERIES TITLE (OPTIONAL)"
-                        else -> "CINEMATIC UNIVERSE TITLE (OPTIONAL)"
-                    }
-                } else {
-                    if (selectedFormat == ProjectFormat.NOVEL) "NOVEL TITLE (OPTIONAL)"
-                    else "PROJECT TITLE (OPTIONAL)"
+                val titleLabel = when {
+                    isBlendedUniverseMode -> "BLENDED UNIVERSE TITLE (OPTIONAL)"
+                    isUniverseMode && selectedFormat == ProjectFormat.TV_SERIES -> "TELEVISION UNIVERSE TITLE (OPTIONAL)"
+                    isUniverseMode && selectedFormat == ProjectFormat.NOVEL -> "NOVEL UNIVERSE TITLE (OPTIONAL)"
+                    isUniverseMode -> "CINEMATIC UNIVERSE TITLE (OPTIONAL)"
+                    selectedFormat == ProjectFormat.NOVEL -> "NOVEL TITLE (OPTIONAL)"
+                    else -> "PROJECT TITLE (OPTIONAL)"
                 }
                 Text(
                     text = titleLabel,
@@ -1066,27 +1317,27 @@ private fun SparkModeHubContent(
     onBack: () -> Unit
 ) {
     StartMenuLayout(
-        headerTitle = "🕹️ GAMIFIED GENRE CAMPAIGN HUB",
-        headerSubtitle = "Timed Stage Quests • 48-Hour Survival Quotas, Genre-Themed AI Bouncer & XP Loot Drops",
+        headerTitle = "🏆 WRITING CHALLENGE HUB",
+        headerSubtitle = "Gamified Anti-Procrastination Engine • Timed Stage Quests, 48h Quotas, AI Bouncer & XP Loot Drops",
         showBackButton = true,
         onBack = onBack
     ) {
-        // 1. START NEW GENRE CAMPAIGN
+        // 1. START NEW WRITING CHALLENGE
         StartMenuBigButton(
-            badgeText = "🎮",
-            title = "START NEW GENRE CAMPAIGN",
-            subtitle = "Pick a Genre (Survival, Protocol, Quest, Heist, Overdrive, Roast, Virtuoso, or Detective) • Complete 4 timed stages to unlock the Studio",
+            badgeText = "🏆",
+            title = "START NEW WRITING CHALLENGE",
+            subtitle = "Pick a Genre (Survival, Protocol, Quest, Heist, Overdrive, Roast, Virtuoso, or Detective) • Beat 4 timed stages to unlock Studio",
             badgeColor = ScribeStarNeonRed,
             onClick = onStartNewSpark
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 2. CONTINUE EXISTING CAMPAIGN
+        // 2. CONTINUE EXISTING WRITING CHALLENGE
         if (activeSparkState != null) {
             StartMenuBigButton(
                 badgeText = activeSparkState.campaignGenre.icon,
-                title = "CONTINUE ACTIVE CAMPAIGN: ${activeProjectTitle.uppercase(Locale.US)}",
+                title = "CONTINUE ACTIVE CHALLENGE: ${activeProjectTitle.uppercase(Locale.US)}",
                 subtitle = "${activeSparkState.campaignGenre.modeTitle} • Stage: ${activeSparkState.campaignGenre.stageTitleFor(activeSparkState.stage)} • ⚡ ${activeSparkState.xpBalance} ${activeSparkState.campaignGenre.currencyName} • 🔥 ${activeSparkState.activeStreakDays}d Streak",
                 badgeColor = ElectrumGold,
                 onClick = onContinueActiveSpark
@@ -1096,7 +1347,7 @@ private fun SparkModeHubContent(
 
         if (savedSparkProjects.isNotEmpty()) {
             Text(
-                text = "SAVED GENRE CAMPAIGNS",
+                text = "SAVED WRITING CHALLENGES",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontFamily = MainAppFontFamily,
                     color = ElectrumGold,
@@ -1130,7 +1381,7 @@ private fun SparkModeHubContent(
                 }
                 StartMenuBigButton(
                     badgeText = spark.campaignGenre.icon,
-                    title = spark.projectTitle.ifBlank { "UNTITLED CAMPAIGN" }.uppercase(Locale.US),
+                    title = spark.projectTitle.ifBlank { "UNTITLED CHALLENGE" }.uppercase(Locale.US),
                     subtitle = sub,
                     badgeColor = Color(0xFF10B981),
                     onClick = { onResumeSparkProject(spark) }
@@ -1139,9 +1390,9 @@ private fun SparkModeHubContent(
             }
         } else if (activeSparkState == null) {
             StartMenuBigButton(
-                badgeText = "🕹️",
-                title = "NO SAVED CAMPAIGNS YET",
-                subtitle = "Click 'Start New Genre Campaign' above or pick a Gamified Campaign on the main splash screen to begin your first run!",
+                badgeText = "🏆",
+                title = "NO SAVED CHALLENGES YET",
+                subtitle = "Click 'Start New Writing Challenge' above or pick any Challenge on the Splash screen to begin your first run!",
                 badgeColor = ElectrumGold,
                 onClick = onStartNewSpark
             )
@@ -1154,6 +1405,8 @@ private fun SparkNewSetupContent(
     selectedFormat: ProjectFormat,
     selectedScreenplayType: ScreenplayType?,
     isUniverseMode: Boolean,
+    isBlendedUniverseMode: Boolean = false,
+    onBlendedStarterChange: (ProjectFormat, ScreenplayType?) -> Unit = { _, _ -> },
     projectTitleInput: String,
     onTitleChange: (String) -> Unit,
     isDark: Boolean,
@@ -1163,19 +1416,31 @@ private fun SparkNewSetupContent(
     var selectedGenre by remember { mutableStateOf(CampaignGenre.HORROR) }
 
     val mediumName = when {
-        isUniverseMode -> "UNIVERSE / TV SERIES CAMPAIGN"
-        selectedFormat == ProjectFormat.NOVEL -> "NOVEL CAMPAIGN (${selectedGenre.novelTargetLabel.uppercase(Locale.US)} TARGET)"
-        selectedFormat == ProjectFormat.STAGE_PLAY -> "STAGE PLAY CAMPAIGN"
-        selectedFormat == ProjectFormat.COMIC_BOOK -> "COMIC BOOK CAMPAIGN"
-        else -> "SCREENPLAY CAMPAIGN (90 PAGES / ~18,000W)"
+        isBlendedUniverseMode -> "BLENDED UNIVERSE CHALLENGE"
+        isUniverseMode && selectedFormat == ProjectFormat.NOVEL -> "NOVEL UNIVERSE CHALLENGE"
+        isUniverseMode && selectedFormat == ProjectFormat.TV_SERIES -> "TELEVISION UNIVERSE CHALLENGE"
+        isUniverseMode -> "CINEMATIC UNIVERSE CHALLENGE"
+        selectedFormat == ProjectFormat.NOVEL -> "NOVEL CHALLENGE (${selectedGenre.novelTargetLabel.uppercase(Locale.US)} TARGET)"
+        selectedFormat == ProjectFormat.STAGE_PLAY -> "STAGE PLAY CHALLENGE"
+        selectedFormat == ProjectFormat.COMIC_BOOK -> "COMIC BOOK CHALLENGE"
+        selectedFormat == ProjectFormat.TV_SERIES -> "TV SCRIPT CHALLENGE"
+        else -> "FILM SCREENPLAY CHALLENGE (90 PAGES / ~18,000W)"
     }
 
     StartMenuLayout(
-        headerTitle = "🎮 SELECT YOUR GENRE CAMPAIGN",
-        headerSubtitle = "$mediumName • Your genre transforms the game mode, stage names, currency & AI Bouncer",
+        headerTitle = "🏆 CHOOSE WRITING CHALLENGE GENRE",
+        headerSubtitle = "$mediumName • Your genre transforms the game rules, stages, currency & AI Bouncer",
         showBackButton = true,
         onBack = onBack
     ) {
+        if (isBlendedUniverseMode) {
+            BlendedStarterFormatPicker(
+                selectedFormat = selectedFormat,
+                selectedScreenplayType = selectedScreenplayType,
+                isDark = isDark,
+                onSelect = onBlendedStarterChange
+            )
+        }
         // 1. 8-GENRE CAMPAIGN GRID (4 rows of 2 cards)
         val genres = CampaignGenre.entries
         Column(
@@ -1454,49 +1719,20 @@ private fun SparkNewSetupContent(
         }
 
         // 4. LAUNCH BUTTON(S)
-        if (isUniverseMode) {
-            StartMenuBigButton(
-                badgeText = selectedGenre.icon,
-                title = "${selectedGenre.launchCtaLabel} • 1-HOUR TV DRAMA (60M PILOT)",
-                subtitle = "${selectedGenre.modeTitle} • Target: 10,000w (Ep 101 Pilot) • 60m Dual-Spark → 72h Bible → 24h Outline → 500w/48h Quota",
-                badgeColor = Color(0xFF3B82F6),
-                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, selectedGenre) }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            StartMenuBigButton(
-                badgeText = selectedGenre.icon,
-                title = "${selectedGenre.launchCtaLabel} • 30-MIN TV COMEDY (30M PILOT)",
-                subtitle = "${selectedGenre.modeTitle} • Target: 5,500w (Ep 101 Pilot) • 60m Dual-Spark → 72h Bible → 24h Outline → 500w/48h Quota",
-                badgeColor = Color(0xFFEC4899),
-                onClick = { onLaunchSpark(ProjectFormat.TV_SERIES, ScreenplayType.TV_HALF_HOUR_COMEDY, selectedGenre) }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            StartMenuBigButton(
-                badgeText = selectedGenre.icon,
-                title = "${selectedGenre.launchCtaLabel} • CINEMATIC FEATURE UNIVERSE",
-                subtitle = "${selectedGenre.modeTitle} • Target: 90 Pages (~18,000w, Installment 1) • 30m Spark → 48h Bible → 24h Outline → 600w/48h Quota",
-                badgeColor = ElectrumGold,
-                onClick = { onLaunchSpark(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, selectedGenre) }
-            )
-        } else {
-            val primarySub = when (selectedFormat) {
-                ProjectFormat.NOVEL -> "${selectedGenre.modeTitle} • ${selectedGenre.novelTargetLabel} Target • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (96h) → ${selectedGenre.stage3Title} (48h) → ${selectedGenre.stage4Title}"
-                ProjectFormat.STAGE_PLAY -> "${selectedGenre.modeTitle} • Stage Play • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
-                ProjectFormat.COMIC_BOOK -> "${selectedGenre.modeTitle} • Comic Issue • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
-                else -> "${selectedGenre.modeTitle} • 90-Page Feature • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
-            }
-            StartMenuBigButton(
-                badgeText = selectedGenre.icon,
-                title = selectedGenre.launchCtaLabel,
-                subtitle = primarySub,
-                badgeColor = ElectrumGold,
-                onClick = { onLaunchSpark(selectedFormat, selectedScreenplayType ?: ScreenplayType.FEATURE, selectedGenre) }
-            )
+        val primarySub = when (selectedFormat) {
+            ProjectFormat.NOVEL -> "${selectedGenre.modeTitle} • ${selectedGenre.novelTargetLabel} Target • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (96h) → ${selectedGenre.stage3Title} (48h) → ${selectedGenre.stage4Title}"
+            ProjectFormat.STAGE_PLAY -> "${selectedGenre.modeTitle} • Stage Play • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
+            ProjectFormat.COMIC_BOOK -> "${selectedGenre.modeTitle} • Comic Issue • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
+            ProjectFormat.TV_SERIES -> "${selectedGenre.modeTitle} • ${if (selectedScreenplayType == ScreenplayType.TV_HALF_HOUR_COMEDY) "30m Comedy Pilot" else "60m Drama Pilot"} • Stage 1: ${selectedGenre.stage1Title} (60m) → ${selectedGenre.stage2Title} (72h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
+            else -> "${selectedGenre.modeTitle} • 90-Page Feature • Stage 1: ${selectedGenre.stage1Title} (30m) → ${selectedGenre.stage2Title} (48h) → ${selectedGenre.stage3Title} (24h) → ${selectedGenre.stage4Title}"
         }
+        StartMenuBigButton(
+            badgeText = selectedGenre.icon,
+            title = selectedGenre.launchCtaLabel,
+            subtitle = primarySub,
+            badgeColor = ElectrumGold,
+            onClick = { onLaunchSpark(selectedFormat, selectedScreenplayType, selectedGenre) }
+        )
     }
 }
 
@@ -2136,9 +2372,12 @@ private fun StartMenuBigButton(
 private fun GlassStartMenuHub(
     hasActiveProject: Boolean,
     activeTitle: String,
+    onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
+    onSelectSparkUniverse: () -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -2175,9 +2414,12 @@ private fun GlassStartMenuHub(
         if (availableWidth >= 680.dp) {
             GlassStartMenuHubWide(
                 availableWidth = availableWidth,
+                onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
+                onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -2186,9 +2428,12 @@ private fun GlassStartMenuHub(
         } else if (availableWidth >= 480.dp) {
             GlassStartMenuHubMedium(
                 availableWidth = availableWidth,
+                onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
+                onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -2197,9 +2442,12 @@ private fun GlassStartMenuHub(
         } else {
             GlassStartMenuHubCompact(
                 availableWidth = availableWidth,
+                onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
+                onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
                 onOpenLibrary = onOpenLibrary,
@@ -2332,7 +2580,7 @@ private fun SplashColumnHeaderPill(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = if (isSpark) "🎮 GAMIFIED GENRE CAMPAIGNS" else "🏛️ STANDARD STUDIO (FREEFORM)",
+                            text = if (isSpark) "🏆 WRITING CHALLENGES (FIRST DRAFT ENGINE)" else "🏛️ STANDARD STUDIO",
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontFamily = MainAppFontFamily,
                                 fontWeight = FontWeight.Bold,
@@ -2347,7 +2595,7 @@ private fun SplashColumnHeaderPill(
                             border = BorderStroke(0.8.dp, if (isSpark) ElectrumGold.copy(alpha = 0.6f) else ScribeStarNeonRed.copy(alpha = 0.6f))
                         ) {
                             Text(
-                                text = if (isSpark) "⚡ TIMED STAGES • XP LOOT • 48H SURVIVAL" else "🔓 WRITE AT YOUR OWN PACE • ZERO TIMERS",
+                                text = if (isSpark) "🎮 RPG GAME + ANTI-PROCRASTINATION ENGINE" else "🔓 WRITE AT YOUR OWN PACE • ZERO TIMERS",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = MainAppFontFamily,
                                     fontWeight = FontWeight.SemiBold,
@@ -2361,9 +2609,9 @@ private fun SplashColumnHeaderPill(
 
                         Text(
                             text = if (isSpark) {
-                                "Anti-procrastination arcade mode powered by the First Draft Engine. Pick your genre, race against 4 strict timed airlocks (Spark → Bible → Outline → Draft), maintain 48-hour word quotas, survive the AI Bouncer, and earn XP to buy items and unlock loot drops."
+                                "Part immersive writing RPG, part strict anti-procrastination engine. Pick your medium and choose from 8 playable genres (Survival, Protocol, Quest, Heist, Overdrive, Roast, Virtuoso, or Detective).\n\nYou'll conquer 4 timed stages (Spark → Story Bible → Outline → Draft) with forward-only draft locks and 48-hour word quotas. Outlast the Genre AI Bouncer, earn XP currency, buy shields & power-ups, and unlock full Studio mode when you reach THE END."
                             } else {
-                                "Write at your own pace with all creative tools unlocked from day one. Full unrestricted access to Lore Bible, Corkboard Outline, and Drafting Editor with zero stage airlocks, survival quotas, or typing speed constraints."
+                                "Write at your own pace with every creative tool unlocked from day one. Full unrestricted access to Lore Bible, Corkboard Outline, and Drafting Editor with zero stage timers, word quotas, or editing locks."
                             },
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = MainAppFontFamily,
@@ -2374,7 +2622,7 @@ private fun SplashColumnHeaderPill(
                         )
 
                         Text(
-                            text = if (isSpark) "Hover away or tap to dismiss • Click any card to play" else "Hover away or tap to dismiss • Click any format to start",
+                            text = if (isSpark) "Hover away or tap to dismiss • Pick any challenge to play" else "Hover away or tap to dismiss • Click any format to start",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MainAppFontFamily,
                                 fontSize = 9.sp,
@@ -2391,9 +2639,12 @@ private fun SplashColumnHeaderPill(
 @Composable
 private fun GlassStartMenuHubWide(
     availableWidth: Dp,
+    onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
+    onSelectSparkUniverse: () -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -2410,7 +2661,7 @@ private fun GlassStartMenuHubWide(
             .padding(horizontal = 24.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Midsection: Left Column (All 5 Standard Projects) vs Right Column (All 5 Respective Spark Projects)
+        // Midsection: Left Column (All 5 Standard Projects) vs Right Column (All 5 Writing Challenges)
         Row(
             modifier = Modifier
                 .wrapContentWidth()
@@ -2418,7 +2669,7 @@ private fun GlassStartMenuHubWide(
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
-            // LEFT COLUMN: NEW STANDARD PROJECTS (FREEFORM STUDIO / NO SPARK)
+            // LEFT COLUMN: STANDARD STUDIO (Screenplay -> Novel -> Comic Book -> Stage Play -> Create A Universe)
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
@@ -2429,82 +2680,73 @@ private fun GlassStartMenuHubWide(
                     isSpark = false
                 )
                 GlassFormatCard(
-                    title = "Single Screenplay",
-                    subtitle = "Standard Feature • Freeform Studio",
+                    title = "Screenplay",
+                    subtitle = "Film or Television Script",
                     iconType = 0,
-                    onClick = { onSelectFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) },
+                    onClick = onSelectScreenplayBranch,
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Screenplay Universe",
-                    subtitle = "Film Franchise or TV Series",
-                    iconType = 5,
-                    onClick = onSelectUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play",
-                    subtitle = "Theatrical Script • Freeform Studio",
-                    iconType = 3,
-                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
+                    title = "Novel",
+                    subtitle = "Book Manuscript & Chapters",
+                    iconType = 2,
+                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
                     title = "Comic Book",
-                    subtitle = "Pages & Panels • Freeform Studio",
+                    subtitle = "Pages, Panels & SFX",
                     iconType = 4,
                     onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel",
-                    subtitle = "Book Manuscript • Freeform Studio",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+                    title = "Stage Play",
+                    subtitle = "Theatrical Script & Acts",
+                    iconType = 3,
+                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Create A Universe",
+                    subtitle = "Film, TV, Novel or Blended",
+                    iconType = 5,
+                    onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // RIGHT COLUMN: GAMIFIED GENRE CAMPAIGNS (FIRST DRAFT ENGINE)
+            // RIGHT COLUMN: WRITING CHALLENGES (FIRST DRAFT ENGINE)
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "🎮 GENRE CAMPAIGNS",
+                    title = "🏆 WRITING CHALLENGES",
                     subtitle = "",
                     isSpark = true
                 )
                 GlassFormatCard(
-                    title = "Screenplay Campaign",
-                    subtitle = "Gamified 90p Challenge • Earn XP & Loot",
+                    title = "Screenplay Challenge",
+                    subtitle = "Film or TV Quest • Earn XP & Loot",
                     iconType = 0,
                     isSparkCard = true,
                     badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    onClick = onSelectSparkScreenplayBranch,
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Universe / TV Campaign",
-                    subtitle = "Pilot & Franchise Mode • Act-Gate Quests",
-                    iconType = 5,
+                    title = "Novel Challenge",
+                    subtitle = "75k–100k Word RPG • Chapter Quests",
+                    iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
+                    badgeTag = "75k-100k",
+                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Stage Play Campaign",
-                    subtitle = "Theatrical Gauntlet • Timed Scene Airlocks",
-                    iconType = 3,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book Campaign",
-                    subtitle = "Issue Boss-Run • Timed Page & Panel Locks",
+                    title = "Comic Book Challenge",
+                    subtitle = "Issue Boss-Run • Timed Panel Locks",
                     iconType = 4,
                     isSparkCard = true,
                     badgeTag = "Play →",
@@ -2512,12 +2754,21 @@ private fun GlassStartMenuHubWide(
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel Campaign",
-                    subtitle = "75k–100k Word RPG • Chapter Quests & XP",
-                    iconType = 2,
+                    title = "Stage Play Challenge",
+                    subtitle = "Theatrical Gauntlet • Timed Airlocks",
+                    iconType = 3,
                     isSparkCard = true,
-                    badgeTag = "75k-100k",
-                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
+                    badgeTag = "Play →",
+                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Universe Challenge",
+                    subtitle = "Cinematic, TV, Novel or Blended",
+                    iconType = 5,
+                    isSparkCard = true,
+                    badgeTag = "Play →",
+                    onClick = onSelectSparkUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -2525,7 +2776,7 @@ private fun GlassStartMenuHubWide(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Bottom Center Dock: Open/Import, Continue Studio Project, Continue Existing Spark
+        // Bottom Center Dock: Open/Import, Continue Studio Project, Continue Writing Challenge
         ConceptBActionDock(
             isCompact = false,
             onNewProject = onNewProject,
@@ -2539,9 +2790,12 @@ private fun GlassStartMenuHubWide(
 @Composable
 private fun GlassStartMenuHubMedium(
     availableWidth: Dp,
+    onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
+    onSelectSparkUniverse: () -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -2564,7 +2818,7 @@ private fun GlassStartMenuHubMedium(
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
-            // Left Column: Standard
+            // Left Column: Standard Studio
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -2576,24 +2830,17 @@ private fun GlassStartMenuHubMedium(
                     isCompact = true
                 )
                 GlassFormatCard(
-                    title = "Single Screenplay",
-                    subtitle = "Freeform Studio",
+                    title = "Screenplay",
+                    subtitle = "Film or TV Script",
                     iconType = 0,
-                    onClick = { onSelectFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) },
+                    onClick = onSelectScreenplayBranch,
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Screenplay Universe",
-                    subtitle = "Film or TV Series",
-                    iconType = 5,
-                    onClick = onSelectUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play",
-                    subtitle = "Theatrical Script",
-                    iconType = 3,
-                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
+                    title = "Novel",
+                    subtitle = "Book Manuscript",
+                    iconType = 2,
+                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
@@ -2604,54 +2851,52 @@ private fun GlassStartMenuHubMedium(
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel",
-                    subtitle = "Book Manuscript",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
+                    title = "Stage Play",
+                    subtitle = "Theatrical Script",
+                    iconType = 3,
+                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Create A Universe",
+                    subtitle = "Film, TV, Novel or Blended",
+                    iconType = 5,
+                    onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // Right Column: Gamified Genre Campaigns
+            // Right Column: Writing Challenges
             Column(
                 modifier = Modifier.width(cardWidth),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 SplashColumnHeaderPill(
-                    title = "🎮 GENRE CAMPAIGNS",
+                    title = "🏆 WRITING CHALLENGES",
                     subtitle = "",
                     isSpark = true,
                     isCompact = true
                 )
                 GlassFormatCard(
-                    title = "Screenplay Campaign",
-                    subtitle = "Gamified 90p • XP & Loot",
+                    title = "Screenplay Challenge",
+                    subtitle = "Film or TV • XP & Loot",
                     iconType = 0,
                     isSparkCard = true,
                     badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    onClick = onSelectSparkScreenplayBranch,
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Universe / TV Campaign",
-                    subtitle = "Pilot & Franchise Quests",
-                    iconType = 5,
+                    title = "Novel Challenge",
+                    subtitle = "75k–100k Word RPG",
+                    iconType = 2,
                     isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
+                    badgeTag = "75k-100k",
+                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Stage Play Campaign",
-                    subtitle = "Theatrical Gauntlet",
-                    iconType = 3,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book Campaign",
+                    title = "Comic Book Challenge",
                     subtitle = "Issue Boss-Run",
                     iconType = 4,
                     isSparkCard = true,
@@ -2660,12 +2905,21 @@ private fun GlassStartMenuHubMedium(
                     modifier = Modifier.fillMaxWidth()
                 )
                 GlassFormatCard(
-                    title = "Novel Campaign",
-                    subtitle = "75k–100k Word RPG",
-                    iconType = 2,
+                    title = "Stage Play Challenge",
+                    subtitle = "Theatrical Gauntlet",
+                    iconType = 3,
                     isSparkCard = true,
-                    badgeTag = "75k-100k",
-                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
+                    badgeTag = "Play →",
+                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GlassFormatCard(
+                    title = "Universe Challenge",
+                    subtitle = "Film, TV, Novel or Blended",
+                    iconType = 5,
+                    isSparkCard = true,
+                    badgeTag = "Play →",
+                    onClick = onSelectSparkUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -2686,9 +2940,12 @@ private fun GlassStartMenuHubMedium(
 @Composable
 private fun GlassStartMenuHubCompact(
     availableWidth: Dp,
+    onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
+    onSelectSparkUniverse: () -> Unit,
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
@@ -2717,7 +2974,7 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             SplashColumnHeaderPill(
-                title = "🎮 CAMPAIGNS",
+                title = "🏆 CHALLENGES",
                 subtitle = "",
                 isSpark = true,
                 isCompact = true,
@@ -2725,7 +2982,7 @@ private fun GlassStartMenuHubCompact(
             )
         }
 
-        // Row 1: Screenplay vs Screenplay Campaign
+        // Row 1: Screenplay vs Screenplay Challenge
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2733,87 +2990,21 @@ private fun GlassStartMenuHubCompact(
             GlassFormatCard(
                 title = "Screenplay",
                 iconType = 0,
-                onClick = { onSelectFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE) },
+                onClick = onSelectScreenplayBranch,
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Screenplay Game",
+                title = "Screenplay Challenge",
                 iconType = 0,
                 isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                onClick = onSelectSparkScreenplayBranch,
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
         }
 
-        // Row 2: Universe vs Universe/TV Campaign
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Universe",
-                iconType = 5,
-                onClick = onSelectUniverse,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "TV / Film Game",
-                iconType = 5,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.TV_SERIES, ScreenplayType.TV_HOUR_DRAMA, true) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 3: Stage Play vs Stage Play Campaign
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Stage Play",
-                iconType = 3,
-                onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Stage Game",
-                iconType = 3,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 4: Comic Book vs Comic Book Campaign
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Comic Book",
-                iconType = 4,
-                onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Comic Game",
-                iconType = 4,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 5: Novel vs Novel Campaign
+        // Row 2: Novel vs Novel Challenge
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -2826,10 +3017,76 @@ private fun GlassStartMenuHubCompact(
                 modifier = Modifier.width(cardWidth)
             )
             GlassFormatCard(
-                title = "Novel Game",
+                title = "Novel Challenge",
                 iconType = 2,
                 isSparkCard = true,
                 onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 3: Comic Book vs Comic Book Challenge
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
+                title = "Comic Book",
+                iconType = 4,
+                onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            GlassFormatCard(
+                title = "Comic Challenge",
+                iconType = 4,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 4: Stage Play vs Stage Play Challenge
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
+                title = "Stage Play",
+                iconType = 3,
+                onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            GlassFormatCard(
+                title = "Stage Challenge",
+                iconType = 3,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 5 (Last): Create A Universe vs Universe Challenge
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
+                title = "Create A Universe",
+                iconType = 5,
+                onClick = onSelectUniverse,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            GlassFormatCard(
+                title = "Universe Challenge",
+                iconType = 5,
+                isSparkCard = true,
+                onClick = onSelectSparkUniverse,
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
@@ -2849,7 +3106,7 @@ private fun GlassStartMenuHubCompact(
 
 /**
  * Concept B Floating Action Pill Dock (Centered at Bottom).
- * Displays 📂 Open / Import Project, ▶️ Continue Studio Project, and 🔥 Continue Existing Spark.
+ * Displays Open / Import Project, Continue Studio Project, and Continue Writing Challenge.
  */
 @Composable
 private fun ConceptBActionDock(
@@ -2885,7 +3142,7 @@ private fun ConceptBActionDock(
             )
 
             ConceptBPrimaryPill(
-                text = if (isCompact) "🕹️ Continue Campaign" else "🕹️ Continue Active Campaign",
+                text = if (isCompact) "🏆 Continue Challenge" else "🏆 Continue Writing Challenge",
                 onClick = onOpenSparkMode,
                 isCompact = isCompact
             )

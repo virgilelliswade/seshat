@@ -91,7 +91,8 @@ import java.util.Locale
 @Composable
 fun ScriptLibraryDialog(
     viewModel: ScreenplayViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onProjectOpened: () -> Unit = onDismiss
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -123,7 +124,7 @@ fun ScriptLibraryDialog(
                 ScriptFileManager.saveScript(context, doc.blocks, doc.titlePage, "fountain")
                 refreshTrigger++
                 Toast.makeText(context, "Loaded '${doc.titlePage.title}' (${doc.blocks.size} blocks)", Toast.LENGTH_LONG).show()
-                onDismiss()
+                onProjectOpened()
             } else {
                 Toast.makeText(context, importResult.errorMessage ?: "Failed to import script", Toast.LENGTH_LONG).show()
             }
@@ -289,7 +290,7 @@ fun ScriptLibraryDialog(
                                     if (imp.isSuccess && imp.document != null) {
                                         viewModel.loadDocument(imp.document.blocks, imp.document.titlePage)
                                         Toast.makeText(context, "Opened '${project.title}'", Toast.LENGTH_SHORT).show()
-                                        onDismiss()
+                                        onProjectOpened()
                                     } else {
                                         Toast.makeText(context, "Failed to load script: ${imp.errorMessage}", Toast.LENGTH_SHORT).show()
                                     }
@@ -338,7 +339,7 @@ fun ScriptLibraryDialog(
                     refreshTrigger++
                     showNewTemplateDialog = false
                     Toast.makeText(context, "Created new screenplay '$title'", Toast.LENGTH_SHORT).show()
-                    onDismiss()
+                    onProjectOpened()
                 }
             }
         )

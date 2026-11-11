@@ -54,4 +54,12 @@ object DeviceEnvironment {
      */
     fun getDeviceNavLabel(context: Context? = null): String =
         if (isMacOS) "🍎 MacBook • ⌘ Arrow Nav" else if (isGooglebook(context)) "💻 Googlebook • Arrow Nav" else "📱 Touch Screen"
+
+    fun openExternalUrl(context: Context? = null, url: String) {
+        try {
+            if (java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().browse(java.net.URI(url))
+            }
+        } catch (_: Throwable) {}
+    }
 }

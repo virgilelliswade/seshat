@@ -45,7 +45,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import com.seshat.writer.util.DeviceEnvironment
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -484,16 +487,82 @@ fun StudioSettingsDialog(
 
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    // API Key Field (if required)
+                                    // API Key Field + Guided BYOK Helpers (if required)
+                                    val clipboardManager = LocalClipboardManager.current
                                     if (config.provider.requiresKey) {
-                                        Text(
-                                            text = "${config.provider.displayName} API Key",
-                                            style = MaterialTheme.typography.labelMedium.copy(color = ScreenplayTextDark)
-                                        )
+                                        val keyPortalUrl = when (config.provider) {
+                                            AiProvider.GOOGLE_GEMINI -> "https://aistudio.google.com/apikey"
+                                            AiProvider.OPENAI -> "https://platform.openai.com/api-keys"
+                                            AiProvider.ANTHROPIC_CLAUDE -> "https://console.anthropic.com/settings/keys"
+                                            AiProvider.CUSTOM_LOCAL -> ""
+                                        }
+                                        val getKeyLabel = when (config.provider) {
+                                            AiProvider.GOOGLE_GEMINI -> "🔗 Get Free Gemini Key ↗"
+                                            AiProvider.OPENAI -> "🔗 OpenAI Keys ↗"
+                                            AiProvider.ANTHROPIC_CLAUDE -> "🔗 Anthropic Keys ↗"
+                                            AiProvider.CUSTOM_LOCAL -> ""
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "${config.provider.displayName} API Key",
+                                                style = MaterialTheme.typography.labelMedium.copy(color = ScreenplayTextDark)
+                                            )
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                if (keyPortalUrl.isNotEmpty()) {
+                                                    Surface(
+                                                        color = ElectrumGold.copy(alpha = 0.14f),
+                                                        shape = RoundedCornerShape(0.dp),
+                                                        border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.65f)),
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(0.dp))
+                                                            .clickable { DeviceEnvironment.openExternalUrl(context, keyPortalUrl) }
+                                                    ) {
+                                                        Text(
+                                                            text = getKeyLabel,
+                                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = ElectrumGold,
+                                                                fontSize = 10.5.sp
+                                                            ),
+                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Surface(
+                                                    color = ObsidianBlack,
+                                                    shape = RoundedCornerShape(0.dp),
+                                                    border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(0.dp))
+                                                        .clickable {
+                                                            val clip = clipboardManager.getText()?.text?.trim().orEmpty()
+                                                            if (clip.isNotEmpty()) {
+                                                                updateConfig(config.copy(apiKey = clip))
+                                                                testStatus = null
+                                                            }
+                                                        }
+                                                ) {
+                                                    Text(
+                                                        text = "📋 Paste Key",
+                                                        style = MaterialTheme.typography.labelSmall.copy(
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            color = ScreenplayTextDark,
+                                                            fontSize = 10.5.sp
+                                                        ),
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                         Spacer(modifier = Modifier.height(6.dp))
                                         OutlinedTextField(
                                             value = config.apiKey,
-                                            onValueChange = { updateConfig(config.copy(apiKey = it)) },
+                                            onValueChange = { updateConfig(config.copy(apiKey = it.trim())) },
                                             modifier = Modifier.fillMaxWidth(),
                                             placeholder = {
                                                 Text(
@@ -524,11 +593,111 @@ fun StudioSettingsDialog(
                                             ),
                                             singleLine = true
                                         )
+
+                                        // Live format check & guided onboarding tip
+                                        Spacer(modifier = Modifier.height(5.dp))
+                                        val trimmedKey = config.apiKey.trim()
+                                        val (hintText, hintColor) = when {
+                                            trimmedKey.isEmpty() -> {
+                                                val setupHint = when (config.provider) {
+                                                    AiProvider.GOOGLE_GEMINI -> "1. Tap 'Get Free Gemini Key' above  →  2. Create Key  →  3. Tap 'Paste Key'."
+                                                    AiProvider.OPENAI -> "1. Tap 'OpenAI Keys' above  →  2. Create Secret Key  →  3. Tap 'Paste Key'."
+                                                    AiProvider.ANTHROPIC_CLAUDE -> "1. Tap 'Anthropic Keys' above  →  2. Create Key  →  3. Tap 'Paste Key'."
+                                                    AiProvider.CUSTOM_LOCAL -> ""
+                                                }
+                                                setupHint to ScreenplayTextMuted
+                                            }
+                                            config.provider == AiProvider.GOOGLE_GEMINI && trimmedKey.startsWith("AIza") && trimmedKey.length >= 25 ->
+                                                "✓ Valid Gemini key format detected — tap 'Test Connection' below." to Color(0xFF4CAF50)
+                                            config.provider == AiProvider.OPENAI && trimmedKey.startsWith("sk-") && trimmedKey.length >= 20 ->
+                                                "✓ Valid OpenAI key format detected — tap 'Test Connection' below." to Color(0xFF4CAF50)
+                                            config.provider == AiProvider.ANTHROPIC_CLAUDE && trimmedKey.startsWith("sk-ant-") ->
+                                                "✓ Valid Anthropic key format detected — tap 'Test Connection' below." to Color(0xFF4CAF50)
+                                            else ->
+                                                "ℹ️ Double-check your ${config.provider.displayName} key format or tap 'Test Connection'." to ElectrumGold
+                                        }
+                                        Text(
+                                            text = hintText,
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontSize = 11.sp,
+                                                color = hintColor
+                                            )
+                                        )
                                         Spacer(modifier = Modifier.height(14.dp))
                                     }
 
-                                    // Custom Endpoint (for Local / Ollama)
+                                    // Custom Endpoint + Local AI (Ollama) Quick-Setup Guide
                                     if (config.provider == AiProvider.CUSTOM_LOCAL) {
+                                        Surface(
+                                            color = ObsidianBlack.copy(alpha = 0.7f),
+                                            shape = RoundedCornerShape(0.dp),
+                                            border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = "🦙 LOCAL AI (OLLAMA) — ZERO ACCOUNTS / 100% OFFLINE",
+                                                        style = MaterialTheme.typography.labelSmall.copy(
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = ElectrumGold,
+                                                            fontSize = 10.5.sp
+                                                        )
+                                                    )
+                                                    Surface(
+                                                        color = ElectrumGold.copy(alpha = 0.14f),
+                                                        shape = RoundedCornerShape(0.dp),
+                                                        border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.55f)),
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(0.dp))
+                                                            .clickable { DeviceEnvironment.openExternalUrl(context, "https://ollama.com") }
+                                                    ) {
+                                                        Text(
+                                                            text = "🔗 ollama.com ↗",
+                                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                                color = ElectrumGold,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 10.sp
+                                                            ),
+                                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "1. Install Ollama on your Mac/PC  •  2. Open Terminal and run: ollama run ${config.modelName.ifBlank { "llama3.3" }}  •  3. Keep endpoint below as http://localhost:11434/v1",
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        color = ScreenplayTextMuted,
+                                                        fontSize = 11.sp,
+                                                        lineHeight = 15.sp
+                                                    )
+                                                )
+                                                Surface(
+                                                    color = ObsidianSurface,
+                                                    shape = RoundedCornerShape(0.dp),
+                                                    border = BorderStroke(1.dp, ObsidianSurfaceVariant),
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(0.dp))
+                                                        .clickable {
+                                                            val cmd = "ollama run ${config.modelName.ifBlank { "llama3.3" }}"
+                                                            clipboardManager.setText(AnnotatedString(cmd))
+                                                        }
+                                                ) {
+                                                    Text(
+                                                        text = "📋 Copy Command: ollama run ${config.modelName.ifBlank { "llama3.3" }}",
+                                                        style = MaterialTheme.typography.labelSmall.copy(
+                                                            color = ScreenplayTextDark,
+                                                            fontSize = 10.5.sp
+                                                        ),
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+
                                         Text(
                                             text = "Local Endpoint URL",
                                             style = MaterialTheme.typography.labelMedium.copy(color = ScreenplayTextDark)

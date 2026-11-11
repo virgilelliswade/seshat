@@ -86,4 +86,17 @@ object DeviceEnvironment {
     fun getDeviceNavLabel(context: Context): String = getDeviceLabel(context)
 
     fun isMacBook(): Boolean = false
+
+    fun openExternalUrl(context: Context?, url: String) {
+        if (context == null) return
+        try {
+            val intent = android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse(url)
+            ).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (_: Throwable) {}
+    }
 }
