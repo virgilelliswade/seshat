@@ -510,6 +510,19 @@ fun StartMenuScreen(
                                             projectTitleInput = ""
                                             navigateTo(StartMenuStep.UNIVERSE_SELECT)
                                         },
+                                        onOpenPitchDeck = {
+                                            viewModel.startNewProject(
+                                                context = context,
+                                                format = ProjectFormat.SCREENPLAY,
+                                                screenplayType = ScreenplayType.FEATURE,
+                                                initialWorkspaceView = InitialWorkspaceView.PITCH_DECK,
+                                                customTitle = "Untitled Pitch Deck",
+                                                template = TemplateRegistry.BLANK_FEATURE,
+                                                enableSparkMode = false,
+                                                isUniverseProject = false
+                                            )
+                                            onCloseMenu()
+                                        },
                                         onSelectSparkScreenplayBranch = {
                                             isUniverseMode = false
                                             isBlendedUniverseMode = false
@@ -800,7 +813,8 @@ fun StartMenuScreen(
                                                 initialWorkspaceView = view,
                                                 customTitle = projectTitleInput,
                                                 template = selectedTemplate,
-                                                enableSparkMode = false
+                                                enableSparkMode = false,
+                                                isUniverseProject = isUniverseMode
                                             )
                                         }
                                         onCloseMenu()
@@ -1306,6 +1320,17 @@ private fun WorkspaceViewContent(
             subtitle = draftingDesc,
             badgeColor = Color(0xFF10B981),
             onClick = { onSelectView(InitialWorkspaceView.EDITOR) }
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Choice 4: Pitch Deck Creator
+        StartMenuBigButton(
+            badgeText = "🎤",
+            title = "PITCH DECK CREATOR",
+            subtitle = "Build a 45-Second Elevator Pitch & 16:9 Presentation Deck (PDF & PowerPoint/Slides/Keynote export)",
+            badgeColor = ScribeStarNeonRed,
+            onClick = { onSelectView(InitialWorkspaceView.PITCH_DECK) }
         )
     }
 }
@@ -2379,6 +2404,7 @@ private fun GlassStartMenuHub(
     onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onOpenPitchDeck: () -> Unit = {},
     onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onSelectSparkUniverse: () -> Unit,
@@ -2421,6 +2447,7 @@ private fun GlassStartMenuHub(
                 onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onOpenPitchDeck = onOpenPitchDeck,
                 onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
                 onSelectSparkUniverse = onSelectSparkUniverse,
@@ -2435,6 +2462,7 @@ private fun GlassStartMenuHub(
                 onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onOpenPitchDeck = onOpenPitchDeck,
                 onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
                 onSelectSparkUniverse = onSelectSparkUniverse,
@@ -2449,6 +2477,7 @@ private fun GlassStartMenuHub(
                 onSelectScreenplayBranch = onSelectScreenplayBranch,
                 onSelectFormat = onSelectFormat,
                 onSelectUniverse = onSelectUniverse,
+                onOpenPitchDeck = onOpenPitchDeck,
                 onSelectSparkScreenplayBranch = onSelectSparkScreenplayBranch,
                 onSelectSparkFormat = onSelectSparkFormat,
                 onSelectSparkUniverse = onSelectSparkUniverse,
@@ -2646,6 +2675,7 @@ private fun GlassStartMenuHubWide(
     onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onOpenPitchDeck: () -> Unit = {},
     onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onSelectSparkUniverse: () -> Unit,
@@ -2718,6 +2748,13 @@ private fun GlassStartMenuHubWide(
                     onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
+                GlassFormatCard(
+                    title = "Pitch Deck",
+                    subtitle = "45s Elevator Pitch & 16:9 Slides",
+                    iconType = 1,
+                    onClick = onOpenPitchDeck,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // RIGHT COLUMN: WRITING CHALLENGES (FIRST DRAFT ENGINE)
@@ -2775,6 +2812,15 @@ private fun GlassStartMenuHubWide(
                     onClick = onSelectSparkUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
+                GlassFormatCard(
+                    title = "Pitch Deck Challenge",
+                    subtitle = "Pitch Night Prep • 45s & Deck",
+                    iconType = 1,
+                    isSparkCard = true,
+                    badgeTag = "Play →",
+                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
@@ -2797,6 +2843,7 @@ private fun GlassStartMenuHubMedium(
     onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onOpenPitchDeck: () -> Unit = {},
     onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onSelectSparkUniverse: () -> Unit,
@@ -2868,6 +2915,13 @@ private fun GlassStartMenuHubMedium(
                     onClick = onSelectUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
+                GlassFormatCard(
+                    title = "Pitch Deck",
+                    subtitle = "45s Elevator Pitch & 16:9 Slides",
+                    iconType = 1,
+                    onClick = onOpenPitchDeck,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             // Right Column: Writing Challenges
@@ -2926,6 +2980,15 @@ private fun GlassStartMenuHubMedium(
                     onClick = onSelectSparkUniverse,
                     modifier = Modifier.fillMaxWidth()
                 )
+                GlassFormatCard(
+                    title = "Pitch Deck Challenge",
+                    subtitle = "Pitch Night Prep",
+                    iconType = 1,
+                    isSparkCard = true,
+                    badgeTag = "Play →",
+                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
@@ -2947,6 +3010,7 @@ private fun GlassStartMenuHubCompact(
     onSelectScreenplayBranch: () -> Unit,
     onSelectFormat: (ProjectFormat, ScreenplayType?) -> Unit,
     onSelectUniverse: () -> Unit,
+    onOpenPitchDeck: () -> Unit = {},
     onSelectSparkScreenplayBranch: () -> Unit,
     onSelectSparkFormat: (ProjectFormat, ScreenplayType?, Boolean) -> Unit,
     onSelectSparkUniverse: () -> Unit,
@@ -3091,6 +3155,28 @@ private fun GlassStartMenuHubCompact(
                 iconType = 5,
                 isSparkCard = true,
                 onClick = onSelectSparkUniverse,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        // Row 6: Pitch Deck vs Pitch Deck Challenge
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            GlassFormatCard(
+                title = "Pitch Deck",
+                iconType = 1,
+                onClick = onOpenPitchDeck,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+            GlassFormatCard(
+                title = "Pitch Challenge",
+                iconType = 1,
+                isSparkCard = true,
+                onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )

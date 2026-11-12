@@ -164,7 +164,7 @@ fun ScriptLibraryDialog(
                             )
                         )
                         Text(
-                            text = "Manage screenplay projects, fork drafts & import Final Draft / Fountain files",
+                            text = "Manage screenplay projects, fork drafts & import Final Draft, Fountain, or PDF scripts",
                             style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted, fontSize = 11.sp)
                         )
                     }
@@ -174,7 +174,7 @@ fun ScriptLibraryDialog(
                         OutlinedButton(
                             onClick = {
                                 try {
-                                    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Import Screenplay (.fdx / .fountain)", java.awt.FileDialog.LOAD)
+                                    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Import Screenplay (.fdx / .fountain / .pdf)", java.awt.FileDialog.LOAD)
                                     dialog.isVisible = true
                                     val dir = dialog.directory
                                     val name = dialog.file
@@ -187,7 +187,7 @@ fun ScriptLibraryDialog(
                             shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Text("📥 Import File (.fdx / .fountain)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
+                            Text("📥 Import (.fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))

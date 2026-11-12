@@ -46,6 +46,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)
+                implementation("org.apache.pdfbox:pdfbox:2.0.32")
             }
         }
     }
@@ -58,7 +59,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Pkg)
             packageName = "Seshat"
-            packageVersion = "2.9.0"
+            packageVersion = "2.10.0"
             macOS {
                 bundleID = "com.seshat.writer"
                 dockName = "Seshat"

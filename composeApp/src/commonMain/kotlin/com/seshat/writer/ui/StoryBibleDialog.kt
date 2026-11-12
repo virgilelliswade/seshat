@@ -61,6 +61,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -304,6 +306,13 @@ fun StoryBibleDialog(
     activeLocationsInScript: List<String> = emptyList(),
     projectFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
     screenplayType: ScreenplayType = ScreenplayType.FEATURE,
+    isUniverseProject: Boolean = false,
+    tvSeriesProject: com.seshat.writer.tv.TvSeriesProject? = null,
+    blendedUniverseProject: com.seshat.writer.universe.BlendedUniverseProject? = null,
+    onSelectBlendedAssignment: ((Int) -> Unit)? = null,
+    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType) -> Unit)? = null,
+    onSelectTvEpisode: ((Int) -> Unit)? = null,
+    onAddTvEpisode: ((String, String) -> Unit)? = null,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     onSaveBible: (StoryBible) -> Unit,
     onDismiss: () -> Unit,
@@ -422,13 +431,19 @@ fun StoryBibleDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            val tabs = listOf(
-                                "📖 Lore Pillars (4)",
-                                "🎭 Characters (${bible.characters.size})",
-                                "🔍 Locations (${bible.locations.size})",
-                                "📌 Beats (${bible.beats.size})",
-                                hubDescriptor.tabLabel
-                            )
+                            val showSeriesHub = isUniverseProject || tvSeriesProject != null || blendedUniverseProject != null || bible.tvConfig.isTvSeries
+                            val hubTabLabel = when {
+                                blendedUniverseProject != null -> "🪐 Universe Hub"
+                                tvSeriesProject != null -> "📺 Series Hub"
+                                else -> hubDescriptor.tabLabel
+                            }
+                            val tabs = buildList {
+                                add("📖 Lore Pillars (4)")
+                                add("🎭 Characters (${bible.characters.size})")
+                                add("🔍 Locations (${bible.locations.size})")
+                                add("📌 Beats (${bible.beats.size})")
+                                if (showSeriesHub) add(hubTabLabel)
+                            }
                             Row(
                                 modifier = Modifier
                                     .horizontalScroll(rememberScrollState())
@@ -575,6 +590,12 @@ fun StoryBibleDialog(
                             onUpdateTvConfig = { updatedTv ->
                                 updateAndPersist(bible.copy(tvConfig = updatedTv))
                             },
+                            tvSeriesProject = tvSeriesProject,
+                            blendedUniverseProject = blendedUniverseProject,
+                            onSelectBlendedAssignment = onSelectBlendedAssignment,
+                            onAddBlendedAssignment = onAddBlendedAssignment,
+                            onSelectTvEpisode = onSelectTvEpisode,
+                            onAddTvEpisode = onAddTvEpisode,
                             firstDraftState = firstDraftState,
                             isCompactScreen = isCompactScreen
                         )
@@ -2273,12 +2294,22 @@ private fun SeriesHubSection(
     descriptor: SeriesHubDescriptor,
     tvConfig: TvSeriesBibleConfig,
     onUpdateTvConfig: (TvSeriesBibleConfig) -> Unit,
+    tvSeriesProject: com.seshat.writer.tv.TvSeriesProject? = null,
+    blendedUniverseProject: com.seshat.writer.universe.BlendedUniverseProject? = null,
+    onSelectBlendedAssignment: ((Int) -> Unit)? = null,
+    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType) -> Unit)? = null,
+    onSelectTvEpisode: ((Int) -> Unit)? = null,
+    onAddTvEpisode: ((String, String) -> Unit)? = null,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     isCompactScreen: Boolean = false
 ) {
     val isDark = LocalSeshatDarkTheme.current
     val scroll = rememberScrollState()
     val maxArcWords = firstDraftState.maxWordsTvSeasonArc()
+    var newBranchTitle by remember { mutableStateOf("") }
+    var newBranchFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
+    var showAddBranchRow by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -2292,7 +2323,7 @@ private fun SeriesHubSection(
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "${descriptor.icon} ${descriptor.headerTitle}",
+                        text = if (blendedUniverseProject != null) "🪐 BLENDED UNIVERSE & PROJECT TREE" else "${descriptor.icon} ${descriptor.headerTitle}",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontFamily = MainAppFontFamily,
                             fontWeight = FontWeight.SemiBold,
@@ -2302,7 +2333,7 @@ private fun SeriesHubSection(
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(color = if (isDark) ScribeStarNeonRed else Color(0xFF1D4ED8), shape = RoundedCornerShape(0.dp)) {
                         Text(
-                            text = "ROADMAP",
+                            text = "UNIVERSE TREE",
                             style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -2310,13 +2341,284 @@ private fun SeriesHubSection(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = descriptor.description,
+                    text = if (blendedUniverseProject != null) {
+                        "Unified Master Lore Bible branching into Film, TV, Novel, Comic Book, and Stage Play assignments."
+                    } else {
+                        descriptor.description
+                    },
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = if (isDark) Color(0xFFBBDEFB) else Color(0xFF1E293B),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium
                     )
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Interactive Universe / Series Project Branch Tree
+        GlassCardItem(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val rootTitle = blendedUniverseProject?.title
+                        ?: tvSeriesProject?.title
+                        ?: tvConfig.seriesTitle.ifBlank { "MASTER STORY UNIVERSE" }
+                    Text(
+                        text = "🌳 ROOT: ${rootTitle.uppercase()}",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = if (isDark) ElectrumGold else Color(0xFF991B1B),
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Surface(
+                        color = ScribeStarNeonRed.copy(alpha = 0.16f),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .clickable { showAddBranchRow = !showAddBranchRow }
+                            .border(1.dp, ScribeStarNeonRed, RoundedCornerShape(0.dp))
+                    ) {
+                        Text(
+                            text = if (showAddBranchRow) "Cancel" else "+ Add Branch",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = if (isDark) Color.White else Color(0xFF991B1B),
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+
+                if (showAddBranchRow) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                            .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (blendedUniverseProject != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf(
+                                    "🎬 Film" to ProjectFormat.SCREENPLAY,
+                                    "📺 TV" to ProjectFormat.TV_SERIES,
+                                    "📖 Novel" to ProjectFormat.NOVEL,
+                                    "💥 Comic" to ProjectFormat.COMIC_BOOK,
+                                    "🎭 Stage" to ProjectFormat.STAGE_PLAY
+                                ).forEach { (label, fmt) ->
+                                    val selected = newBranchFormat == fmt
+                                    Surface(
+                                        color = if (selected) ElectrumGold.copy(alpha = 0.2f) else ObsidianSurface,
+                                        shape = RoundedCornerShape(0.dp),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(0.dp))
+                                            .clickable { newBranchFormat = fmt }
+                                            .border(1.dp, if (selected) ElectrumGold else ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = if (selected) ElectrumGold else ScreenplayTextMuted,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = newBranchTitle,
+                                onValueChange = { newBranchTitle = it },
+                                placeholder = { Text("New branch / installment title...", color = ScreenplayTextMuted, fontSize = 11.sp) },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark),
+                                modifier = Modifier.weight(1f)
+                            )
+                            Button(
+                                onClick = {
+                                    val titleToAdd = newBranchTitle.trim().ifBlank { "New Branch" }
+                                    when {
+                                        blendedUniverseProject != null && onAddBlendedAssignment != null -> {
+                                            val sType = if (newBranchFormat == ProjectFormat.TV_SERIES) ScreenplayType.TV_HOUR_DRAMA else ScreenplayType.FEATURE
+                                            onAddBlendedAssignment(titleToAdd, newBranchFormat, sType)
+                                        }
+                                        tvSeriesProject != null && onAddTvEpisode != null -> {
+                                            val nextNum = "${100 + tvSeriesProject.episodes.size + 1}"
+                                            onAddTvEpisode(nextNum, titleToAdd)
+                                        }
+                                        else -> {
+                                            val nextNum = tvConfig.episodes.size + 1
+                                            onUpdateTvConfig(
+                                                tvConfig.copy(
+                                                    isTvSeries = true,
+                                                    episodes = tvConfig.episodes + TvEpisodeOutline(episodeNumber = nextNum, title = titleToAdd)
+                                                )
+                                            )
+                                        }
+                                    }
+                                    newBranchTitle = ""
+                                    showAddBranchRow = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = ElectrumGold, contentColor = Color.Black),
+                                shape = RoundedCornerShape(0.dp)
+                            ) {
+                                Text("Create", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                // Render Connected Tree Nodes
+                val branchRows: List<Triple<String, String, Boolean>> = when {
+                    blendedUniverseProject != null -> blendedUniverseProject.assignments.mapIndexed { idx, a ->
+                        Triple(
+                            "${a.mediumBadge()} • ${a.title}",
+                            if (a.format == ProjectFormat.NOVEL) "${a.novelManuscript.chapters.size} chapters" else "${a.blocks.size} blocks",
+                            idx == blendedUniverseProject.activeAssignmentIndex
+                        )
+                    }
+                    tvSeriesProject != null -> tvSeriesProject.episodes.mapIndexed { idx, ep ->
+                        Triple(
+                            "📺 EP ${ep.episodeNumber}: ${ep.title}",
+                            "${ep.sceneCount} scenes • ${ep.pageCount} pp",
+                            idx == tvSeriesProject.activeEpisodeIndex
+                        )
+                    }
+                    else -> tvConfig.episodes.mapIndexed { idx, ep ->
+                        Triple(
+                            "${descriptor.itemPrefix} ${ep.episodeNumber}: ${ep.title.ifBlank { "Untitled" }}",
+                            ep.status,
+                            idx == 0
+                        )
+                    }
+                }
+
+                if (branchRows.isEmpty()) {
+                    Text(
+                        text = "No branches yet — click '+ Add Branch' to add a Film, Episode, Book, or Spin-off under this Universe.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted)
+                    )
+                } else {
+                    branchRows.forEachIndexed { idx, (branchTitle, branchMeta, isActiveBranch) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Tree Trunk + Horizontal Arm Connector
+                            Box(
+                                modifier = Modifier
+                                    .width(24.dp)
+                                    .height(40.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 6.dp)
+                                        .width(2.dp)
+                                        .fillMaxHeight()
+                                        .background(ElectrumGold.copy(alpha = 0.55f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 6.dp)
+                                        .fillMaxWidth()
+                                        .height(2.dp)
+                                        .background(ElectrumGold.copy(alpha = 0.55f))
+                                )
+                            }
+
+                            Surface(
+                                color = if (isActiveBranch) ElectrumGold.copy(alpha = 0.14f) else ObsidianBlack,
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(
+                                    width = if (isActiveBranch) 1.4.dp else 1.dp,
+                                    color = if (isActiveBranch) ElectrumGold else ObsidianSurfaceVariant
+                                ),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = branchTitle,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                color = if (isActiveBranch) (if (isDark) ElectrumGold else Color(0xFF991B1B)) else ScreenplayTextDark,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = branchMeta,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = ScreenplayTextMuted,
+                                                fontSize = 10.sp
+                                            )
+                                        )
+                                    }
+
+                                    if (blendedUniverseProject != null && onSelectBlendedAssignment != null) {
+                                        Surface(
+                                            color = if (isActiveBranch) ElectrumGold else ObsidianSurface,
+                                            shape = RoundedCornerShape(0.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .clickable { onSelectBlendedAssignment(idx) }
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
+                                        ) {
+                                            Text(
+                                                text = if (isActiveBranch) "Active ✓" else "Open →",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = if (isActiveBranch) Color.Black else ElectrumGold,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    } else if (tvSeriesProject != null && onSelectTvEpisode != null) {
+                                        Surface(
+                                            color = if (isActiveBranch) ElectrumGold else ObsidianSurface,
+                                            shape = RoundedCornerShape(0.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .clickable { onSelectTvEpisode(idx) }
+                                                .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
+                                        ) {
+                                            Text(
+                                                text = if (isActiveBranch) "Active ✓" else "Open →",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = if (isActiveBranch) Color.Black else ElectrumGold,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

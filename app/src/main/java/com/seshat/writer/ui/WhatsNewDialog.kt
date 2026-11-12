@@ -61,6 +61,27 @@ private data class WhatsNewHighlight(
 
 private val v28Highlights = listOf(
     WhatsNewHighlight(
+        badge = "🎤",
+        tag = "PITCH DECK CREATOR",
+        title = "45s Elevator Pitch, 16:9 Slide Studio, AI Builder & .PPTX",
+        description = "Launch from the Splash screen, Project Workspace branch, or inside any project! Includes a 45-second Elevator Pitch rehearsal clock, 16:9 presentation builder with 5 themes (including Cyber Yellow & Obsidian), Story Bible/Corkboard-aware AI drafting, PDF exports, and .pptx exports for PowerPoint, Google Slides & Apple Keynote.",
+        accentColor = ElectrumGold
+    ),
+    WhatsNewHighlight(
+        badge = "📄",
+        tag = "PDF SCRIPT IMPORT",
+        title = "Import Any Screenplay PDF Into an Editable Project",
+        description = "Open / Import now reads .pdf screenplays with layout-aware margin detection—automatically classifying Scene Headings, Action, Character Cues, Parentheticals, Dialogue, and Transitions.",
+        accentColor = ScribeStarNeonRed
+    ),
+    WhatsNewHighlight(
+        badge = "🌳",
+        tag = "UNIVERSE HUB TREE",
+        title = "Interactive Project Branch Tree & Clean Solo Bibles",
+        description = "Removed the Series Hub tab from solo scripts so it focuses strictly on Universe / Series projects—and rebuilt the Hub into a visual branch tree linking Film, TV, Novel, Comic & Stage assignments with 1-click Open & + Add Branch.",
+        accentColor = ElectrumGold
+    ),
+    WhatsNewHighlight(
         badge = "🌌",
         tag = "CHARACTER STELLARIUM",
         title = "Character Builder 2.0 & Archetype Constellations",
@@ -184,7 +205,7 @@ fun WhatsNewDialog(
                                 )
                             )
                             Text(
-                                text = "RELEASE 2.9 • CLOUD SYNC, STELLARIUM & STUDIO",
+                                text = "RELEASE 2.10 • PITCH DECK, PDF IMPORT & UNIVERSE TREE",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = StudioMonoFontFamily,
                                     color = secondaryText,

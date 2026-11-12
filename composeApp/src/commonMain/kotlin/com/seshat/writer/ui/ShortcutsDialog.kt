@@ -185,7 +185,10 @@ private fun ShortcutSection(title: String, shortcuts: List<Pair<String, String>>
                     ) {
                         Text(
                             text = desc,
-                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White, fontSize = 12.sp)
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = com.seshat.writer.ui.theme.ScreenplayTextDark,
+                                fontSize = 12.sp
+                            )
                         )
                         Box(
                             modifier = Modifier

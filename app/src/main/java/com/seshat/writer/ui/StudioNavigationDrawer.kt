@@ -113,6 +113,7 @@ fun StudioNavigationDrawer(
     onToggleDictation: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenWhatsNew: () -> Unit = {},
+    onOpenPitchDeck: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -547,6 +548,17 @@ fun StudioNavigationDrawer(
                     HorizontalDivider(color = ObsidianSurfaceVariant, thickness = 1.dp)
 
                     DrawerQuickButton(
+                        text = "🎤 Pitch Deck Creator",
+                        onClick = {
+                            onCloseDrawer()
+                            onOpenPitchDeck()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+
+                    DrawerQuickButton(
                         text = "✨ What's New in Seshat",
                         onClick = {
                             onCloseDrawer()
@@ -554,7 +566,7 @@ fun StudioNavigationDrawer(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                            .padding(start = 14.dp, end = 14.dp, bottom = 10.dp)
                     )
                 }
             }

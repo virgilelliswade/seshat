@@ -595,7 +595,8 @@ fun ScreenplayEditorScreen(
             onOpenFind = { viewModel.openFind() },
             onToggleDictation = onToggleDictationWithPermission,
             onOpenSettings = { viewModel.openSettingsDialog() },
-            onOpenWhatsNew = { viewModel.openWhatsNewDialog() }
+            onOpenWhatsNew = { viewModel.openWhatsNewDialog() },
+            onOpenPitchDeck = { viewModel.openPitchDeck() }
         )
     }
 
@@ -653,6 +654,21 @@ fun ScreenplayEditorScreen(
             onDismiss = { viewModel.closeWhatsNewDialog() },
             onOpenAiSettings = {
                 viewModel.closeWhatsNewDialog()
+                viewModel.openSettingsDialog()
+            }
+        )
+    }
+
+    if (uiState.isPitchDeckOpen) {
+        PitchDeckDialog(
+            projectTitle = uiState.title,
+            author = uiState.author,
+            storyBible = uiState.storyBible,
+            corkboard = uiState.corkboardDoc,
+            blocks = uiState.blocks,
+            onDismiss = { viewModel.closePitchDeck() },
+            onOpenAiSettings = {
+                viewModel.closePitchDeck()
                 viewModel.openSettingsDialog()
             }
         )
@@ -736,6 +752,23 @@ fun ScreenplayEditorScreen(
             activeLocationsInScript = activeLocations,
             projectFormat = uiState.projectFormat,
             screenplayType = uiState.screenplayType,
+            isUniverseProject = uiState.isUniverseProject || uiState.tvSeriesProject != null || uiState.blendedUniverseProject != null || uiState.storyBible.tvConfig.isTvSeries,
+            tvSeriesProject = uiState.tvSeriesProject,
+            blendedUniverseProject = uiState.blendedUniverseProject,
+            onSelectBlendedAssignment = { idx ->
+                viewModel.selectBlendedAssignment(context, idx)
+                viewModel.closeStoryBible()
+            },
+            onAddBlendedAssignment = { title, fmt, sType ->
+                viewModel.addBlendedAssignment(context, title, fmt, sType)
+            },
+            onSelectTvEpisode = { idx ->
+                viewModel.selectTvEpisode(context, idx)
+                viewModel.closeStoryBible()
+            },
+            onAddTvEpisode = { epNum, epTitle ->
+                viewModel.addTvEpisode(context, epNum, epTitle)
+            },
             firstDraftState = uiState.firstDraftState,
             onSaveBible = { updated -> viewModel.saveStoryBible(context, updated) },
             onDismiss = { viewModel.closeStoryBible() },
@@ -1085,7 +1118,7 @@ private fun SidebarPane(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.1.sp,
-                    color = Color.White,
+                    color = if (LocalSeshatDarkTheme.current) Color.White else Color(0xFF0F172A),
                     fontSize = 11.sp
                 )
             )
@@ -1323,7 +1356,7 @@ private fun StatCard(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MainAppFontFamily,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = if (LocalSeshatDarkTheme.current) Color.White else Color(0xFF0F172A),
                     fontSize = 15.sp
                 )
             )
@@ -1573,6 +1606,12 @@ private fun ScreenplayStudioToolsTray(
                 text = "🔍 Find",
                 onClick = { if (uiState.isFindReplaceVisible) actions.closeFind() else actions.openFind(false) },
                 isHighlight = uiState.isFindReplaceVisible
+            )
+
+            GlassEditorPillButton(
+                text = "🎤 Pitch Deck",
+                onClick = actions::openPitchDeck,
+                isHighlight = uiState.isPitchDeckOpen
             )
 
             if (includeCompactExtras) {

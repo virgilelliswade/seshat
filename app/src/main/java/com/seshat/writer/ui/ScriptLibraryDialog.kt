@@ -182,7 +182,7 @@ fun ScriptLibraryDialog(
                             shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Text("📥 Import File (.fdx / .fountain)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
+                            Text("📥 Import (.fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))

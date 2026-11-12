@@ -194,6 +194,7 @@ data class ScreenplayUiState(
     val isCompilerDialogOpen: Boolean = false,
     val tvSeriesProject: TvSeriesProject? = null,
     val blendedUniverseProject: BlendedUniverseProject? = null,
+    val isUniverseProject: Boolean = false,
     val isWritersRoomOpen: Boolean = false,
     val isStudioDrawerOpen: Boolean = false,
     val isCoverCreatorOpen: Boolean = false,
@@ -202,6 +203,7 @@ data class ScreenplayUiState(
     val isShortcutsDialogOpen: Boolean = false,
     val isAboutDialogOpen: Boolean = false,
     val isWhatsNewDialogOpen: Boolean = false,
+    val isPitchDeckOpen: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.DARK,
     val studioPalette: StudioColorPalette = StudioColorPalette.SCRIBESTAR_CRIMSON,
     val firstDraftState: FirstDraftState = FirstDraftController.createForStandardProject(
@@ -3395,7 +3397,8 @@ class ScreenplayViewModel : ViewModel() {
         customTitle: String? = null,
         template: ProjectTemplate? = null,
         enableSparkMode: Boolean = false,
-        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI,
+        isUniverseProject: Boolean = false
     ) {
         val resolvedTemplate = template ?: TemplateRegistry.getBlankTemplate(format, screenplayType)
         if (format == ProjectFormat.TV_SERIES) {
@@ -3537,6 +3540,7 @@ class ScreenplayViewModel : ViewModel() {
                 screenplayType = screenplayType ?: ScreenplayType.FEATURE,
                 tvSeriesProject = null,
                 blendedUniverseProject = null,
+                isUniverseProject = isUniverseProject,
                 corkboardDoc = initialCorkboard,
                 storyBible = initialBible,
                 novelManuscript = starterManuscript,
@@ -3544,6 +3548,7 @@ class ScreenplayViewModel : ViewModel() {
                 activeChapterIndex = 0,
                 isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
                 isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                isPitchDeckOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.PITCH_DECK,
                 isCorkboardSideBySide = false,
                 firstDraftState = newFirstDraft
             )
@@ -3606,6 +3611,7 @@ class ScreenplayViewModel : ViewModel() {
                     screenplayType = starterAssignment.screenplayType,
                     tvSeriesProject = null,
                     blendedUniverseProject = blendedProject,
+                    isUniverseProject = true,
                     title = "${resolvedTitle} — ${starterAssignment.title}",
                     blocks = starterAssignment.blocks,
                     focusedBlockId = starterAssignment.blocks.firstOrNull()?.id ?: "",
@@ -3615,6 +3621,7 @@ class ScreenplayViewModel : ViewModel() {
                     activeChapterIndex = 0,
                     isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
                     isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                    isPitchDeckOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.PITCH_DECK,
                     isCorkboardSideBySide = false,
                     firstDraftState = newFirstDraft
                 ),
@@ -3833,6 +3840,7 @@ class ScreenplayViewModel : ViewModel() {
                     projectFormat = ProjectFormat.TV_SERIES,
                     screenplayType = format,
                     tvSeriesProject = series,
+                    isUniverseProject = true,
                     title = "${series.title} - Ep ${activeEp.episodeNumber}: ${activeEp.title}",
                     author = showrunner,
                     blocks = activeEp.blocks,
@@ -3841,6 +3849,7 @@ class ScreenplayViewModel : ViewModel() {
                     storyBible = series.seriesBible,
                     isStoryBibleOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.LORE_DOC,
                     isCorkboardOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.OUTLINE,
+                    isPitchDeckOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.PITCH_DECK,
                     isCorkboardSideBySide = false,
                     firstDraftState = newFirstDraft
                 ),
@@ -4207,6 +4216,14 @@ class ScreenplayViewModel : ViewModel() {
 
     fun closeWhatsNewDialog() {
         _uiState.update { it.copy(isWhatsNewDialogOpen = false) }
+    }
+
+    fun openPitchDeck() {
+        _uiState.update { it.copy(isPitchDeckOpen = true) }
+    }
+
+    fun closePitchDeck() {
+        _uiState.update { it.copy(isPitchDeckOpen = false) }
     }
 
     // =========================================================================

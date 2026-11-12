@@ -321,7 +321,8 @@ fun NovelEditorPane(
                     onOpenScraps = { showScrapsDialog = true },
                     onOpenCompiler = onOpenCompiler,
                     onSaveProject = onSaveProject,
-                    onOpenSettings = { viewModel.openSettingsDialog() }
+                    onOpenSettings = { viewModel.openSettingsDialog() },
+                    onOpenPitchDeck = { viewModel.openPitchDeck() }
                 )
             } else {
                 DesktopNovelTopBar(
@@ -345,7 +346,8 @@ fun NovelEditorPane(
                     onOpenScraps = { showScrapsDialog = true },
                     onOpenCompiler = onOpenCompiler,
                     onSaveProject = onSaveProject,
-                    onOpenSettings = { viewModel.openSettingsDialog() }
+                    onOpenSettings = { viewModel.openSettingsDialog() },
+                    onOpenPitchDeck = { viewModel.openPitchDeck() }
                 )
             }
         }
@@ -1079,6 +1081,7 @@ private fun NovelStudioToolsTray(
     onToggleDictation: () -> Unit,
     onToggleFocusMode: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenPitchDeck: () -> Unit = {},
     includeCompactExtras: Boolean
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1104,6 +1107,7 @@ private fun NovelStudioToolsTray(
                 )
             }
             NovelGlassPillButton(text = "🔍 Find", onClick = onOpenFindReplace)
+            NovelGlassPillButton(text = "🎤 Pitch Deck", onClick = onOpenPitchDeck)
             NovelGlassPillButton(text = "🎯 Sprint", onClick = onOpenSprint)
             NovelGlassPillButton(
                 text = "📜 Typewriter",
@@ -1154,6 +1158,7 @@ private fun CompactNovelTopBar(
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenPitchDeck: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1239,6 +1244,7 @@ private fun CompactNovelTopBar(
                 onToggleDictation = onToggleDictation,
                 onToggleFocusMode = onToggleFocusMode,
                 onOpenSettings = onOpenSettings,
+                onOpenPitchDeck = onOpenPitchDeck,
                 includeCompactExtras = true
             )
         }
@@ -1270,6 +1276,7 @@ private fun DesktopNovelTopBar(
     onOpenCompiler: () -> Unit,
     onSaveProject: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenPitchDeck: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1421,6 +1428,7 @@ private fun DesktopNovelTopBar(
                 onToggleDictation = onToggleDictation,
                 onToggleFocusMode = onToggleFocusMode,
                 onOpenSettings = onOpenSettings,
+                onOpenPitchDeck = onOpenPitchDeck,
                 includeCompactExtras = false
             )
         }

@@ -194,5 +194,6 @@ class EditorCanvasActions(
     fun toggleThemeMode() = viewModel.toggleThemeMode(context)
     fun openSettings() = viewModel.openSettingsDialog()
     fun openCompiler() = viewModel.openNovelCompiler()
+    fun openPitchDeck() = viewModel.openPitchDeck()
     fun insertTkToken() = viewModel.insertTkFixLaterToken(context)
 }

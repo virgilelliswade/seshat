@@ -10,6 +10,7 @@ import java.util.Locale
 enum class ScriptFormat {
     FOUNTAIN,
     FINAL_DRAFT,
+    PDF,
     UNKNOWN
 }
 
@@ -29,6 +30,9 @@ object ScriptImporter {
 
     fun detectFormat(content: String, fileName: String = ""): ScriptFormat {
         val lowerName = fileName.lowercase(Locale.US)
+        if (lowerName.endsWith(".pdf")) {
+            return ScriptFormat.PDF
+        }
         if (lowerName.endsWith(".fdx") || lowerName.endsWith(".xml")) {
             return ScriptFormat.FINAL_DRAFT
         }
@@ -73,6 +77,12 @@ object ScriptImporter {
                         detectedFormat = ScriptFormat.FINAL_DRAFT
                     )
                 }
+                ScriptFormat.PDF -> {
+                    ScriptImportResult(
+                        isSuccess = false,
+                        errorMessage = "Use importFromFile or importFromUri for binary PDF scripts."
+                    )
+                }
                 ScriptFormat.FOUNTAIN, ScriptFormat.UNKNOWN -> {
                     val fountainDoc = FountainSerializer.importFromFountain(content)
                     ScriptImportResult(
@@ -96,6 +106,8 @@ object ScriptImporter {
     fun importFromFile(file: File): ScriptImportResult {
         return if (!file.exists() || !file.canRead()) {
             ScriptImportResult(isSuccess = false, errorMessage = "File not found or unreadable: ${file.name}")
+        } else if (file.name.lowercase(Locale.US).endsWith(".pdf")) {
+            PdfScriptExtractor.extractFromFile(file)
         } else {
             val content = file.readText()
             parseScriptContent(content, file.name)

@@ -424,7 +424,11 @@ fun CharacterStellariumDialog(
                         }
 
                         IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close Stellarium", tint = Color.White)
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close Stellarium",
+                                tint = if (com.seshat.writer.ui.theme.LocalSeshatDarkTheme.current) Color.White else Color(0xFF0F172A)
+                            )
                         }
                     }
                 }

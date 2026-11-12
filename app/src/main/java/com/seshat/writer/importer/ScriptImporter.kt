@@ -14,6 +14,7 @@ import java.util.Locale
 enum class ScriptFormat {
     FOUNTAIN,
     FINAL_DRAFT,
+    PDF,
     UNKNOWN
 }
 
@@ -33,6 +34,9 @@ object ScriptImporter {
 
     fun detectFormat(content: String, fileName: String = ""): ScriptFormat {
         val lowerName = fileName.lowercase(Locale.US)
+        if (lowerName.endsWith(".pdf")) {
+            return ScriptFormat.PDF
+        }
         if (lowerName.endsWith(".fdx") || lowerName.endsWith(".xml")) {
             return ScriptFormat.FINAL_DRAFT
         }
@@ -77,6 +81,12 @@ object ScriptImporter {
                         detectedFormat = ScriptFormat.FINAL_DRAFT
                     )
                 }
+                ScriptFormat.PDF -> {
+                    ScriptImportResult(
+                        isSuccess = false,
+                        errorMessage = "Use importFromFile or importFromUri for binary PDF scripts."
+                    )
+                }
                 ScriptFormat.FOUNTAIN, ScriptFormat.UNKNOWN -> {
                     val fountainDoc = FountainSerializer.importFromFountain(content)
                     ScriptImportResult(
@@ -100,6 +110,8 @@ object ScriptImporter {
     fun importFromFile(file: File): ScriptImportResult {
         return if (!file.exists() || !file.canRead()) {
             ScriptImportResult(isSuccess = false, errorMessage = "File not found or unreadable: ${file.name}")
+        } else if (file.name.lowercase(Locale.US).endsWith(".pdf")) {
+            PdfScriptExtractor.extractFromFile(file)
         } else {
             val content = file.readText()
             parseScriptContent(content, file.name)
@@ -110,6 +122,12 @@ object ScriptImporter {
         return try {
             val contentResolver = context.contentResolver
             val fileName = queryFileName(context, uri) ?: "imported_script.fountain"
+            val mime = contentResolver.getType(uri)?.lowercase(Locale.US) ?: ""
+            if (fileName.lowercase(Locale.US).endsWith(".pdf") || mime == "application/pdf") {
+                return contentResolver.openInputStream(uri)?.use { stream ->
+                    PdfScriptExtractor.extractFromStream(stream, fileName, context)
+                } ?: ScriptImportResult(isSuccess = false, errorMessage = "Unable to open PDF stream.")
+            }
             val stringBuilder = StringBuilder()
             contentResolver.openInputStream(uri)?.use { inputStream ->
                 BufferedReader(InputStreamReader(inputStream)).use { reader ->

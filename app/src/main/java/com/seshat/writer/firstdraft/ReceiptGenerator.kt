@@ -193,7 +193,7 @@ object ReceiptGenerator {
                 }
             }
 
-            canvas.drawText("SESHAT v2.9.0 • ANTI-PROCRASTINATION ENGINE", RECEIPT_WIDTH / 2f, 1810f, labelPaint)
+            canvas.drawText("SESHAT v2.10.0 • ANTI-PROCRASTINATION ENGINE", RECEIPT_WIDTH / 2f, 1810f, labelPaint)
 
             val dir = File(context.filesDir, RECEIPTS_DIR)
             if (!dir.exists()) dir.mkdirs()

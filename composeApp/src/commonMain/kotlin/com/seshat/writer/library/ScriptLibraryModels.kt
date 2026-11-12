@@ -141,7 +141,8 @@ enum class ScreenplayType(val displayName: String) {
 enum class InitialWorkspaceView(val displayName: String) {
     LORE_DOC("Lore Doc & Story Bible"),
     OUTLINE("Corkboard Outline"),
-    EDITOR("Drafting Canvas")
+    EDITOR("Drafting Canvas"),
+    PITCH_DECK("Pitch Deck Creator")
 }
 
 data class ScriptProject(

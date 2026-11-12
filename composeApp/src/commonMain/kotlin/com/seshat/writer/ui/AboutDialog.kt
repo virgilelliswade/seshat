@@ -80,7 +80,7 @@ fun AboutDialog(
                 )
 
                 Text(
-                    text = "Version 2.9.0 • Studio & First Draft Engine",
+                    text = "Version 2.10.0 • Studio & First Draft Engine",
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = ScreenplayTextMuted,
                         fontSize = 12.sp
@@ -99,7 +99,7 @@ fun AboutDialog(
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = "Engineered for professional screenwriters, novelists, and showrunners.",
-                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White, fontSize = 12.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(color = com.seshat.writer.ui.theme.ScreenplayTextDark, fontSize = 12.sp),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
