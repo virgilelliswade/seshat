@@ -63,6 +63,13 @@ import com.seshat.writer.ai.AiClient
 import com.seshat.writer.ai.AiConfig
 import com.seshat.writer.ai.AiPreferences
 import com.seshat.writer.ai.AiProvider
+import com.seshat.writer.sync.CloudSyncManager
+import com.seshat.writer.sync.CloudSyncResult
+import com.seshat.writer.sync.rememberCloudSyncFolderPicker
+import com.seshat.writer.sync.rememberOneTapCloudBackupLauncher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import com.seshat.writer.ui.theme.ActiveStudioPaletteState
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LightGold
@@ -83,6 +90,9 @@ fun StudioSettingsDialog(
     onThemeModeChanged: (ThemeMode) -> Unit = {},
     currentStudioPalette: StudioColorPalette = ActiveStudioPaletteState.value,
     onStudioPaletteChanged: (StudioColorPalette) -> Unit = {},
+    projectTitle: String = "UNTITLED",
+    onMirrorNow: (() -> CloudSyncResult)? = null,
+    onExportBundleToFile: ((File) -> Boolean)? = null,
     onDismiss: () -> Unit,
     onConfigChanged: (AiConfig) -> Unit = {}
 ) {
@@ -93,6 +103,32 @@ fun StudioSettingsDialog(
     var studioPalette by remember(currentStudioPalette) { mutableStateOf(currentStudioPalette) }
     var config by remember { mutableStateOf(AiPreferences.load(context)) }
     var showApiKey by remember { mutableStateOf(false) }
+
+    var cloudSettings by remember { mutableStateOf(CloudSyncManager.loadSettings(context)) }
+    var cloudStatusBanner by remember { mutableStateOf<String?>(null) }
+    var isMirroring by remember { mutableStateOf(false) }
+    val suggestedCloudFolders = remember { CloudSyncManager.detectSuggestedCloudFolders() }
+
+    val launchFolderPicker = rememberCloudSyncFolderPicker { selectedPath ->
+        val updated = cloudSettings.copy(
+            mirrorFolderPath = selectedPath,
+            autoMirrorEnabled = true,
+            lastMirrorStatus = "Folder selected"
+        )
+        cloudSettings = updated
+        CloudSyncManager.saveSettings(context, updated)
+        cloudStatusBanner = "📂 Sync folder set! Auto-mirror enabled."
+    }
+
+    val safeBackupName = "${CloudSyncManager.sanitizeFileName(projectTitle)}.seshat"
+    val launchOneTapBackup = rememberOneTapCloudBackupLauncher(
+        defaultFileName = safeBackupName,
+        onExportToTempAndCopy = { file ->
+            val ok = onExportBundleToFile?.invoke(file) ?: false
+            cloudStatusBanner = if (ok) "☁️ Saved backup copy: ${file.name}" else "❌ Backup export failed"
+            ok
+        }
+    )
 
     var testStatus by remember { mutableStateOf<String?>(null) }
     var isTesting by remember { mutableStateOf(false) }
@@ -941,6 +977,206 @@ fun StudioSettingsDialog(
 
                             Spacer(modifier = Modifier.height(16.dp))
                         }
+
+                        // 3B. CLOUD SYNC MIRROR & PORTABLE BACKUP (ZERO-SERVER)
+                        Text(
+                            text = "CLOUD SYNC & BACKUP",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp,
+                                color = ScreenplayTextMuted
+                            ),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Surface(
+                            color = ObsidianSurface,
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = "☁️ ZERO-SERVER CLOUD MIRROR (iCLOUD, GOOGLE DRIVE, DROPBOX)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = ElectrumGold,
+                                        letterSpacing = 0.6.sp
+                                    )
+                                )
+                                Text(
+                                    text = "Drafts stay fast and offline-safe locally, then mirror atomically (.tmp → .seshat) to your chosen cloud folder on Save or after 25s idle—preventing upload locks or conflicted copies.",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = ScreenplayTextMuted,
+                                        lineHeight = 16.sp
+                                    )
+                                )
+
+                                FeatureToggleRow(
+                                    title = "Auto-Mirror on Idle & Save",
+                                    subtitle = if (cloudSettings.isConfigured) {
+                                        cloudSettings.formattedLastMirrored()
+                                    } else {
+                                        "Choose a sync folder below to enable"
+                                    },
+                                    checked = cloudSettings.autoMirrorEnabled,
+                                    onCheckedChange = { enabled ->
+                                        val updated = cloudSettings.copy(autoMirrorEnabled = enabled)
+                                        cloudSettings = updated
+                                        CloudSyncManager.saveSettings(context, updated)
+                                    }
+                                )
+
+                                Surface(
+                                    color = ObsidianBlack,
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = if (cloudSettings.mirrorFolderPath.isNotBlank()) {
+                                            "📁 ${cloudSettings.mirrorFolderPath}"
+                                        } else {
+                                            "No Cloud Sync folder selected yet."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = if (cloudSettings.isConfigured) ScreenplayTextDark else ScreenplayTextMuted,
+                                            fontSize = 11.sp
+                                        ),
+                                        maxLines = 2
+                                    )
+                                }
+
+                                if (suggestedCloudFolders.isNotEmpty()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        suggestedCloudFolders.take(3).forEach { (label, path) ->
+                                            Surface(
+                                                color = ObsidianBlack,
+                                                shape = RoundedCornerShape(0.dp),
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(0.dp))
+                                                    .clickable {
+                                                        val seshatSub = File(path, "Seshat Projects")
+                                                        val targetPath = seshatSub.absolutePath
+                                                        val updated = cloudSettings.copy(
+                                                            mirrorFolderPath = targetPath,
+                                                            autoMirrorEnabled = true,
+                                                            lastMirrorStatus = "Folder selected"
+                                                        )
+                                                        cloudSettings = updated
+                                                        CloudSyncManager.saveSettings(context, updated)
+                                                        cloudStatusBanner = "📂 Set to $label/Seshat Projects"
+                                                    }
+                                                    .border(1.dp, ElectrumGold.copy(alpha = 0.45f), RoundedCornerShape(0.dp))
+                                            ) {
+                                                Text(
+                                                    text = label,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = ElectrumGold,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Surface(
+                                        color = ObsidianBlack,
+                                        shape = RoundedCornerShape(0.dp),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(0.dp))
+                                            .clickable { launchFolderPicker() }
+                                            .border(1.dp, ElectrumGold, RoundedCornerShape(0.dp))
+                                    ) {
+                                        Text(
+                                            text = "📂 Choose Sync Folder...",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = ElectrumGold,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                        )
+                                    }
+
+                                    if (onMirrorNow != null && cloudSettings.isConfigured) {
+                                        Surface(
+                                            color = ObsidianBlack,
+                                            shape = RoundedCornerShape(0.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .clickable(enabled = !isMirroring) {
+                                                    isMirroring = true
+                                                    scope.launch {
+                                                        val res = withContext(Dispatchers.IO) { onMirrorNow() }
+                                                        isMirroring = false
+                                                        cloudSettings = CloudSyncManager.loadSettings(context)
+                                                        cloudStatusBanner = if (res.success) "✅ ${res.message}" else "❌ ${res.message}"
+                                                    }
+                                                }
+                                                .border(1.dp, Color(0xFF10B981), RoundedCornerShape(0.dp))
+                                        ) {
+                                            Text(
+                                                text = if (isMirroring) "⏳ Syncing..." else "☁️ Sync Now",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = Color(0xFF10B981),
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                            )
+                                        }
+                                    }
+
+                                    if (onExportBundleToFile != null) {
+                                        Surface(
+                                            color = ObsidianBlack,
+                                            shape = RoundedCornerShape(0.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .clickable { launchOneTapBackup() }
+                                                .border(1.dp, ObsidianSurfaceVariant, RoundedCornerShape(0.dp))
+                                        ) {
+                                            Text(
+                                                text = "💾 Save Backup Copy",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = ScreenplayTextDark,
+                                                    fontWeight = FontWeight.SemiBold
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (cloudStatusBanner != null) {
+                                    Text(
+                                        text = cloudStatusBanner!!,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = if (cloudStatusBanner!!.startsWith("❌")) Color(0xFFEF4444) else Color(0xFF10B981),
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // 4. PRIVACY & WGA COMPLIANCE PLEDGE
                         Surface(

@@ -1411,6 +1411,39 @@ private fun CharacterCardCompact(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Age & Gender (side-by-side)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = character.age,
+                onValueChange = { onUpdate(character.copy(age = it)) },
+                modifier = Modifier.weight(0.42f),
+                textStyle = MaterialTheme.typography.bodySmall.copy(
+                    color = ScreenplayTextDark,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                singleLine = true,
+                placeholder = { Text("e.g. 34", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
+                label = { Text("Age", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+            )
+            OutlinedTextField(
+                value = character.gender,
+                onValueChange = { onUpdate(character.copy(gender = it)) },
+                modifier = Modifier.weight(0.58f),
+                textStyle = MaterialTheme.typography.bodySmall.copy(
+                    color = ScreenplayTextDark,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                singleLine = true,
+                placeholder = { Text("e.g. Female / Non-binary", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
+                label = { Text("Gender", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // AI Portrait Generation & Upload Section
         CharacterPortraitSection(
             character = character,
@@ -1436,11 +1469,11 @@ private fun CharacterCardCompact(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = character.arcAndNeed,
-            onValueChange = { onUpdate(character.copy(arcAndNeed = it)) },
+            value = character.wants.ifBlank { character.goalAndStakes },
+            onValueChange = { onUpdate(character.copy(wants = it, goalAndStakes = it)) },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Internal Need & Flaw (e.g. Overcome cynical distrust)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-            label = { Text("Internal Need & Flaw", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+            placeholder = { Text("Wants — External Goal (e.g. Clear her brother's name before dawn)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
+            label = { Text("Wants (External Goal)", color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium),
             maxLines = 3
         )
@@ -1448,13 +1481,34 @@ private fun CharacterCardCompact(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = character.goalAndStakes,
-            onValueChange = { onUpdate(character.copy(goalAndStakes = it)) },
+            value = character.needs.ifBlank { character.arcAndNeed },
+            onValueChange = { onUpdate(character.copy(needs = it, arcAndNeed = it)) },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("External Goal & Stakes (e.g. Retrieve archive before dawn)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-            label = { Text("External Goal & Stakes", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+            placeholder = { Text("Needs — Internal Truth (e.g. Learn to trust allies & forgive herself)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
+            label = { Text("Needs (Internal Growth)", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 10.sp, fontWeight = FontWeight.Bold) },
             textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium),
             maxLines = 3
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = character.shardOfGlass,
+            onValueChange = { onUpdate(character.copy(shardOfGlass = it)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Shard of Glass — Core Wound / Unhealed Flaw (e.g. Believes closeness always ends in betrayal)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
+            label = { Text("Shard of Glass (Core Wound)", color = ScribeStarNeonRed, fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+            textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium),
+            maxLines = 3
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Character Stellarium (Archetype Constellation Builder)
+        CharacterStellariumSummaryCard(
+            character = character,
+            onUpdate = onUpdate,
+            isDark = isDark
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -1548,6 +1602,30 @@ private fun CharacterCardDesktop(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Age & Gender Row
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = character.age,
+                onValueChange = { onUpdate(character.copy(age = it)) },
+                modifier = Modifier.weight(0.35f),
+                singleLine = true,
+                placeholder = { Text("e.g. 34", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
+                label = { Text("Age", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.SemiBold)
+            )
+            OutlinedTextField(
+                value = character.gender,
+                onValueChange = { onUpdate(character.copy(gender = it)) },
+                modifier = Modifier.weight(0.65f),
+                singleLine = true,
+                placeholder = { Text("e.g. Female / Male / Non-binary", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
+                label = { Text("Gender", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.SemiBold)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         // Portrait section & Physical description side-by-side
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1574,22 +1652,46 @@ private fun CharacterCardDesktop(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Wants, Needs & Shard of Glass
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedTextField(
-                value = character.arcAndNeed,
-                onValueChange = { onUpdate(character.copy(arcAndNeed = it)) },
+                value = character.wants.ifBlank { character.goalAndStakes },
+                onValueChange = { onUpdate(character.copy(wants = it, goalAndStakes = it)) },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Internal Need & Flaw (e.g. Needs to overcome cynical distrust)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
+                label = { Text("Wants (External Goal)", color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                placeholder = { Text("What they chase visibly (e.g. Retrieve the archive before dawn)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
                 textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium)
             )
             OutlinedTextField(
-                value = character.goalAndStakes,
-                onValueChange = { onUpdate(character.copy(goalAndStakes = it)) },
+                value = character.needs.ifBlank { character.arcAndNeed },
+                onValueChange = { onUpdate(character.copy(needs = it, arcAndNeed = it)) },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("External Goal & Stakes (e.g. Retrieve the archive before dawn)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
+                label = { Text("Needs (Internal Truth)", color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                placeholder = { Text("What they truly need (e.g. Overcome cynical distrust)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
                 textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium)
             )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = character.shardOfGlass,
+            onValueChange = { onUpdate(character.copy(shardOfGlass = it)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Shard of Glass (Core Wound / Driving Flaw)", color = ScribeStarNeonRed, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+            placeholder = { Text("The unhealed wound that cuts them from within (e.g. Believes anyone she loves will abandon her)", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 12.sp) },
+            textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontWeight = FontWeight.Medium),
+            maxLines = 2
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Character Stellarium (Archetype Constellation Builder)
+        CharacterStellariumSummaryCard(
+            character = character,
+            onUpdate = onUpdate,
+            isDark = isDark
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 

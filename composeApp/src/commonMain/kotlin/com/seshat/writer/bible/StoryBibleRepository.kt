@@ -67,9 +67,24 @@ object StoryBibleRepository {
                 append("### 5. CHARACTER DOSSIERS\n")
                 for (c in bible.characters) {
                     append("#### ${c.name.uppercase()} (${c.role})\n")
+                    if (c.age.isNotBlank() || c.gender.isNotBlank()) {
+                        val bio = listOfNotNull(
+                            c.age.takeIf { it.isNotBlank() }?.let { "Age $it" },
+                            c.gender.takeIf { it.isNotBlank() }
+                        ).joinToString(" • ")
+                        append("- **Demographics:** $bio\n")
+                    }
                     if (c.factionOrCaste.isNotBlank()) append("- **Faction/Caste:** ${c.factionOrCaste}\n")
-                    if (c.arcAndNeed.isNotBlank()) append("- **Internal Need & Arc:** ${c.arcAndNeed}\n")
-                    if (c.goalAndStakes.isNotBlank()) append("- **External Goal:** ${c.goalAndStakes}\n")
+                    if (c.physicalDescription.isNotBlank()) append("- **Physical Description:** ${c.physicalDescription}\n")
+                    val wantsVal = c.wants.ifBlank { c.goalAndStakes }
+                    val needsVal = c.needs.ifBlank { c.arcAndNeed }
+                    if (wantsVal.isNotBlank()) append("- **Wants:** $wantsVal\n")
+                    if (needsVal.isNotBlank()) append("- **Needs:** $needsVal\n")
+                    if (c.shardOfGlass.isNotBlank()) append("- **Shard of Glass:** ${c.shardOfGlass}\n")
+                    if (c.stellariumStars.isNotEmpty()) {
+                        append("- **Character Stellarium:** ${StellariumCatalog.buildConstellationSummary(c.stellariumStars)}\n")
+                    }
+                    if (c.stellariumNotes.isNotBlank()) append("- **Constellation Notes:** ${c.stellariumNotes}\n")
                     if (c.voiceCadence.isNotBlank()) append("- **Voice & Cadence:** ${c.voiceCadence}\n")
                     if (c.secretsAndLore.isNotBlank()) append("- **Lore Secrets:** ${c.secretsAndLore}\n")
                     append("\n")

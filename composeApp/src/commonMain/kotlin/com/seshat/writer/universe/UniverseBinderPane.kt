@@ -113,7 +113,7 @@ fun UniverseBinderPane(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close Universe Binder",
-                    tint = ScreenplayTextMuted
+                    tint = if (com.seshat.writer.ui.theme.LocalSeshatDarkTheme.current) Color(0xFFE2E8F0) else Color(0xFF0F172A)
                 )
             }
         }

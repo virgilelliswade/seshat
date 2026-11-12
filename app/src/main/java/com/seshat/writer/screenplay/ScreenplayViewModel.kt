@@ -40,6 +40,10 @@ import com.seshat.writer.breakdown.ProductionBreakdownEngine
 import com.seshat.writer.breakdown.ProductionBreakdownPdfExporter
 import com.seshat.writer.breakdown.ScriptBreakdownSummary
 import com.seshat.writer.export.ScriptFileManager
+import com.seshat.writer.sync.CloudSyncManager
+import com.seshat.writer.sync.CloudSyncResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -952,6 +956,7 @@ class ScreenplayViewModel : ViewModel() {
             )
             nextState.copy(firstDraftState = updatedFd)
         }
+        scheduleDebouncedCloudMirror()
     }
 
     fun updateBlockFormats(id: String, formats: List<InlineFormatSpan>) {
@@ -2891,6 +2896,8 @@ class ScreenplayViewModel : ViewModel() {
         StoryBibleRepository.saveBible(context, updatedBible)
         _uiState.value.tvSeriesProject?.let { TvSeriesRepository.saveProject(context, it) }
         _uiState.value.blendedUniverseProject?.let { UniverseRepository.saveProject(context, it) }
+        latestAppContext = context.applicationContext
+        scheduleDebouncedCloudMirror(context)
     }
 
     fun loadStoryBibleIfPresent(context: Context) {
@@ -2972,10 +2979,69 @@ class ScreenplayViewModel : ViewModel() {
             CorkboardRepository.saveCorkboard(context, _uiState.value.corkboardDoc)
             StoryBibleRepository.saveBible(context, _uiState.value.storyBible)
             FirstDraftController.saveState(context, title, _uiState.value.firstDraftState)
+            latestAppContext = context.applicationContext
+            val syncCfg = CloudSyncManager.loadSettings(context)
+            if (syncCfg.autoMirrorEnabled && syncCfg.isConfigured) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    mirrorProjectNow(context)
+                }
+            }
             true
         } catch (_: Exception) {
             false
         }
+    }
+
+    private var cloudMirrorJob: Job? = null
+
+    fun scheduleDebouncedCloudMirror(context: Context? = latestAppContext) {
+        val ctx = context ?: return
+        val cfg = CloudSyncManager.loadSettings(ctx)
+        if (!cfg.autoMirrorEnabled || !cfg.isConfigured) return
+        cloudMirrorJob?.cancel()
+        cloudMirrorJob = viewModelScope.launch(Dispatchers.IO) {
+            delay(25_000L)
+            saveCurrentProject(ctx)
+        }
+    }
+
+    fun mirrorProjectNow(context: Context = latestAppContext!!): CloudSyncResult {
+        val state = _uiState.value
+        val activeTitle = state.title.ifBlank { "UNTITLED" }
+        return CloudSyncManager.mirrorProjectAtomic(
+            context = context,
+            projectFormat = state.projectFormat,
+            screenplayType = state.screenplayType,
+            title = activeTitle,
+            author = state.author,
+            blocks = state.blocks,
+            corkboard = state.corkboardDoc,
+            storyBible = state.storyBible,
+            novelManuscript = state.novelManuscript,
+            tvSeriesProject = state.tvSeriesProject,
+            blendedUniverseProject = state.blendedUniverseProject,
+            firstDraftState = state.firstDraftState
+        )
+    }
+
+    fun exportProjectBundleToFile(context: Context, outputFile: File): Boolean {
+        val state = _uiState.value
+        val activeTitle = state.title.ifBlank { "UNTITLED" }
+        return CloudSyncManager.buildBundleToFile(
+            context = context,
+            outputFile = outputFile,
+            projectFormat = state.projectFormat,
+            screenplayType = state.screenplayType,
+            title = activeTitle,
+            author = state.author,
+            blocks = state.blocks,
+            corkboard = state.corkboardDoc,
+            storyBible = state.storyBible,
+            novelManuscript = state.novelManuscript,
+            tvSeriesProject = state.tvSeriesProject,
+            blendedUniverseProject = state.blendedUniverseProject,
+            firstDraftState = state.firstDraftState
+        )
     }
 
     // ==========================================

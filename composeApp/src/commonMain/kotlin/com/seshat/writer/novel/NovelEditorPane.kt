@@ -1758,7 +1758,7 @@ private fun NovelBinderPane(
                         fontFamily = MainAppFontFamily,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.1.sp,
-                        color = Color.White
+                        color = if (LocalSeshatDarkTheme.current) Color.White else Color(0xFF0F172A)
                     )
                 )
             }

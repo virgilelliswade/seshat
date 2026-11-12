@@ -696,6 +696,9 @@ fun ScreenplayEditorScreen(
             onStudioPaletteChanged = { newPalette ->
                 viewModel.setStudioPalette(context, newPalette)
             },
+            projectTitle = uiState.title,
+            onMirrorNow = { viewModel.mirrorProjectNow(context) },
+            onExportBundleToFile = { file -> viewModel.exportProjectBundleToFile(context, file) },
             onDismiss = {
                 viewModel.closeSettingsDialog()
                 aiConfig = AiPreferences.load(context)
@@ -972,6 +975,8 @@ private fun SidebarPane(
     Column(
         modifier = modifier.padding(14.dp)
     ) {
+        val isDark = LocalSeshatDarkTheme.current
+        val primaryInk = if (isDark) Color.White else Color(0xFF0F172A)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -994,11 +999,11 @@ private fun SidebarPane(
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "BINDER ⌵",
+                        text = "SCENES ⌵",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MainAppFontFamily,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
+                            color = primaryInk,
                             fontSize = 10.sp,
                             letterSpacing = 0.1.sp
                         )
@@ -1012,7 +1017,7 @@ private fun SidebarPane(
                             fontFamily = MainAppFontFamily,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.2.sp,
-                            color = Color.White,
+                            color = primaryInk,
                             fontSize = 14.sp
                         )
                     )
@@ -1032,7 +1037,7 @@ private fun SidebarPane(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Collapse Sidebar",
-                    tint = Color.White
+                    tint = primaryInk
                 )
             }
         }

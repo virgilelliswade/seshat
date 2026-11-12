@@ -57,42 +57,76 @@ data class CharacterDossier(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
     val role: String = "Protagonist", // Protagonist, Antagonist, Ally, Mentor, Foil
+    val age: String = "",
+    val gender: String = "",
     val factionOrCaste: String = "",
     val physicalDescription: String = "",
     val imageUrl: String = "",
+    val wants: String = "",
+    val needs: String = "",
+    val shardOfGlass: String = "",
     val arcAndNeed: String = "",
     val goalAndStakes: String = "",
     val voiceCadence: String = "",
-    val secretsAndLore: String = ""
+    val secretsAndLore: String = "",
+    val stellariumStars: List<StellariumStarSelection> = emptyList(),
+    val stellariumNotes: String = ""
 ) {
     fun toJson(): JSONObject {
         val json = JSONObject()
         json.put("id", id)
         json.put("name", name)
         json.put("role", role)
+        json.put("age", age)
+        json.put("gender", gender)
         json.put("factionOrCaste", factionOrCaste)
         json.put("physicalDescription", physicalDescription)
         json.put("imageUrl", imageUrl)
+        json.put("wants", wants)
+        json.put("needs", needs)
+        json.put("shardOfGlass", shardOfGlass)
         json.put("arcAndNeed", arcAndNeed)
         json.put("goalAndStakes", goalAndStakes)
         json.put("voiceCadence", voiceCadence)
         json.put("secretsAndLore", secretsAndLore)
+        json.put("stellariumNotes", stellariumNotes)
+        val starsArr = JSONArray()
+        for (star in stellariumStars) {
+            starsArr.put(star.toJson())
+        }
+        json.put("stellariumStars", starsArr)
         return json
     }
 
     companion object {
         fun fromJson(json: JSONObject): CharacterDossier {
+            val stars = mutableListOf<StellariumStarSelection>()
+            val starsArr = json.optJSONArray("stellariumStars")
+            if (starsArr != null) {
+                for (i in 0 until starsArr.length()) {
+                    starsArr.optJSONObject(i)?.let { stars.add(StellariumStarSelection.fromJson(it)) }
+                }
+            }
+            val legacyArc = json.optString("arcAndNeed", "")
+            val legacyGoal = json.optString("goalAndStakes", "")
             return CharacterDossier(
                 id = json.optString("id", UUID.randomUUID().toString()),
                 name = json.optString("name", ""),
                 role = json.optString("role", "Protagonist"),
+                age = json.optString("age", ""),
+                gender = json.optString("gender", ""),
                 factionOrCaste = json.optString("factionOrCaste", ""),
                 physicalDescription = json.optString("physicalDescription", ""),
                 imageUrl = json.optString("imageUrl", ""),
-                arcAndNeed = json.optString("arcAndNeed", ""),
-                goalAndStakes = json.optString("goalAndStakes", ""),
+                wants = json.optString("wants", legacyGoal),
+                needs = json.optString("needs", legacyArc),
+                shardOfGlass = json.optString("shardOfGlass", ""),
+                arcAndNeed = legacyArc,
+                goalAndStakes = legacyGoal,
                 voiceCadence = json.optString("voiceCadence", ""),
-                secretsAndLore = json.optString("secretsAndLore", "")
+                secretsAndLore = json.optString("secretsAndLore", ""),
+                stellariumStars = stars,
+                stellariumNotes = json.optString("stellariumNotes", "")
             )
         }
     }
@@ -314,9 +348,23 @@ data class StoryBible(
                 if (c.name.isNotBlank()) {
                     sb.append("• ").append(c.name.uppercase())
                     if (c.role.isNotBlank()) sb.append(" (").append(c.role).append(")")
+                    if (c.age.isNotBlank() || c.gender.isNotBlank()) {
+                        val bio = listOfNotNull(
+                            c.age.takeIf { it.isNotBlank() }?.let { "Age $it" },
+                            c.gender.takeIf { it.isNotBlank() }
+                        ).joinToString(", ")
+                        sb.append(" [").append(bio).append("]")
+                    }
                     if (c.factionOrCaste.isNotBlank()) sb.append(" [").append(c.factionOrCaste).append("]")
-                    if (c.arcAndNeed.isNotBlank()) sb.append(" - Need: ").append(c.arcAndNeed)
-                    if (c.secretsAndLore.isNotBlank()) sb.append(" - Secret: ").append(c.secretsAndLore)
+                    val wantsStr = c.wants.ifBlank { c.goalAndStakes }
+                    val needsStr = c.needs.ifBlank { c.arcAndNeed }
+                    if (wantsStr.isNotBlank()) sb.append(" | Wants: ").append(wantsStr)
+                    if (needsStr.isNotBlank()) sb.append(" | Needs: ").append(needsStr)
+                    if (c.shardOfGlass.isNotBlank()) sb.append(" | Shard of Glass: ").append(c.shardOfGlass)
+                    if (c.stellariumStars.isNotEmpty()) {
+                        sb.append(" | Stellarium: ").append(StellariumCatalog.buildConstellationSummary(c.stellariumStars))
+                    }
+                    if (c.secretsAndLore.isNotBlank()) sb.append(" | Secret: ").append(c.secretsAndLore)
                     sb.append("\n")
                 }
             }

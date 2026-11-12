@@ -61,8 +61,29 @@ private data class WhatsNewHighlight(
 
 private val v28Highlights = listOf(
     WhatsNewHighlight(
+        badge = "🌌",
+        tag = "CHARACTER STELLARIUM",
+        title = "Character Builder 2.0 & Archetype Constellations",
+        description = "Expanded character dossiers now track Age, Gender, Physical Description, Wants, Needs, and Shard of Glass—plus the interactive Character Stellarium where you combine 2–6 Archetype Stars (Light, Dual, or Shadow) across 8 domains into a glowing character constellation.",
+        accentColor = ElectrumGold
+    ),
+    WhatsNewHighlight(
+        badge = "☁️",
+        tag = "CLOUD SYNC MIRROR",
+        title = "Zero-Server iCloud, Google Drive & Dropbox Mirroring",
+        description = "Choose any Cloud Sync Folder in Studio Settings. Active drafts stay fast and offline-safe locally, then mirror atomically (.tmp → .seshat) on Save or after 25s idle—plus a 1-tap 'Save Backup Copy' option for Android Google Drive.",
+        accentColor = ScribeStarNeonRed
+    ),
+    WhatsNewHighlight(
+        badge = "☀️",
+        tag = "LIGHT MODE POLISH",
+        title = "Crisp Sidebar Close Controls & 'SCENES' Header",
+        description = "Fixed invisible white close ('X') icons and header labels in Light Mode across the Screenplay, Novel, TV, and Universe sidebars, and renamed 'BINDER ⌵' to 'SCENES ⌵' to match the top bar.",
+        accentColor = ElectrumGold
+    ),
+    WhatsNewHighlight(
         badge = "🪐",
-        tag = "NEW UNIVERSE ENGINE",
+        tag = "UNIVERSE ENGINE",
         title = "Blended Universe & Expanded Worldbuilding",
         description = "Create A Universe now offers Cinematic, Television, Novel, and Blended Universes in both Standard and Writing Challenge modes. Blended Universes unite Film scripts, TV episodes, Novels, Comics, and Stage Plays under one Master Story Bible with an instant Assignment Switcher binder.",
         accentColor = ElectrumGold
@@ -163,7 +184,7 @@ fun WhatsNewDialog(
                                 )
                             )
                             Text(
-                                text = "RELEASE 2.8 • STUDIO, UNIVERSES & CHALLENGES",
+                                text = "RELEASE 2.9 • CLOUD SYNC, STELLARIUM & STUDIO",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = StudioMonoFontFamily,
                                     color = secondaryText,
