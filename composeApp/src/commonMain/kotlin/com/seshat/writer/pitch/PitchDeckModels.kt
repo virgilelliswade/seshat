@@ -59,14 +59,18 @@ enum class PitchDeckTheme(
 }
 
 enum class PitchSlideLayout(val label: String) {
-    HERO_HOOK("Hero Hook"),
-    WORLD_STAKES("World & Stakes"),
-    POSTCARD_TITLE("Title / Tone Card"),
-    CHARACTERS_SPOTLIGHT("Characters Spotlight"),
+    POSTCARD_TITLE("Title & Cover"),
+    HERO_HOOK("Logline & Hook"),
+    SYNOPSIS_ARC("Synopsis / Story Arc"),
+    CHARACTERS_SPOTLIGHT("Characters / Cast"),
+    WORLD_STAKES("World & Setting"),
+    TONE_VISUAL_STYLE("Tone & Visual Style"),
+    COMPS("Comparable Titles (Comps)"),
+    AUDIENCE_ROADMAP("Audience & Series Roadmap"),
+    WHY_ME_COMPS("Why Me? Why Now?"),
+    CLOSING_QA("Closing / Questions?"),
     TURNING_POINT("Turning Point / Midpoint"),
-    CENTRAL_DILEMMA("Central Dilemma"),
-    WHY_ME_COMPS("Why Me? Why Now? & Comps"),
-    CLOSING_QA("Closing / Questions?")
+    CENTRAL_DILEMMA("Central Dilemma")
 }
 
 data class PitchSlide(
@@ -191,7 +195,7 @@ data class PitchDeckDocument(
         }
 
         /**
-         * Seeds an LMU Pitch Night 9-slide deck pre-populated with any Story Bible & Corkboard info.
+         * Seeds an industry-standard 10-slide writer pitch deck pre-populated with any Story Bible & Corkboard info.
          */
         fun defaultForProject(
             title: String,
@@ -201,13 +205,13 @@ data class PitchDeckDocument(
         ): PitchDeckDocument {
             val cleanTitle = title.ifBlank { "UNTITLED PROJECT" }
             val worldSeed = bible.lore.cosmology.ifBlank {
-                "Open with a visceral visual hook that drops producers straight into the world."
+                "Open with a 1–2 sentence high-concept logline: protagonist, inciting incident, goal, and ticking-clock stakes."
             }
             val rulesSeed = listOfNotNull(
                 bible.lore.anthropology.takeIf { it.isNotBlank() },
                 bible.lore.technology.takeIf { it.isNotBlank() }
             ).joinToString("\n\n").ifBlank {
-                "• What makes this society / world dangerous right now?\n• What technology, magic, or power structure defines daily survival?"
+                "• Where & when does the story take place?\n• What rules, power structures, or dangers make this world a powder keg?"
             }
             val charSeed = if (bible.characters.isNotEmpty()) {
                 bible.characters.take(3).joinToString("\n\n") { c ->
@@ -226,59 +230,71 @@ data class PitchDeckDocument(
                     }
                 }
             } else {
-                "PROTAGONIST — Who are they, what do they want, and what unhealed flaw gets in their way?\n\nKEY ALLY / FOIL — Who pushes them forward or complicates the mission?"
+                "PROTAGONIST — Core flaw, internal need, external goal, and arc.\n\nANTAGONIST / FOIL — Who opposes them or complicates the mission?"
             }
             val actTurnSeed = bible.beats.firstOrNull()?.let { "${it.title}: ${it.summary}" }
                 ?: corkboard.cards.firstOrNull()?.let { "${it.title}: ${it.summary}" }
-                ?: "The inciting job or catalyst goes sideways—forcing your hero into a point of no return."
+                ?: "Outline the beginning, middle, and major turning points—plus the pilot / Act I engine."
 
             val slides = listOf(
                 PitchSlide(
                     title = cleanTitle.uppercase(),
-                    subtitle = "COLD OPEN HOOK",
+                    subtitle = if (author.isNotBlank()) "WRITTEN BY ${author.uppercase()}" else "TITLE & COVER SLIDE",
+                    body = "Format / Genre (e.g. One-Hour Drama Pilot / Feature Film)\nAdd a key poster visual using Upload Image →",
+                    layout = PitchSlideLayout.POSTCARD_TITLE
+                ),
+                PitchSlide(
+                    title = "THE LOGLINE & HOOK",
+                    subtitle = "1–2 SENTENCE HIGH-CONCEPT PITCH",
                     body = worldSeed,
                     layout = PitchSlideLayout.HERO_HOOK
                 ),
                 PitchSlide(
-                    title = "THE WORLD & STAKES",
+                    title = "SYNOPSIS & STORY ARC",
+                    subtitle = "THE NARRATIVE ENGINE",
+                    body = actTurnSeed,
+                    layout = PitchSlideLayout.SYNOPSIS_ARC
+                ),
+                PitchSlide(
+                    title = "CHARACTERS & CAST",
+                    subtitle = "CORE ENSEMBLE",
+                    body = charSeed,
+                    layout = PitchSlideLayout.CHARACTERS_SPOTLIGHT
+                ),
+                PitchSlide(
+                    title = "THE WORLD & SETTING",
                     subtitle = "WHY THIS WORLD IS A POWDER KEG",
                     body = rulesSeed,
                     layout = PitchSlideLayout.WORLD_STAKES
                 ),
                 PitchSlide(
-                    title = cleanTitle.uppercase(),
-                    subtitle = "TONE & POSTCARD VISUAL",
-                    body = "Drop a signature mood image and a 1-line tagline that captures the aesthetic.",
-                    layout = PitchSlideLayout.POSTCARD_TITLE
+                    title = "TONE & VISUAL STYLE",
+                    subtitle = "MOOD BOARD & CINEMATIC LANGUAGE",
+                    body = "• Color palette, cinematography, pacing, and soundscape\n• Upload reference stills or mood imagery to show what the project feels like to watch",
+                    layout = PitchSlideLayout.TONE_VISUAL_STYLE
                 ),
                 PitchSlide(
-                    title = "OUR STORY & HEROES",
-                    subtitle = "CORE CHARACTERS",
-                    body = charSeed,
-                    layout = PitchSlideLayout.CHARACTERS_SPOTLIGHT
+                    title = "COMPARABLE TITLES (COMPS)",
+                    subtitle = "[PROJECT A] MEETS [PROJECT B]",
+                    body = "• Comp 1 (Tone / Visuals): Why it resonates with the same audience\n• Comp 2 (Story Engine / Stakes): Comparable scale and genre blend\n• The Fresh Twist: What makes this unmistakable in today's market",
+                    layout = PitchSlideLayout.COMPS
                 ),
                 PitchSlide(
-                    title = "AND IT WAS ALL GOING SO WELL...",
-                    subtitle = "INCITING CATALYST & ACT I TURN",
-                    body = actTurnSeed,
-                    layout = PitchSlideLayout.TURNING_POINT
-                ),
-                PitchSlide(
-                    title = "THE CENTRAL DILEMMA",
-                    subtitle = "BETRAYAL & IMPOSSIBLE CHOICE",
-                    body = "What impossible moral or survival choice defines Act II and Act III?",
-                    layout = PitchSlideLayout.CENTRAL_DILEMMA
+                    title = "AUDIENCE & SERIES ROADMAP",
+                    subtitle = "MARKET FIT & FUTURE SEASONS",
+                    body = "• Target Audience & Platform Fit (e.g. A24, HBO, Netflix, Theatrical)\n• Future Seasons / Production Scope: Where the story goes beyond Act I / Season 1",
+                    layout = PitchSlideLayout.AUDIENCE_ROADMAP
                 ),
                 PitchSlide(
                     title = "WHY ME? WHY NOW?",
-                    subtitle = "PERSONAL PASSION & MARKET COMPS",
-                    body = "• Why you are the only writer who can tell this story\n• 2–3 recent film/TV comps (e.g. Tone of X meets Engine of Y)\n• Franchise / multi-season engine",
+                    subtitle = "WRITER'S STATEMENT",
+                    body = "• Why you are uniquely qualified to write this story\n• The personal obsession or timely theme driving the project",
                     layout = PitchSlideLayout.WHY_ME_COMPS
                 ),
                 PitchSlide(
-                    title = "QUESTIONS?",
+                    title = "THANK YOU • QUESTIONS?",
                     subtitle = cleanTitle.uppercase(),
-                    body = if (author.isNotBlank()) "Created by $author" else "Thank you for listening.",
+                    body = if (author.isNotBlank()) "Created by $author\nContact / Representation" else "Thank you for reading.",
                     layout = PitchSlideLayout.CLOSING_QA
                 )
             )

@@ -666,6 +666,7 @@ fun ScreenplayEditorScreen(
             storyBible = uiState.storyBible,
             corkboard = uiState.corkboardDoc,
             blocks = uiState.blocks,
+            isChallengeMode = uiState.firstDraftState.isArcadeLocked,
             onDismiss = { viewModel.closePitchDeck() },
             onOpenAiSettings = {
                 viewModel.closePitchDeck()

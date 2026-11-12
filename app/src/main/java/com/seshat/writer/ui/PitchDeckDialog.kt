@@ -1,7 +1,12 @@
 package com.seshat.writer.ui
 
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,7 +59,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,6 +108,7 @@ fun PitchDeckDialog(
     storyBible: StoryBible,
     corkboard: CorkboardDocument,
     blocks: List<ScreenplayBlock>,
+    isChallengeMode: Boolean = false,
     onDismiss: () -> Unit,
     onOpenAiSettings: () -> Unit = {}
 ) {
@@ -220,7 +230,11 @@ fun PitchDeckDialog(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "LMU Pitch Night Studio • Story Bible & Corkboard Connected",
+                                    text = if (isChallengeMode) {
+                                        "🏆 LMU Pitch Night Challenge • Story Bible & Corkboard Connected"
+                                    } else {
+                                        "Pitch Deck Studio • Story Bible & Corkboard Connected"
+                                    },
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = ScreenplayTextMuted,
                                         fontSize = 10.sp
@@ -411,8 +425,8 @@ fun PitchDeckDialog(
                                 isAiBusy = true
                                 scope.launch {
                                     val prompt = """
-                                        Build an 8-slide Hollywood Pitch Night presentation JSON array for "${deck.projectTitle}".
-                                        Follow this arc: 1) Cold Open Hook, 2) World & Stakes, 3) Title/Tone Card, 4) Characters Spotlight, 5) Turning Point, 6) Central Dilemma, 7) Why Me? Why Now? & Comps, 8) Closing Questions?.
+                                        Build a 10-slide industry-standard writer pitch deck JSON array for "${deck.projectTitle}".
+                                        Follow this exact order: 1) Title & Cover, 2) Logline & Hook, 3) Synopsis & Story Arc, 4) Characters & Cast, 5) The World & Setting, 6) Tone & Visual Style, 7) Comparable Titles (Comps), 8) Target Audience & Series Roadmap, 9) Why Me? Why Now?, 10) Closing / Questions?.
                                         Return ONLY a JSON array of objects with keys: "title", "subtitle", "body", "speakerNotes".
                                     """.trimIndent()
                                     val res = AiClient.generatePitchContent(
@@ -600,6 +614,29 @@ private fun PresentationDeckWorkspace(
 ) {
     val activeSlide = deck.slides.getOrNull(selectedSlideIdx)
     val t = deck.theme
+    val context = LocalContext.current
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        val currentSlide = deck.slides.getOrNull(selectedSlideIdx) ?: return@rememberLauncherForActivityResult
+        if (uri != null) {
+            try {
+                val imgDir = File(context.filesDir, "pitch_images")
+                if (!imgDir.exists()) imgDir.mkdirs()
+                val dest = File(imgDir, "slide_${currentSlide.id}_${System.currentTimeMillis()}.jpg")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(dest).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                val list = deck.slides.toMutableList()
+                list[selectedSlideIdx] = currentSlide.copy(imagePath = dest.absolutePath)
+                onUpdateDeck(deck.copy(slides = list))
+            } catch (e: Exception) {
+                Toast.makeText(context, "Image import failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Column(modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Theme Picker + AI Build Row
@@ -702,10 +739,44 @@ private fun PresentationDeckWorkspace(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = slide.layout.label,
+                                        text = if (slide.imagePath.isNotBlank()) "🖼️ ${slide.layout.label}" else slide.layout.label,
                                         style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted, fontSize = 9.5.sp),
                                         maxLines = 1
                                     )
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    if (idx > 0) {
+                                        Text(
+                                            text = "▲",
+                                            style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold, fontSize = 9.sp),
+                                            modifier = Modifier
+                                                .clickable {
+                                                    val list = deck.slides.toMutableList()
+                                                    val cur = list[idx]
+                                                    list[idx] = list[idx - 1]
+                                                    list[idx - 1] = cur
+                                                    onSelectSlide(idx - 1)
+                                                    onUpdateDeck(deck.copy(slides = list))
+                                                }
+                                                .padding(horizontal = 3.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                    if (idx < deck.slides.lastIndex) {
+                                        Text(
+                                            text = "▼",
+                                            style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold, fontSize = 9.sp),
+                                            modifier = Modifier
+                                                .clickable {
+                                                    val list = deck.slides.toMutableList()
+                                                    val cur = list[idx]
+                                                    list[idx] = list[idx + 1]
+                                                    list[idx + 1] = cur
+                                                    onSelectSlide(idx + 1)
+                                                    onUpdateDeck(deck.copy(slides = list))
+                                                }
+                                                .padding(horizontal = 3.dp, vertical = 1.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -730,7 +801,7 @@ private fun PresentationDeckWorkspace(
                             .background(Color(t.bgHex))
                             .border(1.5.dp, Color(t.accentHex), RoundedCornerShape(0.dp))
                     ) {
-                        // Right accent bar matching LMU Cyberpunk deck style
+                        // Right accent bar
                         Box(
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
@@ -738,55 +809,87 @@ private fun PresentationDeckWorkspace(
                                 .width(14.dp)
                                 .background(Color(t.accentHex))
                         )
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(start = 24.dp, end = 34.dp, top = 18.dp, bottom = 14.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
+                        val slideBitmap = remember(activeSlide.imagePath) {
+                            activeSlide.imagePath.takeIf { it.isNotBlank() }?.let { path ->
+                                try {
+                                    val f = File(path)
+                                    if (f.exists()) BitmapFactory.decodeFile(f.absolutePath)?.asImageBitmap() else null
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(start = 24.dp, end = 26.dp, top = 18.dp, bottom = 14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                HorizontalDivider(color = Color(t.mutedHex).copy(alpha = 0.55f), thickness = 1.dp)
-                                if (activeSlide.subtitle.isNotBlank()) {
-                                    Text(
-                                        text = activeSlide.subtitle.uppercase(Locale.US),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontFamily = StudioMonoFontFamily,
-                                            color = Color(t.mutedHex),
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.sp
+                            Column(
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    HorizontalDivider(color = Color(t.mutedHex).copy(alpha = 0.55f), thickness = 1.dp)
+                                    if (activeSlide.subtitle.isNotBlank()) {
+                                        Text(
+                                            text = activeSlide.subtitle.uppercase(Locale.US),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontFamily = StudioMonoFontFamily,
+                                                color = Color(t.mutedHex),
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            )
                                         )
+                                    }
+                                    Text(
+                                        text = activeSlide.title.ifBlank { deck.projectTitle },
+                                        style = MaterialTheme.typography.headlineSmall.copy(
+                                            fontFamily = MainAppFontFamily,
+                                            color = Color(t.accentHex),
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = activeSlide.body,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = Color(t.textHex),
+                                            lineHeight = 20.sp
+                                        ),
+                                        maxLines = 7,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                                Text(
-                                    text = activeSlide.title.ifBlank { deck.projectTitle },
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontFamily = MainAppFontFamily,
-                                        color = Color(t.accentHex),
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = activeSlide.body,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = Color(t.textHex),
-                                        lineHeight = 20.sp
-                                    ),
-                                    maxLines = 7,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                                Column {
+                                    HorizontalDivider(color = Color(t.mutedHex).copy(alpha = 0.4f), thickness = 1.dp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = String.format(Locale.US, "%02d", selectedSlideIdx + 1),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = StudioMonoFontFamily, color = Color(t.mutedHex))
+                                    )
+                                }
                             }
-                            Column {
-                                HorizontalDivider(color = Color(t.mutedHex).copy(alpha = 0.4f), thickness = 1.dp)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = String.format(Locale.US, "%02d", selectedSlideIdx + 1),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = StudioMonoFontFamily, color = Color(t.mutedHex))
-                                )
+
+                            if (slideBitmap != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(0.75f)
+                                        .fillMaxHeight()
+                                        .padding(vertical = 8.dp)
+                                        .border(1.dp, Color(t.accentHex), RoundedCornerShape(0.dp))
+                                ) {
+                                    Image(
+                                        bitmap = slideBitmap,
+                                        contentDescription = "Slide Visual",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
                             }
                         }
                     }
 
-                    // Slide Controls (Move Up/Down, Delete)
+                    // Slide Controls (Upload Image, Move Up/Down, Delete)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -796,7 +899,32 @@ private fun PresentationDeckWorkspace(
                             text = "EDIT SLIDE ${selectedSlideIdx + 1} (${activeSlide.layout.label})",
                             style = MaterialTheme.typography.labelSmall.copy(color = if (isDark) ElectrumGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold)
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedButton(
+                                onClick = { imagePickerLauncher.launch("image/*") },
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, ElectrumGold)
+                            ) {
+                                Text(
+                                    text = if (activeSlide.imagePath.isBlank()) "🖼️ Upload Image" else "🖼️ Replace Image",
+                                    color = if (isDark) ElectrumGold else Color(0xFF991B1B),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (activeSlide.imagePath.isNotBlank()) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val list = deck.slides.toMutableList()
+                                        list[selectedSlideIdx] = activeSlide.copy(imagePath = "")
+                                        onUpdateDeck(deck.copy(slides = list))
+                                    },
+                                    shape = RoundedCornerShape(0.dp),
+                                    border = BorderStroke(1.dp, Color(0xFFEF5350))
+                                ) {
+                                    Text("✕ Image", color = Color(0xFFEF5350), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
                             IconButton(
                                 enabled = selectedSlideIdx > 0,
                                 onClick = {

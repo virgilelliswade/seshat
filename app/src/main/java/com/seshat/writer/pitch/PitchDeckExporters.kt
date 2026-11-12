@@ -1,7 +1,9 @@
 package com.seshat.writer.pitch
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.seshat.writer.export.ScriptFileManager
@@ -113,23 +115,49 @@ object PitchDeckExporters {
             c.drawLine(56f, 44f, slideW - 56f, 44f, rulePaint)
             c.drawLine(56f, slideH - 44f, slideW - 56f, slideH - 44f, rulePaint)
 
+            // Optional Slide Image on the right column
+            val slideBitmap = slide.imagePath.takeIf { it.isNotBlank() }?.let { path ->
+                try {
+                    val imgFile = File(path)
+                    if (imgFile.exists()) BitmapFactory.decodeFile(imgFile.absolutePath) else null
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            val textMaxW = if (slideBitmap != null) slideW - 430f else slideW - 140f
+
             // Subtitle + Title
             if (slide.subtitle.isNotBlank()) {
                 c.drawText(slide.subtitle.uppercase(Locale.US), 56f, 76f, subtitlePaint)
             }
             var y = 122f
-            val titleLines = wrapText(slide.title.ifBlank { deck.projectTitle }, titlePaint, slideW - 140f)
+            val titleLines = wrapText(slide.title.ifBlank { deck.projectTitle }, titlePaint, textMaxW)
             for (tl in titleLines.take(3)) {
                 c.drawText(tl, 56f, y, titlePaint)
                 y += 42f
             }
 
             y += 14f
-            val bodyLines = wrapText(slide.body, bodyPaint, slideW - 140f)
+            val bodyLines = wrapText(slide.body, bodyPaint, textMaxW)
             for (bl in bodyLines) {
                 if (y > slideH - 64f) break
                 c.drawText(bl, 56f, y, bodyPaint)
                 y += 26f
+            }
+
+            if (slideBitmap != null) {
+                val frameLeft = slideW - 350f
+                val frameTop = 68f
+                val frameRight = slideW - 56f
+                val frameBottom = slideH - 68f
+                val destRect = RectF(frameLeft, frameTop, frameRight, frameBottom)
+                c.drawBitmap(slideBitmap, null, destRect, null)
+                val borderPaint = Paint().apply {
+                    color = hexColor(t.accentHex)
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2f
+                }
+                c.drawRect(destRect, borderPaint)
             }
 
             c.drawText(String.format(Locale.US, "%02d", idx + 1), 56f, slideH - 20f, numPaint)

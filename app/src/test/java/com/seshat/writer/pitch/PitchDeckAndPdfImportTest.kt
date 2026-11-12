@@ -59,10 +59,15 @@ class PitchDeckAndPdfImportTest {
             )
         )
         val deck = PitchDeckDocument.defaultForProject("THE EMERALD TABLET", "Ada", bible, CorkboardDocument())
-        assertEquals(8, deck.slides.size)
-        assertTrue(deck.slides.first().body.contains("Alchemy rules a flooded Cairo."))
+        assertEquals(10, deck.slides.size)
+        assertEquals(PitchSlideLayout.POSTCARD_TITLE, deck.slides[0].layout)
+        assertEquals(PitchSlideLayout.HERO_HOOK, deck.slides[1].layout)
+        assertEquals(PitchSlideLayout.COMPS, deck.slides[6].layout)
+        assertEquals(PitchSlideLayout.CLOSING_QA, deck.slides[9].layout)
+        assertTrue(deck.slides[1].body.contains("Alchemy rules a flooded Cairo."))
         assertTrue(deck.slides[3].body.contains("LAYLA (Age 29, Female)"))
         assertTrue(deck.slides[3].body.contains("Shard of Glass: Never relies on anyone."))
+        assertTrue(deck.slides[6].title.contains("COMPS", ignoreCase = true))
     }
 
     @Test

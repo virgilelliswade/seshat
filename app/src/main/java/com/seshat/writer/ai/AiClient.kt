@@ -335,7 +335,7 @@ object AiClient {
     ): Result<String> = withContext(Dispatchers.IO) {
         val systemPrompt = buildString {
             append(HOLLYWOOD_SYSTEM_INSTRUCTION)
-            append("\nYou are an elite Hollywood Pitch Coach (LMU Pitch Night & studio development executive). ")
+            append("\nYou are an elite Hollywood Pitch Coach & studio development executive. ")
             append("Craft punchy, visual, producer-ready pitch copy that sells world, character, stakes, irony, and 'Why Me? Why Now?'.")
             if (storyBibleContext.isNotBlank()) {
                 append("\n\n=== STORY BIBLE ===\n").append(storyBibleContext)
