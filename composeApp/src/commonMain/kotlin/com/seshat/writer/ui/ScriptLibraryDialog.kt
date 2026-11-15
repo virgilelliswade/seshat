@@ -71,8 +71,11 @@ import com.seshat.writer.library.ProjectFormat
 import com.seshat.writer.library.ScriptLibraryManager
 import com.seshat.writer.library.ScriptProject
 import com.seshat.writer.library.ScriptTemplate
+import com.seshat.writer.novel.NovelRepository
 import com.seshat.writer.screenplay.ScreenplayViewModel
 import com.seshat.writer.titlepage.ScreenplayDocumentStore
+import com.seshat.writer.universe.BlendedUniverseProject
+import org.json.JSONObject
 import com.seshat.writer.ui.theme.ElectrumGold
 import com.seshat.writer.ui.theme.LightGold
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
@@ -163,7 +166,7 @@ fun ScriptLibraryDialog(
                 ) {
                     Column {
                         Text(
-                            text = "📁 SCRIPT LIBRARY & PROJECTS",
+                            text = "📁 SESHAT PROJECT & SCRIPT LIBRARY",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp,
@@ -171,7 +174,7 @@ fun ScriptLibraryDialog(
                             )
                         )
                         Text(
-                            text = "Manage screenplay projects, fork drafts & import Final Draft, Fountain, or PDF scripts",
+                            text = "Manage screenplays, story universes, novels & import Final Draft, Fountain, or PDF files",
                             style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted, fontSize = 11.sp)
                         )
                     }
@@ -239,7 +242,7 @@ fun ScriptLibraryDialog(
                         modifier = Modifier.weight(1f),
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) {
-                                Text("Search screenplays by title or author...", color = ScreenplayTextMuted, fontSize = 13.sp)
+                                Text("Search projects by title or author...", color = ScreenplayTextMuted, fontSize = 13.sp)
                             }
                             innerTextField()
                         }
@@ -272,12 +275,12 @@ fun ScriptLibraryDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = if (projects.isEmpty()) "No saved screenplays yet." else "No scripts match '$searchQuery'",
+                                text = if (projects.isEmpty()) "No saved projects yet." else "No projects match '$searchQuery'",
                                 style = MaterialTheme.typography.bodyMedium.copy(color = ScreenplayTextMuted)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Create a new script using templates or import an existing .fdx / .fountain file.",
+                                text = "Create a new project using templates or import an existing .fdx / .fountain file.",
                                 style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted.copy(alpha = 0.6f), fontSize = 11.sp)
                             )
                         }
@@ -293,13 +296,37 @@ fun ScriptLibraryDialog(
                             ScriptProjectCard(
                                 project = project,
                                 onOpen = {
-                                    val imp = ScriptImporter.importFromFile(project.file)
-                                    if (imp.isSuccess && imp.document != null) {
-                                        viewModel.loadDocument(imp.document.blocks, imp.document.titlePage)
-                                        Toast.makeText(context, "Opened '${project.title}'", Toast.LENGTH_SHORT).show()
-                                        onProjectOpened()
+                                    if (project.format == "UNIVERSE" || project.file.name.endsWith(".universe.json", ignoreCase = true)) {
+                                        try {
+                                            val uProj = BlendedUniverseProject.fromJson(JSONObject(project.file.readText()))
+                                            viewModel.openBlendedUniverseProject(context, uProj)
+                                            Toast.makeText(context, "Opened Universe '${uProj.title}'", Toast.LENGTH_SHORT).show()
+                                            onProjectOpened()
+                                        } catch (e: Throwable) {
+                                            Toast.makeText(context, "Failed to load universe: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else if (project.format == "NOVEL" || project.file.name.endsWith(".novel.json", ignoreCase = true)) {
+                                        try {
+                                            val ms = NovelRepository.loadManuscript(context, project.title)
+                                            if (ms != null) {
+                                                viewModel.openNovelProject(context, ms)
+                                                Toast.makeText(context, "Opened Novel '${ms.title}'", Toast.LENGTH_SHORT).show()
+                                                onProjectOpened()
+                                            } else {
+                                                Toast.makeText(context, "Failed to load novel manuscript", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Throwable) {
+                                            Toast.makeText(context, "Failed to load novel: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Failed to load script: ${imp.errorMessage}", Toast.LENGTH_SHORT).show()
+                                        val imp = ScriptImporter.importFromFile(project.file)
+                                        if (imp.isSuccess && imp.document != null) {
+                                            viewModel.loadDocument(imp.document.blocks, imp.document.titlePage)
+                                            Toast.makeText(context, "Opened '${project.title}'", Toast.LENGTH_SHORT).show()
+                                            onProjectOpened()
+                                        } else {
+                                            Toast.makeText(context, "Failed to load script: ${imp.errorMessage}", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 },
                                 onDuplicate = {
@@ -529,18 +556,26 @@ private fun ScriptProjectCard(
                                     "FDX" -> Color(0xFF1976D2).copy(alpha = 0.2f)
                                     "SESHAT" -> Color(0xFF8B5CF6).copy(alpha = 0.2f)
                                     "PDF" -> Color(0xFFE53935).copy(alpha = 0.2f)
+                                    "UNIVERSE" -> Color(0xFF10B981).copy(alpha = 0.25f)
+                                    "NOVEL" -> Color(0xFFF43F5E).copy(alpha = 0.25f)
                                     else -> ElectrumGold.copy(alpha = 0.2f)
                                 }
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = project.format,
+                            text = when (project.format) {
+                                "UNIVERSE" -> "🪐 UNIVERSE"
+                                "NOVEL" -> "📖 NOVEL"
+                                else -> project.format
+                            },
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = when (project.format) {
                                     "FDX" -> Color(0xFF64B5F6)
                                     "SESHAT" -> Color(0xFFC084FC)
                                     "PDF" -> Color(0xFFEF5350)
+                                    "UNIVERSE" -> Color(0xFF34D399)
+                                    "NOVEL" -> Color(0xFFFB7185)
                                     else -> ElectrumGold
                                 },
                                 fontWeight = FontWeight.Bold,
@@ -572,7 +607,7 @@ private fun ScriptProjectCard(
                 if (project.author.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "by ${project.author}",
+                        text = if (project.format == "UNIVERSE") project.author else "by ${project.author}",
                         style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted, fontSize = 12.sp)
                     )
                 }
@@ -580,8 +615,13 @@ private fun ScriptProjectCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val metaText = when (project.format) {
+                        "UNIVERSE" -> "${project.sceneCount} branches  •  Living World Tree  •  Modified $dateStr"
+                        "NOVEL" -> "${project.sceneCount} chapters  •  Novel Manuscript  •  Modified $dateStr"
+                        else -> "${project.sceneCount} scenes  •  ~${project.pageCount} pgs  •  Modified $dateStr"
+                    }
                     Text(
-                        text = "${project.sceneCount} scenes  •  ~${project.pageCount} pgs  •  Modified $dateStr",
+                        text = metaText,
                         style = MaterialTheme.typography.labelSmall.copy(color = ScreenplayTextMuted.copy(alpha = 0.7f), fontSize = 10.sp)
                     )
                 }
@@ -616,8 +656,10 @@ private fun ScriptProjectCard(
                     Icon(imageVector = Icons.Default.Edit, contentDescription = "Rename", tint = ScreenplayTextMuted, modifier = Modifier.size(16.dp))
                 }
 
-                IconButton(onClick = onExportPdf, modifier = Modifier.size(30.dp)) {
-                    Icon(imageVector = Icons.Default.Share, contentDescription = "Export PDF", tint = ScreenplayTextMuted, modifier = Modifier.size(16.dp))
+                if (project.format != "UNIVERSE" && project.format != "NOVEL") {
+                    IconButton(onClick = onExportPdf, modifier = Modifier.size(30.dp)) {
+                        Icon(imageVector = Icons.Default.Share, contentDescription = "Export PDF", tint = ScreenplayTextMuted, modifier = Modifier.size(16.dp))
+                    }
                 }
 
                 IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {

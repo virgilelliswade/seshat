@@ -3646,6 +3646,86 @@ class ScreenplayViewModel : ViewModel() {
         }
     }
 
+    fun openBlendedUniverseProject(context: Context, project: BlendedUniverseProject) {
+        val activeAssignment = project.assignments.getOrNull(project.activeAssignmentIndex)
+            ?: project.assignments.firstOrNull()
+            ?: BlendedAssignment.defaultAssignment("Main Branch", ProjectFormat.SCREENPLAY)
+
+        val bible = project.universeBible
+        val firstDraftState = FirstDraftController.loadState(
+            context = context,
+            projectTitle = project.title,
+            format = activeAssignment.format,
+            screenplayType = activeAssignment.screenplayType
+        )
+
+        _uiState.update { current ->
+            buildUpdatedState(
+                current.copy(
+                    isStartMenuOpen = false,
+                    isSidebarExpanded = true,
+                    projectFormat = activeAssignment.format,
+                    screenplayType = activeAssignment.screenplayType,
+                    tvSeriesProject = null,
+                    blendedUniverseProject = project,
+                    isUniverseProject = true,
+                    isWorldTreeHubOpen = true,
+                    title = "${project.title} — ${activeAssignment.title}",
+                    blocks = activeAssignment.blocks,
+                    focusedBlockId = activeAssignment.blocks.firstOrNull()?.id ?: "",
+                    corkboardDoc = activeAssignment.corkboard,
+                    storyBible = bible,
+                    novelManuscript = activeAssignment.novelManuscript,
+                    activeChapterIndex = 0,
+                    isStoryBibleOpen = false,
+                    isCorkboardOpen = false,
+                    isPitchDeckOpen = false,
+                    isCorkboardSideBySide = false,
+                    firstDraftState = firstDraftState
+                ),
+                activeAssignment.blocks,
+                focusedBlockId = activeAssignment.blocks.firstOrNull()?.id ?: ""
+            )
+        }
+    }
+
+    fun openNovelProject(context: Context, manuscript: NovelManuscript) {
+        val chapterCards = NovelRepository.chaptersToSceneCards(manuscript)
+        val loadedBible = StoryBibleRepository.loadBible(context, manuscript.title)
+        val loadedCorkboard = CorkboardRepository.loadCorkboard(context, manuscript.title)
+        val firstDraftState = FirstDraftController.loadState(
+            context = context,
+            projectTitle = manuscript.title,
+            format = ProjectFormat.NOVEL,
+            screenplayType = ScreenplayType.FEATURE
+        )
+
+        _uiState.update { current ->
+            current.copy(
+                isStartMenuOpen = false,
+                isSidebarExpanded = true,
+                projectFormat = ProjectFormat.NOVEL,
+                screenplayType = ScreenplayType.FEATURE,
+                tvSeriesProject = null,
+                blendedUniverseProject = null,
+                isUniverseProject = false,
+                isWorldTreeHubOpen = false,
+                title = manuscript.title,
+                author = manuscript.author,
+                novelManuscript = manuscript,
+                sceneCards = chapterCards,
+                activeChapterIndex = 0,
+                corkboardDoc = loadedCorkboard,
+                storyBible = loadedBible,
+                isStoryBibleOpen = false,
+                isCorkboardOpen = false,
+                isPitchDeckOpen = false,
+                isCorkboardSideBySide = false,
+                firstDraftState = firstDraftState
+            )
+        }
+    }
+
     fun openWorldTreeHub() {
         val state = _uiState.value
         val ctx = latestAppContext

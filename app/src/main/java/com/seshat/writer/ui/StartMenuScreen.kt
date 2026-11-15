@@ -573,13 +573,37 @@ fun StartMenuScreen(
                                             onCloseMenu()
                                         },
                                         onOpenProject = { proj ->
-                                            val imp = ScriptImporter.importFromFile(proj.file)
-                                            if (imp.isSuccess && imp.document != null) {
-                                                viewModel.loadDocument(imp.document.blocks, imp.document.titlePage)
-                                                Toast.makeText(context, "Opened '${proj.title}'", Toast.LENGTH_SHORT).show()
-                                                onCloseMenu()
+                                            if (proj.format == "UNIVERSE" || proj.file.name.endsWith(".universe.json", ignoreCase = true)) {
+                                                try {
+                                                    val uProj = com.seshat.writer.universe.BlendedUniverseProject.fromJson(org.json.JSONObject(proj.file.readText()))
+                                                    viewModel.openBlendedUniverseProject(context, uProj)
+                                                    Toast.makeText(context, "Opened Universe '${uProj.title}'", Toast.LENGTH_SHORT).show()
+                                                    onCloseMenu()
+                                                } catch (e: Throwable) {
+                                                    Toast.makeText(context, "Failed to load universe: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                }
+                                            } else if (proj.format == "NOVEL" || proj.file.name.endsWith(".novel.json", ignoreCase = true)) {
+                                                try {
+                                                    val ms = com.seshat.writer.novel.NovelRepository.loadManuscript(context, proj.title)
+                                                    if (ms != null) {
+                                                        viewModel.openNovelProject(context, ms)
+                                                        Toast.makeText(context, "Opened Novel '${ms.title}'", Toast.LENGTH_SHORT).show()
+                                                        onCloseMenu()
+                                                    } else {
+                                                        Toast.makeText(context, "Failed to load novel manuscript", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } catch (e: Throwable) {
+                                                    Toast.makeText(context, "Failed to load novel: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                }
                                             } else {
-                                                Toast.makeText(context, "Failed to load: ${imp.errorMessage}", Toast.LENGTH_SHORT).show()
+                                                val imp = ScriptImporter.importFromFile(proj.file)
+                                                if (imp.isSuccess && imp.document != null) {
+                                                    viewModel.loadDocument(imp.document.blocks, imp.document.titlePage)
+                                                    Toast.makeText(context, "Opened '${proj.title}'", Toast.LENGTH_SHORT).show()
+                                                    onCloseMenu()
+                                                } else {
+                                                    Toast.makeText(context, "Failed to load: ${imp.errorMessage}", Toast.LENGTH_SHORT).show()
+                                                }
                                             }
                                         },
                                         modifier = Modifier.graphicsLayer {

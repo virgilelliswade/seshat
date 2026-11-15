@@ -128,4 +128,64 @@ class ScriptLibraryManagerTest {
         assertTrue(deleted)
         assertFalse(file.exists())
     }
+
+    @Test
+    fun listProjectsDetectsUniverseAndNovelProjects() {
+        val universeFile = File(scriptsDir, "Dune_Universe.universe.json")
+        universeFile.writeText("""
+            {
+                "title": "Dune Universe",
+                "assignments": [
+                    { "title": "Part One" },
+                    { "title": "Part Two" },
+                    { "title": "Spinoff Series" }
+                ]
+            }
+        """.trimIndent())
+
+        val novelFile = File(scriptsDir, "Neuromancer.novel.json")
+        novelFile.writeText("""
+            {
+                "title": "Neuromancer",
+                "author": "William Gibson",
+                "chapters": [
+                    { "title": "Ch 1" },
+                    { "title": "Ch 2" }
+                ]
+            }
+        """.trimIndent())
+
+        val projects = ScriptLibraryManager.listProjectsInDir(scriptsDir)
+        assertEquals(2, projects.size)
+
+        val uProj = projects.find { it.format == "UNIVERSE" }
+        assertNotNull(uProj)
+        assertEquals("Dune Universe", uProj!!.title)
+        assertEquals(3, uProj.sceneCount)
+        assertEquals(com.seshat.writer.model.RevisionColor.GOLDENROD, uProj.revisionColor)
+
+        val nProj = projects.find { it.format == "NOVEL" }
+        assertNotNull(nProj)
+        assertEquals("Neuromancer", nProj!!.title)
+        assertEquals("William Gibson", nProj.author)
+        assertEquals(2, nProj.sceneCount)
+        assertEquals(com.seshat.writer.model.RevisionColor.CHERRY, nProj.revisionColor)
+    }
+
+    @Test
+    fun duplicateAndRenameUniverseProjectPreservesExtension() {
+        val universeFile = File(scriptsDir, "Mythos.universe.json")
+        universeFile.writeText("""{"title":"Mythos","assignments":[]}""")
+
+        val dup = ScriptLibraryManager.duplicateProjectInDir(scriptsDir, universeFile, "Mythos Fork")
+        assertTrue(dup.exists())
+        assertTrue(dup.name.endsWith(".universe.json"))
+        assertTrue(dup.readText().contains("Mythos Fork"))
+
+        val renamed = ScriptLibraryManager.renameProjectInDir(scriptsDir, dup, "Mythos Prime")
+        assertTrue(renamed.exists())
+        assertTrue(renamed.name.endsWith(".universe.json"))
+        assertFalse(dup.exists())
+        assertTrue(renamed.readText().contains("Mythos Prime"))
+    }
 }
