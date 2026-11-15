@@ -120,6 +120,10 @@ fun WorldTreeHubPane(
     var selectedParentId by remember { mutableStateOf<String?>(null) }
     var selectedEraTag by remember(theme) { mutableStateOf(blended?.eras?.firstOrNull()?.name ?: "Era 1") }
     var showErasDialog by remember { mutableStateOf(false) }
+    var renamingProjectIndex by remember { mutableStateOf<Int?>(null) }
+    var renamingDraftTitle by remember { mutableStateOf("") }
+    var viewingNotesProjectIndex by remember { mutableStateOf<Int?>(null) }
+    var draftProjectNotes by remember { mutableStateOf("") }
 
     var arcDraft by remember(bible.tvConfig.seasonalArcSummary) { mutableStateOf(bible.tvConfig.seasonalArcSummary) }
 
@@ -587,7 +591,39 @@ fun WorldTreeHubPane(
                                 )
                             )
 
-                            // 1. Medium / Format Picker
+                            // 1. Prominent Project Title Input
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "PROJECT TITLE *",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = goldAccent,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                                OutlinedTextField(
+                                    value = newBranchTitle,
+                                    onValueChange = { newBranchTitle = it },
+                                    placeholder = {
+                                        Text(
+                                            "e.g. Iron Man 2 or The Fall of Corvan...",
+                                            color = mutedText,
+                                            fontSize = 12.sp
+                                        )
+                                    },
+                                    singleLine = true,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = goldAccent,
+                                        unfocusedBorderColor = cardInsetBorder,
+                                        focusedTextColor = primaryText,
+                                        unfocusedTextColor = primaryText
+                                    ),
+                                    textStyle = MaterialTheme.typography.bodySmall.copy(color = primaryText, fontWeight = FontWeight.SemiBold),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            // 2. Medium / Format Picker
                             if (blended != null) {
                                 Row(
                                     modifier = Modifier
@@ -790,26 +826,12 @@ fun WorldTreeHubPane(
                                 }
                             }
 
-                            // 5. Title & Submit Row
+                            // Submit Button Row
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                OutlinedTextField(
-                                    value = newBranchTitle,
-                                    onValueChange = { newBranchTitle = it },
-                                    placeholder = {
-                                        Text(
-                                            "New project / branch title...",
-                                            color = mutedText,
-                                            fontSize = 12.sp
-                                        )
-                                    },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(color = primaryText),
-                                    modifier = Modifier.weight(1f)
-                                )
                                 Button(
                                     onClick = {
                                         val titleToAdd = newBranchTitle.trim().ifBlank {
@@ -995,6 +1017,26 @@ fun WorldTreeHubPane(
                                                         overflow = TextOverflow.Ellipsis,
                                                         modifier = Modifier.weight(1f, fill = false)
                                                     )
+
+                                                    if (blended != null && branch.index in blended.assignments.indices) {
+                                                        Surface(
+                                                            color = Color.Transparent,
+                                                            modifier = Modifier.clickable {
+                                                                renamingProjectIndex = branch.index
+                                                                renamingDraftTitle = branch.title
+                                                            }
+                                                        ) {
+                                                            Text(
+                                                                text = "✎ Rename",
+                                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                                    color = goldAccent,
+                                                                    fontWeight = FontWeight.SemiBold,
+                                                                    fontSize = 10.sp
+                                                                ),
+                                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 }
 
                                                 Row(
@@ -1036,6 +1078,30 @@ fun WorldTreeHubPane(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
+                                                if (blended != null && branch.index in blended.assignments.indices) {
+                                                    Surface(
+                                                        color = if (isDark) ObsidianSurface else Color.White,
+                                                        shape = RoundedCornerShape(0.dp),
+                                                        border = BorderStroke(1.dp, cardInsetBorder),
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(0.dp))
+                                                            .clickable {
+                                                                viewingNotesProjectIndex = branch.index
+                                                                draftProjectNotes = blended.assignments[branch.index].projectNotes
+                                                            }
+                                                    ) {
+                                                        Text(
+                                                            text = "📝 Notes",
+                                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                                color = secondaryText,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                fontSize = 10.5.sp
+                                                            ),
+                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                                        )
+                                                    }
+                                                }
+
                                                 Surface(
                                                     color = if (isDark) ObsidianSurface else Color.White,
                                                     shape = RoundedCornerShape(0.dp),
@@ -1170,6 +1236,38 @@ fun WorldTreeHubPane(
                     }
                 },
                 onDismiss = { showErasDialog = false }
+            )
+        }
+
+        if (renamingProjectIndex != null && blended != null) {
+            val projectIdx = renamingProjectIndex!!
+            RenameProjectDialog(
+                initialTitle = renamingDraftTitle,
+                isDark = isDark,
+                onConfirm = { newTitle ->
+                    viewModel.renameUniverseAssignment(context, projectIdx, newTitle)
+                    renamingProjectIndex = null
+                },
+                onDismiss = { renamingProjectIndex = null }
+            )
+        }
+
+        if (viewingNotesProjectIndex != null && blended != null) {
+            val projectIdx = viewingNotesProjectIndex!!
+            val projectTitle = blended.assignments.getOrNull(projectIdx)?.title ?: "Project"
+            ProjectNotesDialog(
+                projectTitle = projectTitle,
+                initialNotes = draftProjectNotes,
+                isDark = isDark,
+                onSaveNotes = { newNotes ->
+                    if (projectIdx in blended.assignments.indices) {
+                        val updated = blended.assignments.toMutableList()
+                        updated[projectIdx] = updated[projectIdx].copy(projectNotes = newNotes)
+                        viewModel.updateUniverseAssignments(context, updated)
+                    }
+                    viewingNotesProjectIndex = null
+                },
+                onDismiss = { viewingNotesProjectIndex = null }
             )
         }
     }
@@ -1612,6 +1710,255 @@ private fun HubActionCardButton(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RenameProjectDialog(
+    initialTitle: String,
+    isDark: Boolean,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var title by remember { mutableStateOf(initialTitle) }
+    val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val cardBg = if (isDark) ObsidianSurface else Color.White
+    val textColor = if (isDark) Color.White else Color(0xFF0F172A)
+    val mutedColor = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(min = 320.dp, max = 480.dp)
+                .fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(0.dp))
+                .border(BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.6f)), RoundedCornerShape(0.dp)),
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "RENAME PROJECT",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = ScribeStarNeonRed,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Surface(
+                        color = Color.Transparent,
+                        modifier = Modifier.clickable { onDismiss() }
+                    ) {
+                        Text(
+                            text = "✕",
+                            color = mutedColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Update the title for this branch within your Universe:",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = mutedColor,
+                        fontSize = 12.sp
+                    )
+                )
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Project Title", fontSize = 11.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ScribeStarNeonRed,
+                        unfocusedBorderColor = borderColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = textColor),
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier.weight(1f).height(40.dp)
+                    ) {
+                        Text("Cancel", fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (title.isNotBlank()) {
+                                onConfirm(title.trim())
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ScribeStarNeonRed,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.weight(1f).height(40.dp)
+                    ) {
+                        Text("Save Title", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProjectNotesDialog(
+    projectTitle: String,
+    initialNotes: String,
+    isDark: Boolean,
+    onSaveNotes: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var notes by remember { mutableStateOf(initialNotes) }
+    val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val cardBg = if (isDark) ObsidianSurface else Color.White
+    val textColor = if (isDark) Color.White else Color(0xFF0F172A)
+    val mutedColor = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(min = 360.dp, max = 640.dp)
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(0.dp))
+                .border(BorderStroke(1.dp, ScribeStarNeonRed.copy(alpha = 0.6f)), RoundedCornerShape(0.dp)),
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "PROJECT LOCAL NOTES & LORE",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = ScribeStarNeonRed,
+                                fontSize = 15.sp
+                            )
+                        )
+                        Text(
+                            text = projectTitle,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = if (isDark) ElectrumGold else Color(0xFFB45309),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            )
+                        )
+                    }
+                    Surface(
+                        color = Color.Transparent,
+                        modifier = Modifier.clickable { onDismiss() }
+                    ) {
+                        Text(
+                            text = "✕",
+                            color = mutedColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Dedicated scratchpad for this specific project. Kept independent from the Master Universe Codex so individual storylines stay focused.",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = mutedColor,
+                        fontSize = 11.5.sp
+                    )
+                )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    placeholder = {
+                        Text(
+                            "Log scene ideas, local world rules, production drafts, character arcs specific to this project...",
+                            fontSize = 12.sp,
+                            color = mutedColor
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ScribeStarNeonRed,
+                        unfocusedBorderColor = borderColor,
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
+                    )
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = textColor),
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier.weight(1f).height(40.dp)
+                    ) {
+                        Text("Cancel", fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            onSaveNotes(notes)
+                            onDismiss()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ScribeStarNeonRed,
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.weight(1f).height(40.dp)
+                    ) {
+                        Text("Save Notes", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
             }
         }
     }

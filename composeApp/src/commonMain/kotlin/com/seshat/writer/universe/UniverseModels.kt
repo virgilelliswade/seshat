@@ -222,6 +222,7 @@ data class BlendedUniverseProject(
     val activeAssignmentIndex: Int = 0,
     val theme: UniverseTheme = UniverseTheme.ARBOREAL,
     val eras: List<UniverseTimelineEra> = defaultUniverseEras(UniverseTheme.ARBOREAL),
+    val timelineEvents: List<UniverseTimelineEvent> = emptyList(),
     val lastModified: Long = System.currentTimeMillis()
 ) {
     fun universeKindLabel(): String = when (universeKind.uppercase()) {
@@ -261,6 +262,12 @@ data class BlendedUniverseProject(
             erasArr.put(e.toJson())
         }
         json.put("eras", erasArr)
+
+        val eventsArr = JSONArray()
+        for (ev in timelineEvents) {
+            eventsArr.put(ev.toJson())
+        }
+        json.put("timelineEvents", eventsArr)
         return json
     }
 
@@ -322,6 +329,14 @@ data class BlendedUniverseProject(
                 eras.addAll(defaultUniverseEras(theme))
             }
 
+            val timelineEvents = mutableListOf<UniverseTimelineEvent>()
+            val eventsArr = json.optJSONArray("timelineEvents")
+            if (eventsArr != null) {
+                for (i in 0 until eventsArr.length()) {
+                    eventsArr.optJSONObject(i)?.let { timelineEvents.add(UniverseTimelineEvent.fromJson(it)) }
+                }
+            }
+
             return BlendedUniverseProject(
                 id = json.optString("id", UUID.randomUUID().toString()),
                 title = title,
@@ -331,6 +346,7 @@ data class BlendedUniverseProject(
                 activeAssignmentIndex = json.optInt("activeAssignmentIndex", 0),
                 theme = theme,
                 eras = eras,
+                timelineEvents = timelineEvents,
                 lastModified = json.optLong("lastModified", System.currentTimeMillis())
             )
         }

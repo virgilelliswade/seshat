@@ -79,6 +79,7 @@ import kotlin.math.sqrt
 private enum class Node3DCategory {
     ROOT_LORE,
     ERA_RING,
+    TIMELINE_EVENT,
     PROJECT_NODE,
     CHARACTER_NODE
 }
@@ -98,7 +99,10 @@ private data class TreeNode3D(
     val eraTag: String = "",
     val roleLabel: String = "",
     val meta: String = "",
-    val starringChars: List<String> = emptyList()
+    val dateOrYear: String = "",
+    val projectTitle: String = "",
+    val starringChars: List<String> = emptyList(),
+    val projectEvents: List<Pair<String, String>> = emptyList()
 )
 
 private data class TreeLink3D(
@@ -532,6 +536,50 @@ fun Universe3DTreeInAppDialog(
                                 )
                             }
 
+                            if (activeNode.category == Node3DCategory.TIMELINE_EVENT) {
+                                if (activeNode.dateOrYear.isNotBlank()) {
+                                    Text(
+                                        text = "📅 ${activeNode.dateOrYear} • ⏳ ${activeNode.eraTag}",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFFFBBF24), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    )
+                                }
+                                if (activeNode.projectTitle.isNotBlank()) {
+                                    Text(
+                                        text = "🎬 Occurs in: ${activeNode.projectTitle}",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF38BDF8), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    )
+                                }
+                                if (activeNode.starringChars.isNotEmpty()) {
+                                    Text(
+                                        text = "👥 Characters: ${activeNode.starringChars.joinToString(", ")}",
+                                        style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontSize = 11.sp)
+                                    )
+                                }
+                            }
+
+                            if (activeNode.category == Node3DCategory.PROJECT_NODE && activeNode.projectEvents.isNotEmpty()) {
+                                val spanText = if (activeNode.projectEvents.size == 1) {
+                                    "📅 Timeline Date: ${activeNode.projectEvents.first().first}"
+                                } else {
+                                    "📅 Timeline Span: ${activeNode.projectEvents.first().first} – ${activeNode.projectEvents.last().first} (${activeNode.projectEvents.size} events)"
+                                }
+                                Text(
+                                    text = spanText,
+                                    style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF38BDF8), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "⚡ Key Events in Project:",
+                                    style = MaterialTheme.typography.labelSmall.copy(color = LightGold, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
+                                )
+                                activeNode.projectEvents.take(4).forEach { (date, evTitle) ->
+                                    Text(
+                                        text = "• [$date] $evTitle",
+                                        style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark, fontSize = 11.sp)
+                                    )
+                                }
+                            }
+
                             if (activeNode.meta.isNotBlank()) {
                                 Text(
                                     text = activeNode.meta,
@@ -539,10 +587,10 @@ fun Universe3DTreeInAppDialog(
                                 )
                             }
 
-                            if (activeNode.starringChars.isNotEmpty()) {
+                            if (activeNode.category != Node3DCategory.TIMELINE_EVENT && activeNode.starringChars.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "🎭 Starring Characters:",
+                                    text = "🎭 Characters Involved:",
                                     style = MaterialTheme.typography.labelSmall.copy(color = LightGold, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
                                 )
                                 Text(
@@ -635,7 +683,7 @@ private fun build3DTreeModel(
         Triple("lore_cosmo", "Cosmology & Laws", "✨"),
         Triple("lore_anthro", "Anthropology & Factions", "🏛️"),
         Triple("lore_tech", "Technology & Systems", "⚡"),
-        Triple("lore_chrono", "Chronology & Eras", "⏳")
+        Triple("lore_rules", "Metaphysics & Magic Rules", "🔮")
     )
     val rootAngles = floatArrayOf(0f, 90f, 180f, 270f)
     for (i in loreRoots.indices) {
@@ -714,11 +762,66 @@ private fun build3DTreeModel(
         lastTrunkId = eraNodeId
     }
 
-    // 4. Project Branches (Sprouting from the trunk and eras)
+    // 4. Chronological Events Filling the Trunk
+    val timelineEvents = blendedProject?.timelineEvents ?: emptyList()
+    for (evIdx in timelineEvents.indices) {
+        val ev = timelineEvents[evIdx]
+        val eraIndex = eras.indexOfFirst { it.name.equals(ev.eraTag, ignoreCase = true) }
+        val baseEy = if (eraIndex >= 0) 100f - ((eraIndex + 1) * eraStepY) else (60f - (evIdx * 16f))
+        val evAngle = (evIdx * 65f * PI / 180.0).toFloat()
+        val evX = cos(evAngle) * 42f
+        val evZ = sin(evAngle) * 42f
+        val evY = baseEy + ((evIdx % 3 - 1) * 14f)
+        val evNodeId = "event_${ev.id}"
+
+        nodes.add(
+            TreeNode3D(
+                id = evNodeId,
+                title = ev.title,
+                category = Node3DCategory.TIMELINE_EVENT,
+                x = evX,
+                y = evY,
+                z = evZ,
+                radius = 8.5f,
+                color = Color(0xFFFBBF24),
+                icon = "⚡",
+                formatBadge = "EVENT",
+                eraTag = ev.eraTag,
+                roleLabel = "Chronological Canon Milestone",
+                meta = ev.description,
+                dateOrYear = ev.dateOrYear,
+                projectTitle = ev.projectTitle,
+                starringChars = ev.characterNames
+            )
+        )
+        val trunkAnchor = if (eraIndex >= 0) "era_$eraIndex" else "trunk_base"
+        links.add(TreeLink3D(fromId = trunkAnchor, toId = evNodeId, color = Color(0xFFFBBF24).copy(alpha = 0.65f), strokeWidth = 1.5f))
+
+        // Connect dashed link to project where event occurs
+        if (ev.projectTitle.isNotBlank()) {
+            val matchingProj = blendedProject?.assignments?.find { it.title.equals(ev.projectTitle, ignoreCase = true) }
+            if (matchingProj != null) {
+                links.add(
+                    TreeLink3D(
+                        fromId = evNodeId,
+                        toId = "proj_${matchingProj.id}",
+                        color = Color(0xFF38BDF8).copy(alpha = 0.5f),
+                        isDashed = true,
+                        strokeWidth = 1.5f
+                    )
+                )
+            }
+        }
+    }
+
+    // 5. Project Branches (Sprouting from the trunk and eras)
     val assignments = blendedProject?.assignments ?: emptyList()
 
     for (aIdx in assignments.indices) {
         val a = assignments[aIdx]
+        val eventsInProject = timelineEvents.filter { it.projectTitle.equals(a.title, ignoreCase = true) }
+        val projectEventsList = eventsInProject.map { it.dateOrYear to it.title }
+        val allChars = (a.starringCharacterNames + eventsInProject.flatMap { it.characterNames }).distinct()
         val pColor = when (a.format) {
             ProjectFormat.SCREENPLAY -> ElectrumGold
             ProjectFormat.TV_SERIES -> Color(0xFF10B981)
@@ -772,7 +875,8 @@ private fun build3DTreeModel(
                 eraTag = a.eraTag,
                 roleLabel = if (a.branchRole == BranchRole.MAIN_SPINE) "Main Canon Spine" else "Spinoff / Sidequest",
                 meta = "$stats • ${a.projectNotes.ifBlank { "Project ready for writing." }}",
-                starringChars = a.starringCharacterNames
+                starringChars = allChars,
+                projectEvents = projectEventsList
             )
         )
 

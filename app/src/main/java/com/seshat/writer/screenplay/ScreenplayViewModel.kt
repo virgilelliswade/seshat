@@ -60,6 +60,7 @@ import com.seshat.writer.universe.BranchRole
 import com.seshat.writer.universe.UniverseRepository
 import com.seshat.writer.universe.UniverseTheme
 import com.seshat.writer.universe.UniverseTimelineEra
+import com.seshat.writer.universe.UniverseTimelineEvent
 import com.seshat.writer.library.ScriptTemplate
 import com.seshat.writer.importer.ScriptImporter
 import com.seshat.writer.novel.NovelChapter
@@ -4025,6 +4026,38 @@ class ScreenplayViewModel : ViewModel() {
         val current = _uiState.value.blendedUniverseProject ?: return
         val updated = current.copy(
             eras = newEras,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updated)
+        _uiState.update { it.copy(blendedUniverseProject = updated) }
+    }
+
+    fun updateUniverseTimelineEvents(context: Context, newEvents: List<UniverseTimelineEvent>) {
+        val current = _uiState.value.blendedUniverseProject ?: return
+        val updated = current.copy(
+            timelineEvents = newEvents,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updated)
+        _uiState.update { it.copy(blendedUniverseProject = updated) }
+    }
+
+    fun renameUniverseAssignment(context: Context, assignmentIndex: Int, newTitle: String) {
+        val current = _uiState.value.blendedUniverseProject ?: return
+        if (assignmentIndex !in current.assignments.indices) return
+        val trimmed = newTitle.trim().ifBlank { "Assignment ${assignmentIndex + 1}" }
+        val oldTitle = current.assignments[assignmentIndex].title
+        val mutable = current.assignments.toMutableList()
+        mutable[assignmentIndex] = mutable[assignmentIndex].copy(
+            title = trimmed,
+            lastModified = System.currentTimeMillis()
+        )
+        val updatedEvents = current.timelineEvents.map { ev ->
+            if (ev.projectTitle == oldTitle) ev.copy(projectTitle = trimmed) else ev
+        }
+        val updated = current.copy(
+            assignments = mutable,
+            timelineEvents = updatedEvents,
             lastModified = System.currentTimeMillis()
         )
         UniverseRepository.saveProject(context, updated)

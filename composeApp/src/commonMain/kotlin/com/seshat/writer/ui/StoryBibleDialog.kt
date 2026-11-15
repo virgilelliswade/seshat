@@ -65,6 +65,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import java.util.UUID
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -131,6 +133,7 @@ import com.seshat.writer.bible.TvSeriesBibleConfig
 import com.seshat.writer.universe.BlendedAssignment
 import com.seshat.writer.universe.BlendedUniverseProject
 import com.seshat.writer.universe.UniverseTimelineEra
+import com.seshat.writer.universe.UniverseTimelineEvent
 import com.seshat.writer.firstdraft.FirstDraftStage
 import com.seshat.writer.firstdraft.FirstDraftState
 import com.seshat.writer.firstdraft.FirstDraftTextMetrics
@@ -324,6 +327,7 @@ fun StoryBibleDialog(
     onUpdateAllAssignments: ((List<com.seshat.writer.universe.BlendedAssignment>) -> Unit)? = null,
     onUpdateAssignmentNotes: ((String) -> Unit)? = null,
     onUpdateUniverseEras: ((List<com.seshat.writer.universe.UniverseTimelineEra>) -> Unit)? = null,
+    onUpdateUniverseTimelineEvents: ((List<com.seshat.writer.universe.UniverseTimelineEvent>) -> Unit)? = null,
     onOpen3DTree: (() -> Unit)? = null,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     onSaveBible: (StoryBible) -> Unit,
@@ -599,8 +603,10 @@ fun StoryBibleDialog(
                             isCompactScreen = isCompactScreen,
                             blendedUniverseProject = blendedUniverseProject,
                             activeAssignment = activeAssignment,
+                            characters = bible.characters,
                             onUpdateAssignmentNotes = onUpdateAssignmentNotes,
                             onUpdateUniverseEras = onUpdateUniverseEras,
+                            onUpdateUniverseTimelineEvents = onUpdateUniverseTimelineEvents,
                             onOpen3DTree = onOpen3DTree,
                             fontIndex = docFontFamilyIndex,
                             onFontIndexChange = { docFontFamilyIndex = it },
@@ -1042,250 +1048,987 @@ private fun LoreTypographyControlsBar(
 }
 
 // ==========================================
-// TIMELINE ERAS & CHRONOLOGY MANAGER
+// TIMELINE ERAS & CHRONOLOGY EVENTS MANAGER
 // ==========================================
+private fun parseTextIntoTimelineEvents(
+    rawText: String,
+    availableEras: List<UniverseTimelineEra>,
+    availableProjects: List<BlendedAssignment>,
+    availableCharacters: List<CharacterDossier>
+): List<UniverseTimelineEvent> {
+    val results = mutableListOf<UniverseTimelineEvent>()
+    val lines = rawText.lines().map { it.trim() }.filter { it.isNotBlank() }
+    val defaultEra = availableEras.firstOrNull()?.name ?: "Era 1"
+
+    for (line in lines) {
+        val clean = line.removePrefix("-").removePrefix("•").removePrefix("*").trim()
+        if (clean.isBlank()) continue
+        val match = Regex("""^(?:\[?(\d{1,4}(?:\s*(?:BC|BCE|AD|CE))?|Year\s*\d+|Phase\s*\d+|Day\s*\d+|[A-Za-z]+\s*\d{4})\]?)\s*[:–-]\s*(.*)$""", RegexOption.IGNORE_CASE).find(clean)
+        val (datePart, rest) = if (match != null) {
+            match.groupValues[1].trim() to match.groupValues[2].trim()
+        } else {
+            "" to clean
+        }
+
+        val matchedChars = availableCharacters.filter { c ->
+            c.name.isNotBlank() && rest.contains(c.name, ignoreCase = true)
+        }.map { it.name }
+
+        val matchedProj = availableProjects.find { p ->
+            p.title.isNotBlank() && rest.contains(p.title, ignoreCase = true)
+        }?.title ?: ""
+
+        val title = if (rest.contains(":")) {
+            rest.substringBefore(":").trim()
+        } else if (rest.contains(".")) {
+            rest.substringBefore(".").trim()
+        } else {
+            rest.take(50).trim()
+        }
+
+        results.add(
+            UniverseTimelineEvent(
+                title = title.ifBlank { "Timeline Event" },
+                dateOrYear = datePart.ifBlank { "Canon Timeline" },
+                eraTag = defaultEra,
+                description = rest,
+                characterNames = matchedChars,
+                projectTitle = matchedProj
+            )
+        )
+    }
+    return results
+}
+
 @Composable
-private fun TimelineErasChronologyManager(
+private fun ChronologyTimelineEventsManager(
     eras: List<UniverseTimelineEra>,
+    events: List<UniverseTimelineEvent>,
     assignments: List<BlendedAssignment>,
+    characters: List<CharacterDossier>,
+    chronologyNotes: String,
     onUpdateEras: ((List<UniverseTimelineEra>) -> Unit)?,
+    onUpdateEvents: ((List<UniverseTimelineEvent>) -> Unit)?,
+    onUpdateChronologyNotes: ((String) -> Unit)?,
     onOpen3DTree: (() -> Unit)?,
     isDark: Boolean
 ) {
     val goldAccent = if (isDark) ElectrumGold else Color(0xFFB45309)
     val cardBg = if (isDark) ObsidianSurface else Color(0xFFF8FAFC)
     val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val primaryText = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val secondaryText = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
+    val mutedText = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
 
+    var isAddingEvent by remember { mutableStateOf(false) }
+    var editingEventId by remember { mutableStateOf<String?>(null) }
+    var draftEventTitle by remember { mutableStateOf("") }
+    var draftEventDate by remember { mutableStateOf("") }
+    var draftEventEra by remember(eras) { mutableStateOf(eras.firstOrNull()?.name ?: "Era 1") }
+    var draftEventProject by remember(assignments) { mutableStateOf(assignments.firstOrNull()?.title ?: "Universe Lore / Background") }
+    var draftEventDescription by remember { mutableStateOf("") }
+    var draftEventCharacters by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    var isAddingEra by remember { mutableStateOf(false) }
     var newEraName by remember { mutableStateOf("") }
     var newEraTimeSpan by remember { mutableStateOf("") }
-    var isAddingEra by remember { mutableStateOf(false) }
 
-    Surface(
-        color = cardBg,
-        shape = RoundedCornerShape(0.dp),
-        border = BorderStroke(1.dp, borderColor),
-        modifier = Modifier.fillMaxWidth()
+    var selectedEraFilter by remember { mutableStateOf("ALL") }
+    var selectedProjectFilter by remember { mutableStateOf("ALL") }
+    var selectedCharFilter by remember { mutableStateOf("ALL") }
+
+    var showAiParserDialog by remember { mutableStateOf(false) }
+    var aiParserInputText by remember(chronologyNotes) { mutableStateOf(chronologyNotes) }
+    var isFreeformNotesOpen by remember { mutableStateOf(false) }
+
+    val filteredEvents = remember(events, selectedEraFilter, selectedProjectFilter, selectedCharFilter) {
+        events.filter { ev ->
+            (selectedEraFilter == "ALL" || ev.eraTag == selectedEraFilter) &&
+            (selectedProjectFilter == "ALL" || ev.projectTitle == selectedProjectFilter) &&
+            (selectedCharFilter == "ALL" || ev.characterNames.contains(selectedCharFilter))
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // 1. Centerpiece Control Bar
+        Surface(
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp),
+            border = BorderStroke(1.dp, borderColor),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Header Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("🌌", fontSize = 14.sp)
-                    Text(
-                        text = "TIMELINE ERAS & CANON PHASES (${eras.size})",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = goldAccent,
-                            fontSize = 12.sp
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("⏳", fontSize = 16.sp)
+                            Text(
+                                text = "CHRONOLOGY & TIMELINE EVENTS",
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = goldAccent,
+                                    fontSize = 13.5.sp
+                                )
+                            )
+                            Surface(
+                                color = goldAccent.copy(alpha = 0.18f),
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, goldAccent)
+                            ) {
+                                Text(
+                                    text = "${eras.size} ERAS • ${events.size} CANON EVENTS",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = ScreenplayCourierFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = goldAccent,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Historical timeline events populate the trunk of your 3D Universe Tree by date, era, cast, and project.",
+                            style = MaterialTheme.typography.bodySmall.copy(color = mutedText, fontSize = 11.5.sp)
                         )
-                    )
-                }
+                    }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (onOpen3DTree != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (onOpen3DTree != null) {
+                            Surface(
+                                color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
+                                border = BorderStroke(1.dp, if (isDark) Color(0xFF818CF8) else Color(0xFF6366F1)),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable(onClick = onOpen3DTree)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("🪐", fontSize = 12.sp)
+                                    Text(
+                                        text = "3D Tree",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = MainAppFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4338CA),
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
                         Surface(
-                            color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
-                            border = BorderStroke(1.dp, if (isDark) Color(0xFF818CF8) else Color(0xFF6366F1)),
+                            color = if (isDark) Color(0xFF311042) else Color(0xFFFDF4FF),
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFFA855F7) else Color(0xFF9333EA)),
                             shape = RoundedCornerShape(0.dp),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(0.dp))
-                                .clickable(onClick = onOpen3DTree)
+                                .clickable {
+                                    aiParserInputText = chronologyNotes
+                                    showAiParserDialog = true
+                                }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text("🪐", fontSize = 11.sp)
+                                Text("🤖", fontSize = 12.sp)
                                 Text(
-                                    text = "3D Orbit",
+                                    text = "AI Parse Events",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = MainAppFontFamily,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4338CA),
-                                        fontSize = 10.5.sp
+                                        color = if (isDark) Color(0xFFD8B4FE) else Color(0xFF7E22CE),
+                                        fontSize = 11.sp
                                     )
                                 )
                             }
                         }
-                    }
 
-                    if (onUpdateEras != null) {
-                        Surface(
-                            color = goldAccent.copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, goldAccent),
-                            shape = RoundedCornerShape(0.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(0.dp))
-                                .clickable { isAddingEra = !isAddingEra }
+                        if (onUpdateEras != null) {
+                            Surface(
+                                color = cardBg,
+                                border = BorderStroke(1.dp, borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable { isAddingEra = !isAddingEra }
+                            ) {
+                                Text(
+                                    text = if (isAddingEra) "✕ Close Eras" else "+ Era",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = secondaryText,
+                                        fontSize = 11.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+
+                        if (onUpdateEvents != null) {
+                            Surface(
+                                color = if (isAddingEvent && editingEventId == null) ObsidianSurfaceVariant else ElectrumGold,
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable {
+                                        if (isAddingEvent && editingEventId == null) {
+                                            isAddingEvent = false
+                                        } else {
+                                            isAddingEvent = true
+                                            editingEventId = null
+                                            draftEventTitle = ""
+                                            draftEventDate = ""
+                                            draftEventEra = eras.firstOrNull()?.name ?: "Era 1"
+                                            draftEventProject = assignments.firstOrNull()?.title ?: "Universe Lore / Background"
+                                            draftEventDescription = ""
+                                            draftEventCharacters = emptyList()
+                                        }
+                                    }
+                            ) {
+                                Text(
+                                    text = if (isAddingEvent && editingEventId == null) "✕ Cancel" else "+ New Event",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isAddingEvent && editingEventId == null) Color.White else Color.Black,
+                                        fontSize = 11.5.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Inline Eras Management Tray (when isAddingEra is true)
+                if (isAddingEra && onUpdateEras != null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(if (isDark) ObsidianBlack else Color(0xFFF1F5F9))
+                            .border(1.dp, goldAccent.copy(alpha = 0.4f), RoundedCornerShape(0.dp))
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "TIMELINE ERAS & CANON PHASES (${eras.size}):",
+                            style = MaterialTheme.typography.labelSmall.copy(color = goldAccent, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = if (isAddingEra) "✕ Cancel" else "+ Add Era",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = MainAppFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    color = goldAccent,
-                                    fontSize = 10.5.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            OutlinedTextField(
+                                value = newEraName,
+                                onValueChange = { newEraName = it },
+                                placeholder = { Text("e.g. Era ${eras.size + 1}: Golden Age", fontSize = 11.sp) },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
                             )
+                            OutlinedTextField(
+                                value = newEraTimeSpan,
+                                onValueChange = { newEraTimeSpan = it },
+                                placeholder = { Text("Timeframe (e.g. Year 1 - 50)", fontSize = 11.sp) },
+                                singleLine = true,
+                                modifier = Modifier.weight(0.7f),
+                                textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
+                            )
+                            Button(
+                                onClick = {
+                                    val rName = newEraName.trim().ifBlank { "Era ${eras.size + 1}" }
+                                    val rSpan = newEraTimeSpan.trim().ifBlank { "Epoch ${eras.size + 1}" }
+                                    onUpdateEras(eras + UniverseTimelineEra(name = rName, timeSpan = rSpan))
+                                    newEraName = ""
+                                    newEraTimeSpan = ""
+                                },
+                                shape = RoundedCornerShape(0.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = goldAccent)
+                            ) {
+                                Text("Add", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+                        }
+
+                        // Horizontal list of eras with quick delete
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            eras.forEachIndexed { idx, era ->
+                                Surface(
+                                    color = if (isDark) ObsidianSurface else Color.White,
+                                    border = BorderStroke(1.dp, borderColor),
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("⏳ ${era.name}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = primaryText)
+                                        if (era.timeSpan.isNotBlank()) {
+                                            Text("(${era.timeSpan})", fontSize = 10.sp, color = mutedText)
+                                        }
+                                        if (eras.size > 1) {
+                                            Text(
+                                                text = "✕",
+                                                color = Color(0xFFEF4444),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 10.5.sp,
+                                                modifier = Modifier.clickable {
+                                                    onUpdateEras(eras.filterIndexed { i, _ -> i != idx })
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
 
-            // Inline Add Era Form
-            if (isAddingEra && onUpdateEras != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+        // 2. New / Edit Event Form (When isAddingEvent is true)
+        if (isAddingEvent && onUpdateEvents != null) {
+            Surface(
+                color = if (isDark) ObsidianBlack else Color.White,
+                shape = RoundedCornerShape(0.dp),
+                border = BorderStroke(1.5.dp, goldAccent),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(
-                        value = newEraName,
-                        onValueChange = { newEraName = it },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        placeholder = { Text("e.g. Era ${eras.size + 1}: Golden Age", fontSize = 11.sp) },
-                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp)
+                    Text(
+                        text = if (editingEventId != null) "✎ EDIT TIMELINE EVENT" else "⚡ NEW CHRONOLOGICAL EVENT",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = goldAccent,
+                            fontSize = 12.5.sp
+                        )
                     )
-                    OutlinedTextField(
-                        value = newEraTimeSpan,
-                        onValueChange = { newEraTimeSpan = it },
-                        modifier = Modifier.weight(0.7f),
-                        singleLine = true,
-                        placeholder = { Text("Timeframe (e.g. Year 1 - 50)", fontSize = 11.sp) },
-                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp)
-                    )
-                    Button(
-                        onClick = {
-                            val resolvedName = newEraName.trim().ifBlank { "Era ${eras.size + 1}" }
-                            val resolvedSpan = newEraTimeSpan.trim().ifBlank { "Epoch ${eras.size + 1}" }
-                            val created = UniverseTimelineEra(
-                                name = resolvedName,
-                                timeSpan = resolvedSpan,
-                                description = "Chronological era spanning $resolvedSpan."
-                            )
-                            onUpdateEras(eras + created)
-                            newEraName = ""
-                            newEraTimeSpan = ""
-                            isAddingEra = false
-                        },
-                        shape = RoundedCornerShape(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = goldAccent)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Add", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        OutlinedTextField(
+                            value = draftEventTitle,
+                            onValueChange = { draftEventTitle = it },
+                            label = { Text("Event Title *", fontSize = 11.sp) },
+                            placeholder = { Text("e.g. Battle of New York", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1.2f),
+                            textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        )
+                        OutlinedTextField(
+                            value = draftEventDate,
+                            onValueChange = { draftEventDate = it },
+                            label = { Text("Date / Timeframe *", fontSize = 11.sp) },
+                            placeholder = { Text("e.g. May 2012 or Year 3042", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(0.8f),
+                            textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                        )
+                    }
+
+                    // Era Selector
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("HISTORICAL ERA:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            eras.forEach { era ->
+                                val isSel = draftEventEra == era.name
+                                Surface(
+                                    color = if (isSel) goldAccent.copy(alpha = 0.22f) else (if (isDark) ObsidianSurface else Color(0xFFF1F5F9)),
+                                    border = BorderStroke(1.dp, if (isSel) goldAccent else borderColor),
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier.clickable { draftEventEra = era.name }
+                                ) {
+                                    Text(
+                                        text = "⏳ ${era.name}",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSel) goldAccent else primaryText,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Project Selector (Which project the event happens in)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("PROJECT WHERE EVENT OCCURS:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val projectOptions = listOf("Universe Lore / Background") + assignments.map { it.title }
+                            projectOptions.forEach { pTitle ->
+                                val isSel = draftEventProject == pTitle
+                                Surface(
+                                    color = if (isSel) Color(0xFF38BDF8).copy(alpha = 0.22f) else (if (isDark) ObsidianSurface else Color(0xFFF1F5F9)),
+                                    border = BorderStroke(1.dp, if (isSel) Color(0xFF38BDF8) else borderColor),
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier.clickable { draftEventProject = pTitle }
+                                ) {
+                                    Text(
+                                        text = if (pTitle == "Universe Lore / Background") "🪐 Universe Lore" else "🎬 $pTitle",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSel) Color(0xFF38BDF8) else primaryText,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Characters Involved (Cross-tracked with Character Creator)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("CHARACTERS INVOLVED (CLICK TO TOGGLE):", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                            Text("${draftEventCharacters.size} selected", fontSize = 10.sp, color = goldAccent)
+                        }
+                        if (characters.isEmpty()) {
+                            Text("No characters created yet in the Character Creator.", fontSize = 11.sp, color = mutedText)
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                characters.filter { it.name.isNotBlank() }.forEach { c ->
+                                    val isStar = draftEventCharacters.contains(c.name)
+                                    Surface(
+                                        color = if (isStar) goldAccent.copy(alpha = 0.25f) else (if (isDark) ObsidianSurface else Color(0xFFF1F5F9)),
+                                        border = BorderStroke(1.dp, if (isStar) goldAccent else borderColor),
+                                        shape = RoundedCornerShape(0.dp),
+                                        modifier = Modifier.clickable {
+                                            draftEventCharacters = if (isStar) {
+                                                draftEventCharacters.filter { it != c.name }
+                                            } else {
+                                                draftEventCharacters + c.name
+                                            }
+                                        }
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(if (isStar) "✓" else "+", fontSize = 10.sp, color = if (isStar) goldAccent else mutedText)
+                                            Text(
+                                                text = "👤 ${c.name}",
+                                                fontSize = 10.5.sp,
+                                                fontWeight = if (isStar) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isStar) goldAccent else primaryText
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Description / What happens
+                    OutlinedTextField(
+                        value = draftEventDescription,
+                        onValueChange = { draftEventDescription = it },
+                        label = { Text("What Happens / Event Description", fontSize = 11.sp) },
+                        placeholder = { Text("Describe the dramatic turning point, battle, discovery, treaty, or incident...", fontSize = 11.sp) },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                    )
+
+                    // Action Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                isAddingEvent = false
+                                editingEventId = null
+                            },
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Cancel", color = secondaryText, fontSize = 11.5.sp)
+                        }
+                        Button(
+                            onClick = {
+                                val title = draftEventTitle.trim().ifBlank { "Untitled Event" }
+                                val date = draftEventDate.trim().ifBlank { "Canon Timeline" }
+                                val eventToSave = UniverseTimelineEvent(
+                                    id = editingEventId ?: UUID.randomUUID().toString(),
+                                    title = title,
+                                    dateOrYear = date,
+                                    eraTag = draftEventEra,
+                                    description = draftEventDescription.trim(),
+                                    characterNames = draftEventCharacters,
+                                    projectTitle = draftEventProject
+                                )
+                                val updated = if (editingEventId != null) {
+                                    events.map { if (it.id == editingEventId) eventToSave else it }
+                                } else {
+                                    events + eventToSave
+                                }
+                                onUpdateEvents(updated)
+                                isAddingEvent = false
+                                editingEventId = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = goldAccent),
+                            shape = RoundedCornerShape(0.dp)
+                        ) {
+                            Text("Save Event", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                        }
                     }
                 }
             }
+        }
 
-            // Eras Horizontal Scroll List
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // 3. Filter Navigation Strip
+        Surface(
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp),
+            border = BorderStroke(1.dp, borderColor),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                eras.forEachIndexed { idx, era ->
-                    val assignedProjects = assignments.filter { it.eraTag == era.name }
+                // Filter by Era
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("ERA:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                    val eraFilters = listOf("ALL") + eras.map { it.name }
+                    eraFilters.forEach { eName ->
+                        val isSel = selectedEraFilter == eName
+                        Surface(
+                            color = if (isSel) goldAccent.copy(alpha = 0.2f) else Color.Transparent,
+                            border = BorderStroke(1.dp, if (isSel) goldAccent else borderColor),
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier.clickable { selectedEraFilter = eName }
+                        ) {
+                            Text(
+                                text = if (eName == "ALL") "ALL ERAS (${events.size})" else eName,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) goldAccent else secondaryText,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Filter by Project
+                if (assignments.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("PROJECT:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                        val projFilters = listOf("ALL") + assignments.map { it.title }
+                        projFilters.forEach { pName ->
+                            val isSel = selectedProjectFilter == pName
+                            Surface(
+                                color = if (isSel) Color(0xFF38BDF8).copy(alpha = 0.2f) else Color.Transparent,
+                                border = BorderStroke(1.dp, if (isSel) Color(0xFF38BDF8) else borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier.clickable { selectedProjectFilter = pName }
+                            ) {
+                                Text(
+                                    text = if (pName == "ALL") "ALL PROJECTS" else pName,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSel) Color(0xFF38BDF8) else secondaryText,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Filter by Character
+                if (characters.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("CAST:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                        val charFilters = listOf("ALL") + characters.map { it.name }.filter { it.isNotBlank() }
+                        charFilters.forEach { cName ->
+                            val isSel = selectedCharFilter == cName
+                            Surface(
+                                color = if (isSel) Color(0xFFA855F7).copy(alpha = 0.2f) else Color.Transparent,
+                                border = BorderStroke(1.dp, if (isSel) Color(0xFFA855F7) else borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier.clickable { selectedCharFilter = cName }
+                            ) {
+                                Text(
+                                    text = if (cName == "ALL") "ALL CHARACTERS" else cName,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSel) Color(0xFFA855F7) else secondaryText,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Timeline Events Rail & Cards
+        if (filteredEvents.isEmpty()) {
+            Surface(
+                color = cardBg,
+                shape = RoundedCornerShape(0.dp),
+                border = BorderStroke(1.dp, borderColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("⚡", fontSize = 28.sp)
+                    Text(
+                        text = if (events.isEmpty()) "NO TIMELINE EVENTS RECORDED YET" else "NO EVENTS MATCH THIS FILTER",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = primaryText)
+                    )
+                    Text(
+                        text = "Click '+ New Event' or '🤖 AI Parse Events' to populate chronological events along your universe trunk.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = mutedText),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                filteredEvents.forEachIndexed { idx, ev ->
                     Surface(
-                        color = if (isDark) ObsidianBlack else Color.White,
+                        color = cardBg,
                         shape = RoundedCornerShape(0.dp),
                         border = BorderStroke(1.dp, borderColor),
-                        modifier = Modifier.widthIn(min = 200.dp, max = 260.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "ERA ${idx + 1}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = ScreenplayCourierFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        color = goldAccent,
-                                        fontSize = 10.sp
-                                    )
-                                )
-                                if (onUpdateEras != null && eras.size > 1) {
-                                    Text(
-                                        text = "✕",
-                                        color = Color(0xFFEF4444),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(0.dp))
-                                            .clickable {
-                                                onUpdateEras(eras.filterIndexed { i, _ -> i != idx })
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    // Date Badge
+                                    Surface(
+                                        color = Color(0xFFFBBF24).copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(0.dp),
+                                        border = BorderStroke(1.dp, Color(0xFFFBBF24))
+                                    ) {
+                                        Text(
+                                            text = "📅 ${ev.dateOrYear}",
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFFBBF24),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    // Era Badge
+                                    if (ev.eraTag.isNotBlank()) {
+                                        Surface(
+                                            color = Color(0xFF38BDF8).copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(0.dp),
+                                            border = BorderStroke(1.dp, Color(0xFF38BDF8))
+                                        ) {
+                                            Text(
+                                                text = "⏳ ${ev.eraTag}",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF38BDF8),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Project Badge
+                                    if (ev.projectTitle.isNotBlank()) {
+                                        Surface(
+                                            color = Color(0xFFA855F7).copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(0.dp),
+                                            border = BorderStroke(1.dp, Color(0xFFA855F7))
+                                        ) {
+                                            Text(
+                                                text = "🎬 ${ev.projectTitle}",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFA855F7),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Edit & Delete Actions
+                                if (onUpdateEvents != null) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Surface(
+                                            color = Color.Transparent,
+                                            modifier = Modifier.clickable {
+                                                editingEventId = ev.id
+                                                draftEventTitle = ev.title
+                                                draftEventDate = ev.dateOrYear
+                                                draftEventEra = ev.eraTag
+                                                draftEventProject = ev.projectTitle
+                                                draftEventDescription = ev.description
+                                                draftEventCharacters = ev.characterNames
+                                                isAddingEvent = true
                                             }
-                                            .padding(2.dp)
-                                    )
+                                        ) {
+                                            Text("✎ Edit", fontSize = 11.sp, color = goldAccent, fontWeight = FontWeight.SemiBold)
+                                        }
+                                        Surface(
+                                            color = Color.Transparent,
+                                            modifier = Modifier.clickable {
+                                                onUpdateEvents(events.filter { it.id != ev.id })
+                                            }
+                                        ) {
+                                            Text("🗑 Delete", fontSize = 11.sp, color = Color(0xFFEF4444), fontWeight = FontWeight.SemiBold)
+                                        }
+                                    }
                                 }
                             }
 
-                            if (onUpdateEras != null) {
-                                OutlinedTextField(
-                                    value = era.name,
-                                    onValueChange = { updatedName ->
-                                        val updated = eras.toMutableList()
-                                        updated[idx] = era.copy(name = updatedName)
-                                        onUpdateEras(updated)
-                                    },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.5.sp
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
+                            // Event Title
+                            Text(
+                                text = ev.title,
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryText,
+                                    fontSize = 13.5.sp
                                 )
-                                OutlinedTextField(
-                                    value = era.timeSpan,
-                                    onValueChange = { updatedSpan ->
-                                        val updated = eras.toMutableList()
-                                        updated[idx] = era.copy(timeSpan = updatedSpan)
-                                        onUpdateEras(updated)
-                                    },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
-                                    placeholder = { Text("Timeframe", fontSize = 10.5.sp) },
-                                    modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Description
+                            if (ev.description.isNotBlank()) {
+                                Text(
+                                    text = ev.description,
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryText, fontSize = 12.sp)
                                 )
-                            } else {
-                                Text(era.name, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
-                                Text(era.timeSpan, fontSize = 10.5.sp, color = ScreenplayTextMuted)
                             }
 
-                            if (assignedProjects.isNotEmpty()) {
-                                Text(
-                                    text = "Projects: ${assignedProjects.joinToString { it.title }}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = if (isDark) ScreenplayTextMuted else Color(0xFF475569),
-                                        fontSize = 9.5.sp
-                                    ),
-                                    maxLines = 2
-                                )
+                            // Characters Involved
+                            if (ev.characterNames.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text("Cast:", fontSize = 10.sp, color = mutedText, fontWeight = FontWeight.Bold)
+                                    ev.characterNames.forEach { cName ->
+                                        Surface(
+                                            color = if (isDark) ObsidianBlack else Color(0xFFE2E8F0),
+                                            shape = RoundedCornerShape(0.dp)
+                                        ) {
+                                            Text(
+                                                text = "👤 $cName",
+                                                fontSize = 10.sp,
+                                                color = secondaryText,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Expandable Freeform Chronology Notes Accordion
+        Surface(
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp),
+            border = BorderStroke(1.dp, borderColor),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { isFreeformNotesOpen = !isFreeformNotesOpen },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(if (isFreeformNotesOpen) "▼" else "▶", fontSize = 11.sp, color = goldAccent)
+                        Text(
+                            text = "📝 FREEFORM CHRONOLOGY & SCRATCHPAD NOTES",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = goldAccent,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                    Text(
+                        text = if (isFreeformNotesOpen) "Hide" else "Show Unstructured Notes (${chronologyNotes.length} chars)",
+                        fontSize = 10.5.sp,
+                        color = mutedText
+                    )
+                }
+
+                if (isFreeformNotesOpen) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = chronologyNotes,
+                        onValueChange = { onUpdateChronologyNotes?.invoke(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 6,
+                        placeholder = { Text("Write raw timeline notes, ancient backstory, or paste canon chronologies here...", fontSize = 12.sp) },
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, color = primaryText)
+                    )
+                }
+            }
+        }
+    }
+
+    // 6. AI Chronology Parser Modal Dialog
+    if (showAiParserDialog) {
+        Dialog(onDismissRequest = { showAiParserDialog = false }) {
+            Surface(
+                color = if (isDark) ObsidianSurface else Color.White,
+                shape = RoundedCornerShape(0.dp),
+                border = BorderStroke(1.5.dp, goldAccent),
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🤖 AI CHRONOLOGY PARSER",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = goldAccent,
+                                fontSize = 13.sp
+                            )
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(16.dp).clickable { showAiParserDialog = false }
+                        )
+                    }
+                    Text(
+                        text = "Paste narrative timeline notes, script outlines, or milestone lists below. Seshat will automatically extract dates, eras, event titles, cast, and matching projects into structured timeline events.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = secondaryText, fontSize = 11.5.sp)
+                    )
+
+                    OutlinedTextField(
+                        value = aiParserInputText,
+                        onValueChange = { aiParserInputText = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 7,
+                        placeholder = {
+                            Text(
+                                "Example:\n• 1994: Tony Stark meets James Rhodes at MIT.\n• 2008: Tony builds Mark I armor in Afghan cave.\n• 2012: Battle of New York unites the Avengers against Loki.",
+                                fontSize = 11.5.sp
+                            )
+                        },
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { showAiParserDialog = false },
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Cancel", fontSize = 11.5.sp)
+                        }
+                        Button(
+                            onClick = {
+                                val parsed = parseTextIntoTimelineEvents(
+                                    rawText = aiParserInputText,
+                                    availableEras = eras,
+                                    availableProjects = assignments,
+                                    availableCharacters = characters
+                                )
+                                if (parsed.isNotEmpty() && onUpdateEvents != null) {
+                                    onUpdateEvents(events + parsed)
+                                }
+                                showAiParserDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = goldAccent),
+                            shape = RoundedCornerShape(0.dp)
+                        ) {
+                            Text("⚡ Parse & Populate Trunk", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
                         }
                     }
                 }
@@ -1452,8 +2195,10 @@ private fun LorePillarsSection(
     isCompactScreen: Boolean = false,
     blendedUniverseProject: BlendedUniverseProject? = null,
     activeAssignment: BlendedAssignment? = null,
+    characters: List<CharacterDossier> = emptyList(),
     onUpdateAssignmentNotes: ((String) -> Unit)? = null,
     onUpdateUniverseEras: ((List<UniverseTimelineEra>) -> Unit)? = null,
+    onUpdateUniverseTimelineEvents: ((List<UniverseTimelineEvent>) -> Unit)? = null,
     onOpen3DTree: (() -> Unit)? = null,
     fontIndex: Int = 0,
     onFontIndexChange: (Int) -> Unit = {},
@@ -1466,7 +2211,7 @@ private fun LorePillarsSection(
 ) {
     val isDark = LocalSeshatDarkTheme.current
     Column(modifier = Modifier.fillMaxSize()) {
-        // Floating Pillar Selector Subtabs (Bar-less Spatial Lore Studio - Centered)
+        // Floating Pillar Selector Subtabs (4 Pristine Worldbuilding Pillars - Centered)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1480,17 +2225,13 @@ private fun LorePillarsSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val pillars = remember(lore, activeAssignment, blendedUniverseProject) {
-                    val list = mutableListOf(
+                val pillars = remember(lore, blendedUniverseProject) {
+                    listOf(
                         "✨ Cosmology" to lore.cosmology.isNotBlank(),
                         "🏛️ Anthropology" to lore.anthropology.isNotBlank(),
                         "⚡ Technology" to lore.technology.isNotBlank(),
-                        "⏳ Chronology" to (lore.chronology.isNotBlank() || (blendedUniverseProject?.eras?.isNotEmpty() == true))
+                        "⏳ Chronology" to (lore.chronology.isNotBlank() || (blendedUniverseProject?.eras?.isNotEmpty() == true) || (blendedUniverseProject?.timelineEvents?.isNotEmpty() == true))
                     )
-                    if (activeAssignment != null) {
-                        list.add("📝 ${activeAssignment.title.take(14).uppercase()} Lore" to activeAssignment.projectNotes.isNotBlank())
-                    }
-                    list
                 }
                 pillars.forEachIndexed { index, (label, isFilled) ->
                     val isSelected = subTab == index
@@ -1589,175 +2330,173 @@ private fun LorePillarsSection(
             }
         }
 
-        // Active Pillar Editor & Guide
-        val (pillarTitle, pillarPrompt, pillarContent, updatePillar) = when (subTab) {
-            0 -> Quad(
-                "✨ COSMOLOGY & METAPHYSICAL LAWS",
-                "Define the universe's origin, metaphysical rules, magic limits, physical constants, atmospheric conditions, geography, and celestial entities.",
-                lore.cosmology
-            ) { text: String -> onUpdateLore(lore.copy(cosmology = text)) }
-            1 -> Quad(
-                "🏛️ ANTHROPOLOGY, FACTIONS & SOCIAL CUSTOMS",
-                "Detail cultural factions, tribes, social classes, linguistic dialects, etiquette, taboos, religious rituals, and caste hierarchies.",
-                lore.anthropology
-            ) { text: String -> onUpdateLore(lore.copy(anthropology = text)) }
-            2 -> Quad(
-                "⚡ TECHNOLOGY LEVEL & INVENTIONS",
-                "Specify scientific paradigm, transport, weapon lethality, energy sources, communication limits, and unique inventions.",
-                lore.technology
-            ) { text: String -> onUpdateLore(lore.copy(technology = text)) }
-            3 -> Quad(
-                "⏳ CHRONOLOGY & WORLD TIMELINE",
-                "Chronicle ancient epochs, recent wars, political treaties, preceding backstory, and sequential milestones leading directly into Scene 1.",
-                lore.chronology
-            ) { text: String -> onUpdateLore(lore.copy(chronology = text)) }
-            else -> Quad(
-                "📝 ${activeAssignment?.title?.uppercase() ?: "PROJECT"} • LOCAL LORE SUB-DOCUMENT",
-                "Record installment-specific continuity rules, local canon secrets, and narrative sub-document notes for this individual project branch.",
-                activeAssignment?.projectNotes ?: ""
-            ) { text: String -> onUpdateAssignmentNotes?.invoke(text) }
-        }
-
-        val maxPillarWords = firstDraftState.maxWordsPerLorePillar()
-        val maxTotalWords = firstDraftState.maxTotalLoreWords()
-        val currentPillarWords = FirstDraftTextMetrics.countWords(pillarContent)
-        val totalLoreWords = lore.wordCount()
-
-        val cappedUpdatePillar: (String) -> Unit = { newText ->
-            val clipped = if (firstDraftState.isArcadeLocked) {
-                FirstDraftTextMetrics.clipToWordLimit(newText, maxPillarWords)
-            } else newText
-            val deltaWords = FirstDraftTextMetrics.countWords(clipped) - currentPillarWords
-            if (firstDraftState.isArcadeLocked && totalLoreWords + deltaWords > maxTotalWords && deltaWords > 0) {
-                val allowedForThisPillar = (maxTotalWords - (totalLoreWords - currentPillarWords)).coerceAtLeast(0)
-                updatePillar(FirstDraftTextMetrics.clipToWordLimit(clipped, allowedForThisPillar))
-            } else {
-                updatePillar(clipped)
-            }
-        }
-
-        val docFontFamily = when (fontIndex) {
-            0 -> ScreenplayCourierFontFamily
-            1 -> MainAppFontFamily
-            2 -> androidx.compose.ui.text.font.FontFamily.Serif
-            else -> androidx.compose.ui.text.font.FontFamily.Monospace
-        }
-        val (surfaceBg, surfaceTextColor) = when (surfaceThemeIndex) {
-            0 -> Pair(Color.White, Color(0xFF111111))
-            1 -> Pair(Color(0xFFFDF6E2), Color(0xFF2C1810))
-            2 -> Pair(Color(0xFF181820), Color(0xFFEDEDED))
-            else -> Pair(Color(0xFF0B132B), Color(0xFFE0F2FE))
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        // Active Pillar Content: Chronology Events Manager for SubTab 3, Lore Editor for SubTabs 0-2
+        if (subTab == 3) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Text(
-                    text = pillarTitle,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) LightGold else Color(0xFF991B1B)
-                    )
-                )
-                if (firstDraftState.isArcadeLocked) {
-                    Text(
-                        text = "$currentPillarWords / $maxPillarWords words",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = if (currentPillarWords >= maxPillarWords) ScribeStarNeonRed else ElectrumGold
-                        )
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = pillarPrompt,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = if (isDark) ScreenplayTextMuted else Color(0xFF334155),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.5.sp
-                ),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // In-Tab Chronology Timeline Eras Manager
-            if (subTab == 3 && blendedUniverseProject != null) {
-                TimelineErasChronologyManager(
-                    eras = blendedUniverseProject.eras,
-                    assignments = blendedUniverseProject.assignments,
+                ChronologyTimelineEventsManager(
+                    eras = blendedUniverseProject?.eras ?: emptyList(),
+                    events = blendedUniverseProject?.timelineEvents ?: emptyList(),
+                    assignments = blendedUniverseProject?.assignments ?: emptyList(),
+                    characters = characters,
+                    chronologyNotes = lore.chronology,
                     onUpdateEras = onUpdateUniverseEras,
+                    onUpdateEvents = onUpdateUniverseTimelineEvents,
+                    onUpdateChronologyNotes = { text -> onUpdateLore(lore.copy(chronology = text)) },
                     onOpen3DTree = onOpen3DTree,
                     isDark = isDark
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+            }
+        } else {
+            val (pillarTitle, pillarPrompt, pillarContent, updatePillar) = when (subTab) {
+                0 -> Quad(
+                    "✨ COSMOLOGY & METAPHYSICAL LAWS",
+                    "Define the universe's origin, metaphysical rules, magic limits, physical constants, atmospheric conditions, geography, and celestial entities.",
+                    lore.cosmology
+                ) { text: String -> onUpdateLore(lore.copy(cosmology = text)) }
+                1 -> Quad(
+                    "🏛️ ANTHROPOLOGY, FACTIONS & SOCIAL CUSTOMS",
+                    "Detail cultural factions, tribes, social classes, linguistic dialects, etiquette, taboos, religious rituals, and caste hierarchies.",
+                    lore.anthropology
+                ) { text: String -> onUpdateLore(lore.copy(anthropology = text)) }
+                else -> Quad(
+                    "⚡ TECHNOLOGY LEVEL & INVENTIONS",
+                    "Specify scientific paradigm, transport, weapon lethality, energy sources, communication limits, and unique inventions.",
+                    lore.technology
+                ) { text: String -> onUpdateLore(lore.copy(technology = text)) }
             }
 
-            // Typography & Reading Surface Controls Bar
-            LoreTypographyControlsBar(
-                fontIndex = fontIndex,
-                onFontIndexChange = onFontIndexChange,
-                fontSizePt = fontSizePt,
-                onFontSizeChange = onFontSizeChange,
-                lineHeightMultiplier = lineHeightMultiplier,
-                onLineHeightMultiplierChange = onLineHeightMultiplierChange,
-                surfaceThemeIndex = surfaceThemeIndex,
-                onSurfaceThemeIndexChange = onSurfaceThemeIndexChange,
-                isDark = isDark
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+            val maxPillarWords = firstDraftState.maxWordsPerLorePillar()
+            val maxTotalWords = firstDraftState.maxTotalLoreWords()
+            val currentPillarWords = FirstDraftTextMetrics.countWords(pillarContent)
+            val totalLoreWords = lore.wordCount()
 
-            // Lore Document Writing Surface with live typography and paper styling
-            Card(
-                colors = CardDefaults.cardColors(containerColor = surfaceBg),
-                shape = RoundedCornerShape(0.dp),
-                border = BorderStroke(1.dp, if (surfaceThemeIndex == 0) Color(0xFFCBD5E1) else surfaceBg.copy(alpha = 0.5f)),
+            val cappedUpdatePillar: (String) -> Unit = { newText ->
+                val clipped = if (firstDraftState.isArcadeLocked) {
+                    FirstDraftTextMetrics.clipToWordLimit(newText, maxPillarWords)
+                } else newText
+                val deltaWords = FirstDraftTextMetrics.countWords(clipped) - currentPillarWords
+                if (firstDraftState.isArcadeLocked && totalLoreWords + deltaWords > maxTotalWords && deltaWords > 0) {
+                    val allowedForThisPillar = (maxTotalWords - (totalLoreWords - currentPillarWords)).coerceAtLeast(0)
+                    updatePillar(FirstDraftTextMetrics.clipToWordLimit(clipped, allowedForThisPillar))
+                } else {
+                    updatePillar(clipped)
+                }
+            }
+
+            val docFontFamily = when (fontIndex) {
+                0 -> ScreenplayCourierFontFamily
+                1 -> MainAppFontFamily
+                2 -> androidx.compose.ui.text.font.FontFamily.Serif
+                else -> androidx.compose.ui.text.font.FontFamily.Monospace
+            }
+            val (surfaceBg, surfaceTextColor) = when (surfaceThemeIndex) {
+                0 -> Pair(Color.White, Color(0xFF111111))
+                1 -> Pair(Color(0xFFFDF6E2), Color(0xFF2C1810))
+                2 -> Pair(Color(0xFF181820), Color(0xFFEDEDED))
+                else -> Pair(Color(0xFF0B132B), Color(0xFFE0F2FE))
+            }
+
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(0.dp))
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                OutlinedTextField(
-                    value = pillarContent,
-                    onValueChange = cappedUpdatePillar,
-                    readOnly = !firstDraftState.canEditBible(),
-                    modifier = Modifier.fillMaxSize(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = surfaceTextColor,
-                        fontFamily = docFontFamily,
-                        fontSize = fontSizePt.sp,
-                        lineHeight = (fontSizePt * lineHeightMultiplier).toInt().sp
-                    ),
-                    placeholder = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = pillarTitle,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) LightGold else Color(0xFF991B1B)
+                        )
+                    )
+                    if (firstDraftState.isArcadeLocked) {
                         Text(
-                            text = if (subTab == 4) "Enter project-specific lore, branch continuity secrets, and installment rules here..."
-                                   else "Enter world-building details here...\n\nExample entries:\n• Core rules & limitations\n• Taboos and sacred covenants\n• Technological/magical limits\n• Historical context known to characters",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = surfaceTextColor.copy(alpha = 0.5f),
-                                fontFamily = docFontFamily,
-                                fontSize = fontSizePt.sp
+                            text = "$currentPillarWords / $maxPillarWords words",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = if (currentPillarWords >= maxPillarWords) ScribeStarNeonRed else ElectrumGold
                             )
                         )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = surfaceBg,
-                        unfocusedContainerColor = surfaceBg,
-                        cursorColor = ScribeStarNeonRed,
-                        focusedTextColor = surfaceTextColor,
-                        unfocusedTextColor = surfaceTextColor
-                    )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = pillarPrompt,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF334155),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.5.sp
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Typography & Reading Surface Controls Bar
+                LoreTypographyControlsBar(
+                    fontIndex = fontIndex,
+                    onFontIndexChange = onFontIndexChange,
+                    fontSizePt = fontSizePt,
+                    onFontSizeChange = onFontSizeChange,
+                    lineHeightMultiplier = lineHeightMultiplier,
+                    onLineHeightMultiplierChange = onLineHeightMultiplierChange,
+                    surfaceThemeIndex = surfaceThemeIndex,
+                    onSurfaceThemeIndexChange = onSurfaceThemeIndexChange,
+                    isDark = isDark
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Lore Document Writing Surface with live typography and paper styling
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = surfaceBg),
+                    shape = RoundedCornerShape(0.dp),
+                    border = BorderStroke(1.dp, if (surfaceThemeIndex == 0) Color(0xFFCBD5E1) else surfaceBg.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(0.dp))
+                ) {
+                    OutlinedTextField(
+                        value = pillarContent,
+                        onValueChange = cappedUpdatePillar,
+                        readOnly = !firstDraftState.canEditBible(),
+                        modifier = Modifier.fillMaxSize(),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = surfaceTextColor,
+                            fontFamily = docFontFamily,
+                            fontSize = fontSizePt.sp,
+                            lineHeight = (fontSizePt * lineHeightMultiplier).toInt().sp
+                        ),
+                        placeholder = {
+                            Text(
+                                text = "Enter world-building details here...\n\nExample entries:\n• Core rules & limitations\n• Taboos and sacred covenants\n• Technological/magical limits\n• Historical context known to characters",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = surfaceTextColor.copy(alpha = 0.5f),
+                                    fontFamily = docFontFamily,
+                                    fontSize = fontSizePt.sp
+                                )
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = surfaceBg,
+                            unfocusedContainerColor = surfaceBg,
+                            cursorColor = ScribeStarNeonRed,
+                            focusedTextColor = surfaceTextColor,
+                            unfocusedTextColor = surfaceTextColor
+                        )
+                    )
+                }
             }
         }
     }

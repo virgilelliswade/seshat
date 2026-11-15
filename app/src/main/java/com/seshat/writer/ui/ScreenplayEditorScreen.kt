@@ -792,6 +792,7 @@ fun ScreenplayEditorScreen(
             onUpdateAllAssignments = { list -> viewModel.updateUniverseAssignments(context, list) },
             onUpdateAssignmentNotes = { notes -> viewModel.updateActiveAssignmentNotes(context, notes) },
             onUpdateUniverseEras = { eras -> viewModel.updateUniverseEras(context, eras) },
+            onUpdateUniverseTimelineEvents = { events -> viewModel.updateUniverseTimelineEvents(context, events) },
             onOpen3DTree = { viewModel.openUniverse3DTree() },
             firstDraftState = uiState.firstDraftState,
             onSaveBible = { updated -> viewModel.saveStoryBible(context, updated) },

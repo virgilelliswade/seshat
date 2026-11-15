@@ -189,3 +189,54 @@ data class UniverseTimelineEra(
         )
     }
 }
+
+/**
+ * A chronological event occurring within the universe timeline.
+ * Categorized by historical era, date/timeframe, associated project, and characters involved.
+ */
+data class UniverseTimelineEvent(
+    val id: String = UUID.randomUUID().toString(),
+    val title: String = "",
+    val dateOrYear: String = "",
+    val eraTag: String = "",
+    val description: String = "",
+    val characterNames: List<String> = emptyList(),
+    val projectTitle: String = "",
+    val isMajorMilestone: Boolean = true
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("title", title)
+        put("dateOrYear", dateOrYear)
+        put("eraTag", eraTag)
+        put("description", description)
+        val charArr = JSONArray()
+        for (c in characterNames) charArr.put(c)
+        put("characterNames", charArr)
+        put("projectTitle", projectTitle)
+        put("isMajorMilestone", isMajorMilestone)
+    }
+
+    companion object {
+        fun fromJson(json: JSONObject): UniverseTimelineEvent {
+            val charList = mutableListOf<String>()
+            val charArr = json.optJSONArray("characterNames")
+            if (charArr != null) {
+                for (i in 0 until charArr.length()) {
+                    val s = charArr.optString(i)
+                    if (s.isNotBlank()) charList.add(s)
+                }
+            }
+            return UniverseTimelineEvent(
+                id = json.optString("id", UUID.randomUUID().toString()),
+                title = json.optString("title", ""),
+                dateOrYear = json.optString("dateOrYear", ""),
+                eraTag = json.optString("eraTag", ""),
+                description = json.optString("description", ""),
+                characterNames = charList,
+                projectTitle = json.optString("projectTitle", ""),
+                isMajorMilestone = json.optBoolean("isMajorMilestone", true)
+            )
+        }
+    }
+}
