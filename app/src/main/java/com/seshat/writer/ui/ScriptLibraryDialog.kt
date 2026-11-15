@@ -182,7 +182,7 @@ fun ScriptLibraryDialog(
                             shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Text("📥 Import (.fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
+                            Text("📥 Import (.seshat / .fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -512,13 +512,25 @@ private fun ScriptProjectCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(0.dp))
-                            .background(if (project.format == "FDX") Color(0xFF1976D2).copy(alpha = 0.2f) else ElectrumGold.copy(alpha = 0.2f))
+                            .background(
+                                when (project.format) {
+                                    "FDX" -> Color(0xFF1976D2).copy(alpha = 0.2f)
+                                    "SESHAT" -> Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                    "PDF" -> Color(0xFFE53935).copy(alpha = 0.2f)
+                                    else -> ElectrumGold.copy(alpha = 0.2f)
+                                }
+                            )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = project.format,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (project.format == "FDX") Color(0xFF64B5F6) else ElectrumGold,
+                                color = when (project.format) {
+                                    "FDX" -> Color(0xFF64B5F6)
+                                    "SESHAT" -> Color(0xFFC084FC)
+                                    "PDF" -> Color(0xFFEF5350)
+                                    else -> ElectrumGold
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             )

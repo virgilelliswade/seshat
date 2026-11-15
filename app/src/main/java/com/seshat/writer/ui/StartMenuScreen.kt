@@ -2572,27 +2572,6 @@ private fun GlassStartMenuHub(
     onOpenProject: (ScriptProject) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val recentProjects = remember(context, activeTitle) {
-        try {
-            ScriptLibraryManager.listProjects(context, activeTitle).take(4)
-        } catch (_: Throwable) {
-            emptyList()
-        }
-    }
-
-    val handleContinue = remember(hasActiveProject, recentProjects, onContinueWriting, onOpenProject, onNewProject) {
-        {
-            if (hasActiveProject) {
-                onContinueWriting()
-            } else if (recentProjects.isNotEmpty()) {
-                onOpenProject(recentProjects.first())
-            } else {
-                onNewProject()
-            }
-        }
-    }
-
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.TopCenter
@@ -2610,8 +2589,7 @@ private fun GlassStartMenuHub(
                 onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
-                onOpenLibrary = onOpenLibrary,
-                onContinue = handleContinue
+                onOpenLibrary = onOpenLibrary
             )
         } else if (availableWidth >= 480.dp) {
             GlassStartMenuHubMedium(
@@ -2625,8 +2603,7 @@ private fun GlassStartMenuHub(
                 onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
-                onOpenLibrary = onOpenLibrary,
-                onContinue = handleContinue
+                onOpenLibrary = onOpenLibrary
             )
         } else {
             GlassStartMenuHubCompact(
@@ -2640,8 +2617,7 @@ private fun GlassStartMenuHub(
                 onSelectSparkUniverse = onSelectSparkUniverse,
                 onNewProject = onNewProject,
                 onOpenSparkMode = onOpenSparkMode,
-                onOpenLibrary = onOpenLibrary,
-                onContinue = handleContinue
+                onOpenLibrary = onOpenLibrary
             )
         }
     }
@@ -3000,7 +2976,6 @@ private fun GlassStartMenuHubWide(
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
-    onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val cardWidth = (280.dp + (availableWidth - 680.dp) * 0.16f).coerceIn(280.dp, 420.dp)
@@ -3067,21 +3042,10 @@ private fun GlassStartMenuHubWide(
                 icon = "📂",
                 badgeTag = "RESUME",
                 accentColor = Color(0xFF38BDF8),
-                onClick = onContinue,
+                onClick = onOpenLibrary,
                 modifier = Modifier.width(cardWidth)
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Bottom Center Dock: Open/Import, Continue Studio Project, Continue Writing Challenge
-        ConceptBActionDock(
-            isCompact = false,
-            onNewProject = onNewProject,
-            onOpenSparkMode = onOpenSparkMode,
-            onOpenLibrary = onOpenLibrary,
-            onContinue = onContinue
-        )
     }
 }
 
@@ -3098,7 +3062,6 @@ private fun GlassStartMenuHubMedium(
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
-    onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val cardWidth = ((availableWidth - 48.dp) * 0.47f).coerceIn(210.dp, 320.dp)
@@ -3165,21 +3128,11 @@ private fun GlassStartMenuHubMedium(
                 icon = "📂",
                 badgeTag = "RESUME",
                 accentColor = Color(0xFF38BDF8),
-                onClick = onContinue,
+                onClick = onOpenLibrary,
                 isCompact = true,
                 modifier = Modifier.width(cardWidth)
             )
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ConceptBActionDock(
-            isCompact = false,
-            onNewProject = onNewProject,
-            onOpenSparkMode = onOpenSparkMode,
-            onOpenLibrary = onOpenLibrary,
-            onContinue = onContinue
-        )
     }
 }
 
@@ -3196,7 +3149,6 @@ private fun GlassStartMenuHubCompact(
     onNewProject: () -> Unit,
     onOpenSparkMode: () -> Unit,
     onOpenLibrary: () -> Unit,
-    onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -3249,235 +3201,13 @@ private fun GlassStartMenuHubCompact(
             icon = "📂",
             badgeTag = "RESUME",
             accentColor = Color(0xFF38BDF8),
-            onClick = onContinue,
+            onClick = onOpenLibrary,
             isCompact = true,
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ConceptBActionDock(
-            isCompact = true,
-            onNewProject = onNewProject,
-            onOpenSparkMode = onOpenSparkMode,
-            onOpenLibrary = onOpenLibrary,
-            onContinue = onContinue
-        )
     }
 }
 
-/**
- * Concept B Floating Action Pill Dock (Centered at Bottom).
- * Displays Open / Import Project, Continue Studio Project, and Continue Writing Challenge.
- */
-@Composable
-private fun ConceptBActionDock(
-    isCompact: Boolean,
-    onNewProject: () -> Unit,
-    onOpenSparkMode: () -> Unit,
-    onOpenLibrary: () -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val isDark = LocalSeshatDarkTheme.current
-    Box(
-        modifier = modifier
-            .floatingGlassIsland(isDark = isDark, elevation = 18.dp)
-            .padding(horizontal = if (isCompact) 6.dp else 8.dp, vertical = if (isCompact) 5.dp else 6.dp)
-    ) {
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(if (isCompact) 6.dp else 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ConceptBGlassPill(
-                text = if (isCompact) "📂 Open / Import" else "📂 Open / Import Project",
-                onClick = onOpenLibrary,
-                isCompact = isCompact
-            )
-
-            ConceptBGlassPill(
-                text = if (isCompact) "▶️ Continue Studio" else "▶️ Continue Studio Project",
-                onClick = onContinue,
-                isCompact = isCompact,
-                accentColor = ElectrumGold
-            )
-
-            ConceptBPrimaryPill(
-                text = if (isCompact) "🏆 Continue Challenge" else "🏆 Continue Writing Challenge",
-                onClick = onOpenSparkMode,
-                isCompact = isCompact
-            )
-        }
-    }
-}
-
-@Composable
-private fun ConceptBPrimaryPill(
-    text: String,
-    onClick: () -> Unit,
-    isCompact: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val isLit = isHovered || isPressed
-
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else if (isHovered) 1.04f else 1.0f,
-        animationSpec = tween(durationMillis = 150),
-        label = "PrimaryPillScale"
-    )
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLit) 16.dp else 8.dp,
-        animationSpec = tween(durationMillis = 180),
-        label = "PrimaryPillGlow"
-    )
-
-    val isDark = LocalSeshatDarkTheme.current
-    Box(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .shadow(
-                elevation = if (isLit) 12.dp else 7.dp,
-                shape = RoundedCornerShape(0.dp),
-                ambientColor = Color.Black.copy(alpha = if (isDark) 0.72f else 0.20f),
-                spotColor = Color.Black.copy(alpha = if (isDark) 0.85f else 0.28f)
-            )
-            .neonBloom(
-                color = ScribeStarNeonRed,
-                cornerRadius = 0.dp,
-                glowRadius = glowRadius,
-                strokeWidth = 1.4.dp,
-                outerAlpha = if (isLit) 0.55f else 0.30f,
-                midAlpha = if (isLit) 0.90f else 0.65f,
-                coreAlpha = 1.0f
-            )
-            .clip(RoundedCornerShape(0.dp))
-            .background(
-                opticalPillBrush(isDark = isDark, isPrimary = true, isHighlighted = isLit)
-            )
-            .border(
-                prismaticGlassBorder(
-                    width = if (isLit) 1.4.dp else 1.2.dp,
-                    isLit = true,
-                    isDark = isDark
-                ),
-                RoundedCornerShape(0.dp)
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .padding(
-                horizontal = if (isCompact) 14.dp else 22.dp,
-                vertical = if (isCompact) 9.dp else 12.dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontFamily = MainAppFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = if (isCompact) 12.5.sp else 14.sp,
-                color = Color.White,
-                letterSpacing = 0.3.sp
-            ),
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun ConceptBGlassPill(
-    text: String,
-    onClick: () -> Unit,
-    isCompact: Boolean,
-    modifier: Modifier = Modifier,
-    accentColor: Color = ScribeStarNeonRed
-) {
-    val isDark = LocalSeshatDarkTheme.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val isLit = isHovered || isPressed
-
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else if (isHovered) 1.03f else 1.0f,
-        animationSpec = tween(durationMillis = 150),
-        label = "GlassPillScale"
-    )
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLit) 12.dp else 0.dp,
-        animationSpec = tween(durationMillis = 180),
-        label = "GlassPillGlow"
-    )
-
-    Box(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .shadow(
-                elevation = if (isLit) 10.dp else 5.dp,
-                shape = RoundedCornerShape(0.dp),
-                ambientColor = Color.Black.copy(alpha = if (isDark) 0.68f else 0.16f),
-                spotColor = Color.Black.copy(alpha = if (isDark) 0.78f else 0.24f)
-            )
-            .neonBloom(
-                color = if (isLit) accentColor else (if (isDark) Color.White else Color(0xFF64748B)),
-                cornerRadius = 0.dp,
-                glowRadius = if (isLit) glowRadius else 4.dp,
-                strokeWidth = 1.1.dp,
-                outerAlpha = if (isLit) 0.35f else 0.08f,
-                midAlpha = if (isLit) 0.70f else 0.16f,
-                coreAlpha = if (isLit) 0.90f else 0.35f
-            )
-            .clip(RoundedCornerShape(0.dp))
-            .background(
-                if (isLit) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = accentColor)
-                else opticalGlassBrush(glassOpacity = if (isDark) 0.82f else 0.92f)
-            )
-            .border(
-                prismaticGlassBorder(
-                    width = 1.1.dp,
-                    isLit = isLit,
-                    accentColor = accentColor,
-                    isDark = isDark
-                ),
-                RoundedCornerShape(0.dp)
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .padding(
-                horizontal = if (isCompact) 13.dp else 20.dp,
-                vertical = if (isCompact) 9.dp else 12.dp
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontFamily = MainAppFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = if (isCompact) 12.5.sp else 14.sp,
-                color = if (isLit || isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                letterSpacing = 0.2.sp
-            ),
-            maxLines = 1
-        )
-    }
-}
 
 /**
  * Smoked glass card for Medium selection (Single Screenplay, Screenplay Universe, Stage Play, Comic Book, Novel).

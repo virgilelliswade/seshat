@@ -21,13 +21,30 @@ object ScriptLibraryManager {
 
     fun listProjects(context: Context? = null, activeTitle: String = ""): List<ScriptProject> {
         val dir = getScriptsDirectory(context)
-        return listProjectsInDir(dir, activeTitle)
-    }
+        val scriptProjects = listProjectsInDir(dir, activeTitle)
+        val bundlesDir = try {
+            val base = context?.filesDir ?: com.seshat.writer.platform.AppPlatform.storage.getFilesDir()
+            File(base, "bundles")
+        } catch (_: Throwable) {
+            null
+        }
+        val bundleProjects = if (bundlesDir != null && bundlesDir.exists() && bundlesDir != dir) {
+            listProjectsInDir(bundlesDir, activeTitle)
+        } else emptyList()
 
+        return (scriptProjects + bundleProjects)
+            .distinctBy { it.file.absolutePath }
+            .sortedByDescending { it.lastModified }
+    }
 
     fun listProjectsInDir(directory: File, activeTitle: String = ""): List<ScriptProject> {
         val files = directory.listFiles { f ->
-            f.isFile && (f.extension.equals("fountain", ignoreCase = true) || f.extension.equals("fdx", ignoreCase = true))
+            f.isFile && (
+                f.extension.equals("fountain", ignoreCase = true) ||
+                f.extension.equals("fdx", ignoreCase = true) ||
+                f.extension.equals("seshat", ignoreCase = true) ||
+                f.extension.equals("spmd", ignoreCase = true)
+            )
         } ?: return emptyList()
 
         return files.map { file ->
@@ -37,7 +54,12 @@ object ScriptLibraryManager {
             val author = doc?.titlePage?.author ?: ""
             val sceneCount = doc?.blocks?.count { it.type == BlockType.SCENE_HEADING } ?: 1
             val estimatedPageCount = (doc?.blocks?.size ?: 10) / 25 + 1
-            val formatStr = if (importResult.detectedFormat == ScriptFormat.FINAL_DRAFT) "FDX" else "FOUNTAIN"
+            val formatStr = when {
+                file.extension.equals("seshat", ignoreCase = true) -> "SESHAT"
+                importResult.detectedFormat == ScriptFormat.FINAL_DRAFT -> "FDX"
+                importResult.detectedFormat == ScriptFormat.PDF -> "PDF"
+                else -> "FOUNTAIN"
+            }
             val isActive = activeTitle.isNotBlank() && title.equals(activeTitle, ignoreCase = true)
 
             ScriptProject(

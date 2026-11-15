@@ -120,8 +120,15 @@ fun ScriptLibraryDialog(
             if (importResult.isSuccess && importResult.document != null) {
                 val doc = importResult.document
                 viewModel.loadDocument(doc.blocks, doc.titlePage)
-                // Also save a copy in scripts directory for persistence
-                ScriptFileManager.saveScript(context, doc.blocks, doc.titlePage, "fountain")
+                // Also save or copy to scripts directory for library persistence
+                if (file.extension.equals("seshat", ignoreCase = true)) {
+                    val dest = File(ScriptFileManager.getScriptsDirectory(context), file.name)
+                    if (!dest.exists()) {
+                        try { file.copyTo(dest, overwrite = true) } catch (_: Throwable) {}
+                    }
+                } else {
+                    ScriptFileManager.saveScript(context, doc.blocks, doc.titlePage, "fountain")
+                }
                 refreshTrigger++
                 Toast.makeText(context, "Loaded '${doc.titlePage.title}' (${doc.blocks.size} blocks)", Toast.LENGTH_LONG).show()
                 onProjectOpened()
@@ -174,7 +181,7 @@ fun ScriptLibraryDialog(
                         OutlinedButton(
                             onClick = {
                                 try {
-                                    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Import Screenplay (.fdx / .fountain / .pdf)", java.awt.FileDialog.LOAD)
+                                    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Import Project (.seshat / .fdx / .fountain / .pdf)", java.awt.FileDialog.LOAD)
                                     dialog.isVisible = true
                                     val dir = dialog.directory
                                     val name = dialog.file
@@ -187,7 +194,7 @@ fun ScriptLibraryDialog(
                             shape = RoundedCornerShape(0.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Text("📥 Import (.fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
+                            Text("📥 Import (.seshat / .fdx / .fountain / .pdf)", style = MaterialTheme.typography.labelSmall.copy(color = ElectrumGold))
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -517,13 +524,25 @@ private fun ScriptProjectCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(0.dp))
-                            .background(if (project.format == "FDX") Color(0xFF1976D2).copy(alpha = 0.2f) else ElectrumGold.copy(alpha = 0.2f))
+                            .background(
+                                when (project.format) {
+                                    "FDX" -> Color(0xFF1976D2).copy(alpha = 0.2f)
+                                    "SESHAT" -> Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                    "PDF" -> Color(0xFFE53935).copy(alpha = 0.2f)
+                                    else -> ElectrumGold.copy(alpha = 0.2f)
+                                }
+                            )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = project.format,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (project.format == "FDX") Color(0xFF64B5F6) else ElectrumGold,
+                                color = when (project.format) {
+                                    "FDX" -> Color(0xFF64B5F6)
+                                    "SESHAT" -> Color(0xFFC084FC)
+                                    "PDF" -> Color(0xFFEF5350)
+                                    else -> ElectrumGold
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             )

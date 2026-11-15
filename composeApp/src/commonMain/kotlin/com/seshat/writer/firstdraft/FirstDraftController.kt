@@ -1237,7 +1237,7 @@ object FirstDraftController {
                         isSparkReadOnly = false,
                         isBibleReadOnly = false,
                         isOutlineReadOnly = false,
-                        lastLootToastMessage = "🏆 FADE OUT AT 17,000+ WORDS! STUDIO UNLOCKED — Full Seshat v2.11.1 Unlocked!"
+                        lastLootToastMessage = "🏆 FADE OUT AT 17,000+ WORDS! STUDIO UNLOCKED — Full Seshat v2.11.2 Unlocked!"
                     )
                 }
             }
