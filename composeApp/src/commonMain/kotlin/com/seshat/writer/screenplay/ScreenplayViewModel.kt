@@ -199,6 +199,7 @@ data class ScreenplayUiState(
     val blendedUniverseProject: BlendedUniverseProject? = null,
     val isUniverseProject: Boolean = false,
     val isWorldTreeHubOpen: Boolean = false,
+    val isUniverse3DTreeOpen: Boolean = false,
     val isWritersRoomOpen: Boolean = false,
     val isStudioDrawerOpen: Boolean = false,
     val isCoverCreatorOpen: Boolean = false,
@@ -3804,6 +3805,60 @@ class ScreenplayViewModel : ViewModel() {
 
     fun closeWorldTreeHub() {
         _uiState.update { it.copy(isWorldTreeHubOpen = false) }
+    }
+
+    fun openUniverse3DTree() {
+        _uiState.update { it.copy(isUniverse3DTreeOpen = true) }
+    }
+
+    fun closeUniverse3DTree() {
+        _uiState.update { it.copy(isUniverse3DTreeOpen = false) }
+    }
+
+    fun updateActiveAssignmentCharacters(context: Context, starringNames: List<String>) {
+        val proj = _uiState.value.blendedUniverseProject ?: return
+        val activeIdx = proj.activeAssignmentIndex
+        if (activeIdx !in proj.assignments.indices) return
+        val updatedAssignments = proj.assignments.toMutableList()
+        val current = updatedAssignments[activeIdx]
+        updatedAssignments[activeIdx] = current.copy(
+            starringCharacterNames = starringNames,
+            lastModified = System.currentTimeMillis()
+        )
+        val updatedProj = proj.copy(
+            assignments = updatedAssignments,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updatedProj)
+        _uiState.update { it.copy(blendedUniverseProject = updatedProj) }
+    }
+
+    fun updateActiveAssignmentNotes(context: Context, notes: String) {
+        val proj = _uiState.value.blendedUniverseProject ?: return
+        val activeIdx = proj.activeAssignmentIndex
+        if (activeIdx !in proj.assignments.indices) return
+        val updatedAssignments = proj.assignments.toMutableList()
+        val current = updatedAssignments[activeIdx]
+        updatedAssignments[activeIdx] = current.copy(
+            projectNotes = notes,
+            lastModified = System.currentTimeMillis()
+        )
+        val updatedProj = proj.copy(
+            assignments = updatedAssignments,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updatedProj)
+        _uiState.update { it.copy(blendedUniverseProject = updatedProj) }
+    }
+
+    fun updateUniverseAssignments(context: Context, updatedList: List<BlendedAssignment>) {
+        val proj = _uiState.value.blendedUniverseProject ?: return
+        val updatedProj = proj.copy(
+            assignments = updatedList,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updatedProj)
+        _uiState.update { it.copy(blendedUniverseProject = updatedProj) }
     }
 
     fun openHubCorkboard() {

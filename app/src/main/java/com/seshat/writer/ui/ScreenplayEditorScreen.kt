@@ -101,6 +101,7 @@ import com.seshat.writer.ai.AiPreferences
 import com.seshat.writer.ai.AiConfig
 import com.seshat.writer.universe.UniverseBinderPane
 import com.seshat.writer.universe.WorldTreeHubPane
+import com.seshat.writer.universe.Universe3DTreeInAppDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -611,7 +612,8 @@ fun ScreenplayEditorScreen(
             onOpenPitchDeck = { viewModel.openPitchDeck() },
             onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
                 { viewModel.openWorldTreeHub() }
-            } else null
+            } else null,
+            onOpenUniverse3DTree = { viewModel.openUniverse3DTree() }
         )
     }
 
@@ -771,6 +773,7 @@ fun ScreenplayEditorScreen(
             isUniverseProject = uiState.isUniverseProject || uiState.tvSeriesProject != null || uiState.blendedUniverseProject != null || uiState.storyBible.tvConfig.isTvSeries,
             tvSeriesProject = uiState.tvSeriesProject,
             blendedUniverseProject = uiState.blendedUniverseProject,
+            activeAssignment = uiState.blendedUniverseProject?.getActiveAssignment(),
             onSelectBlendedAssignment = { idx ->
                 viewModel.selectBlendedAssignment(context, idx)
                 viewModel.closeStoryBible()
@@ -785,10 +788,29 @@ fun ScreenplayEditorScreen(
             onAddTvEpisode = { epNum, epTitle ->
                 viewModel.addTvEpisode(context, epNum, epTitle)
             },
+            onUpdateAssignmentCharacters = { chars -> viewModel.updateActiveAssignmentCharacters(context, chars) },
+            onUpdateAllAssignments = { list -> viewModel.updateUniverseAssignments(context, list) },
+            onUpdateAssignmentNotes = { notes -> viewModel.updateActiveAssignmentNotes(context, notes) },
+            onUpdateUniverseEras = { eras -> viewModel.updateUniverseEras(context, eras) },
+            onOpen3DTree = { viewModel.openUniverse3DTree() },
             firstDraftState = uiState.firstDraftState,
             onSaveBible = { updated -> viewModel.saveStoryBible(context, updated) },
             onDismiss = { viewModel.closeStoryBible() },
             onToggleTheme = { viewModel.toggleThemeMode(context) }
+        )
+    }
+
+    if (uiState.isUniverse3DTreeOpen) {
+        val universeTitle = uiState.blendedUniverseProject?.title ?: uiState.title.ifBlank { "UNIVERSE TREE" }
+        Universe3DTreeInAppDialog(
+            universeTitle = universeTitle,
+            bible = uiState.storyBible,
+            blendedProject = uiState.blendedUniverseProject,
+            onEnterProject = { assignmentIdx ->
+                viewModel.selectBlendedAssignment(context, assignmentIdx)
+                viewModel.closeUniverse3DTree()
+            },
+            onDismiss = { viewModel.closeUniverse3DTree() }
         )
     }
 

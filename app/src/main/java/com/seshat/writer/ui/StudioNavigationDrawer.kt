@@ -116,6 +116,7 @@ fun StudioNavigationDrawer(
     onOpenWhatsNew: () -> Unit = {},
     onOpenPitchDeck: () -> Unit = {},
     onOpenWorldTree: (() -> Unit)? = null,
+    onOpenUniverse3DTree: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -306,17 +307,12 @@ fun StudioNavigationDrawer(
                                 )
                                 DrawerNavItem(
                                     icon = "🪐",
-                                    title = "3D World Tree",
-                                    subtitle = "Interactive 3D orbit & branch visualizer",
+                                    title = "3D Universe Tree",
+                                    subtitle = "Interactive in-app 3D spatial orbit",
                                     isActive = false,
                                     onClick = {
                                         onCloseDrawer()
-                                        Universe3DVisualizer.launch3DTree(
-                                            context = context,
-                                            universeTitle = uiState.blendedUniverseProject?.title ?: uiState.title,
-                                            bible = uiState.storyBible,
-                                            blendedProject = uiState.blendedUniverseProject
-                                        )
+                                        onOpenUniverse3DTree?.invoke()
                                     }
                                 )
                             }

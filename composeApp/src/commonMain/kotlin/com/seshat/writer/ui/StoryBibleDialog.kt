@@ -109,8 +109,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.layout.ContentScale
 import com.seshat.writer.ai.AiClient
 import com.seshat.writer.ai.AiPreferences
@@ -127,6 +128,9 @@ import com.seshat.writer.bible.StoryBible
 import com.seshat.writer.bible.StoryBibleRepository
 import com.seshat.writer.bible.TvEpisodeOutline
 import com.seshat.writer.bible.TvSeriesBibleConfig
+import com.seshat.writer.universe.BlendedAssignment
+import com.seshat.writer.universe.BlendedUniverseProject
+import com.seshat.writer.universe.UniverseTimelineEra
 import com.seshat.writer.firstdraft.FirstDraftStage
 import com.seshat.writer.firstdraft.FirstDraftState
 import com.seshat.writer.firstdraft.FirstDraftTextMetrics
@@ -311,10 +315,16 @@ fun StoryBibleDialog(
     isUniverseProject: Boolean = false,
     tvSeriesProject: com.seshat.writer.tv.TvSeriesProject? = null,
     blendedUniverseProject: com.seshat.writer.universe.BlendedUniverseProject? = null,
+    activeAssignment: com.seshat.writer.universe.BlendedAssignment? = null,
     onSelectBlendedAssignment: ((Int) -> Unit)? = null,
     onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType) -> Unit)? = null,
     onSelectTvEpisode: ((Int) -> Unit)? = null,
     onAddTvEpisode: ((String, String) -> Unit)? = null,
+    onUpdateAssignmentCharacters: ((List<String>) -> Unit)? = null,
+    onUpdateAllAssignments: ((List<com.seshat.writer.universe.BlendedAssignment>) -> Unit)? = null,
+    onUpdateAssignmentNotes: ((String) -> Unit)? = null,
+    onUpdateUniverseEras: ((List<com.seshat.writer.universe.UniverseTimelineEra>) -> Unit)? = null,
+    onOpen3DTree: (() -> Unit)? = null,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
     onSaveBible: (StoryBible) -> Unit,
     onDismiss: () -> Unit,
@@ -330,6 +340,11 @@ fun StoryBibleDialog(
     var mainTab by remember { mutableIntStateOf(0) }
     var loreSubTab by remember { mutableIntStateOf(0) }
     var copyNotification by remember { mutableStateOf<String?>(null) }
+
+    var docFontFamilyIndex by remember { mutableIntStateOf(0) }
+    var docFontSizePt by remember { mutableIntStateOf(14) }
+    var docLineHeightMultiplier by remember { mutableFloatStateOf(1.6f) }
+    var docSurfaceThemeIndex by remember { mutableIntStateOf(0) }
 
     val hubDescriptor = remember(projectFormat, screenplayType) {
         getSeriesHubDescriptor(projectFormat, screenplayType)
@@ -434,7 +449,7 @@ fun StoryBibleDialog(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             val tabs = listOf(
-                                "📖 Lore Pillars (4)",
+                                "📖 Lore Pillars (${if (activeAssignment != null) 5 else 4})",
                                 "🎭 Characters (${bible.characters.size})",
                                 "🔍 Locations (${bible.locations.size})",
                                 "📌 Beats (${bible.beats.size})"
@@ -506,6 +521,34 @@ fun StoryBibleDialog(
                                 onToggleTheme = onToggleTheme,
                                 isCompact = isCompactScreen
                             )
+
+                            if (onOpen3DTree != null) {
+                                Surface(
+                                    color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
+                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF818CF8) else Color(0xFF6366F1)),
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(0.dp))
+                                        .clickable(onClick = onOpen3DTree)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("🪐", fontSize = 12.sp)
+                                        Text(
+                                            text = if (isCompactScreen) "3D Tree" else "🪐 3D Universe Tree",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontFamily = MainAppFontFamily,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4338CA),
+                                                fontSize = 11.5.sp
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                     HorizontalDivider(thickness = 1.dp, color = ObsidianSurfaceVariant)
@@ -553,7 +596,20 @@ fun StoryBibleDialog(
                                 updateAndPersist(bible.copy(lore = updatedLore))
                             },
                             firstDraftState = firstDraftState,
-                            isCompactScreen = isCompactScreen
+                            isCompactScreen = isCompactScreen,
+                            blendedUniverseProject = blendedUniverseProject,
+                            activeAssignment = activeAssignment,
+                            onUpdateAssignmentNotes = onUpdateAssignmentNotes,
+                            onUpdateUniverseEras = onUpdateUniverseEras,
+                            onOpen3DTree = onOpen3DTree,
+                            fontIndex = docFontFamilyIndex,
+                            onFontIndexChange = { docFontFamilyIndex = it },
+                            fontSizePt = docFontSizePt,
+                            onFontSizeChange = { docFontSizePt = it },
+                            lineHeightMultiplier = docLineHeightMultiplier,
+                            onLineHeightMultiplierChange = { docLineHeightMultiplier = it },
+                            surfaceThemeIndex = docSurfaceThemeIndex,
+                            onSurfaceThemeIndexChange = { docSurfaceThemeIndex = it }
                         )
                         1 -> CharacterDossiersSection(
                             characters = bible.characters,
@@ -562,7 +618,11 @@ fun StoryBibleDialog(
                                 updateAndPersist(bible.copy(characters = updatedList))
                             },
                             firstDraftState = firstDraftState,
-                            isCompactScreen = isCompactScreen
+                            isCompactScreen = isCompactScreen,
+                            blendedUniverseProject = blendedUniverseProject,
+                            activeAssignment = activeAssignment,
+                            onUpdateActiveStarringNames = onUpdateAssignmentCharacters,
+                            onUpdateAllAssignments = onUpdateAllAssignments
                         )
                         2 -> LocationCodexSection(
                             locations = bible.locations,
@@ -737,6 +797,649 @@ private fun GlassActionButton(
 }
 
 // ==========================================
+// LORE TYPOGRAPHY & TYPE CONTROLS
+// ==========================================
+@Composable
+private fun LoreTypographyControlsBar(
+    fontIndex: Int,
+    onFontIndexChange: (Int) -> Unit,
+    fontSizePt: Int,
+    onFontSizeChange: (Int) -> Unit,
+    lineHeightMultiplier: Float,
+    onLineHeightMultiplierChange: (Float) -> Unit,
+    surfaceThemeIndex: Int,
+    onSurfaceThemeIndexChange: (Int) -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = if (isDark) ObsidianSurface else Color(0xFFF1F5F9),
+        shape = RoundedCornerShape(0.dp),
+        border = BorderStroke(1.dp, if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Font Family Selector
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "FONT:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 10.sp
+                    )
+                )
+                val fontLabels = listOf("Typewriter", "Sans", "Serif", "Mono")
+                fontLabels.forEachIndexed { idx, label ->
+                    val isSelected = fontIndex == idx
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(
+                                if (isSelected) (if (isDark) ElectrumGold.copy(alpha = 0.25f) else Color(0xFFE2E8F0))
+                                else Color.Transparent
+                            )
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    if (isSelected) (if (isDark) ElectrumGold else Color(0xFF475569))
+                                    else Color.Transparent
+                                ),
+                                RoundedCornerShape(0.dp)
+                            )
+                            .clickable { onFontIndexChange(idx) }
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = when (idx) {
+                                    0 -> ScreenplayCourierFontFamily
+                                    1 -> MainAppFontFamily
+                                    2 -> androidx.compose.ui.text.font.FontFamily.Serif
+                                    else -> androidx.compose.ui.text.font.FontFamily.Monospace
+                                },
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) (if (isDark) ElectrumGold else Color(0xFF0F172A))
+                                        else (if (isDark) ScreenplayTextMuted else Color(0xFF475569)),
+                                fontSize = 10.5.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(16.dp).background(if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)))
+
+            // Font Size Stepper
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "SIZE:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 10.sp
+                    )
+                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(if (isDark) ObsidianBlack else Color.White)
+                        .border(BorderStroke(1.dp, if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)), RoundedCornerShape(0.dp))
+                        .clickable { onFontSizeChange((fontSizePt - 1).coerceAtLeast(11)) }
+                ) {
+                    Text("A-", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF0F172A))
+                }
+                Text(
+                    text = "${fontSizePt}pt",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = ScreenplayCourierFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) LightGold else Color(0xFF0F172A),
+                        fontSize = 11.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(if (isDark) ObsidianBlack else Color.White)
+                        .border(BorderStroke(1.dp, if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)), RoundedCornerShape(0.dp))
+                        .clickable { onFontSizeChange((fontSizePt + 1).coerceAtMost(24)) }
+                ) {
+                    Text("A+", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF0F172A))
+                }
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(16.dp).background(if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)))
+
+            // Line Spacing
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "LINE:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 10.sp
+                    )
+                )
+                val spacingOptions = listOf(1.3f to "1.3x", 1.6f to "1.6x", 2.0f to "2.0x")
+                spacingOptions.forEach { (mul, label) ->
+                    val isSelected = lineHeightMultiplier == mul
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(
+                                if (isSelected) (if (isDark) ScribeStarNeonRed.copy(alpha = 0.25f) else Color(0xFFE2E8F0))
+                                else Color.Transparent
+                            )
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    if (isSelected) (if (isDark) ScribeStarNeonRed else Color(0xFF475569))
+                                    else Color.Transparent
+                                ),
+                                RoundedCornerShape(0.dp)
+                            )
+                            .clickable { onLineHeightMultiplierChange(mul) }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) (if (isDark) ScribeStarNeonRed else Color(0xFF0F172A))
+                                        else (if (isDark) ScreenplayTextMuted else Color(0xFF475569)),
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Box(modifier = Modifier.width(1.dp).height(16.dp).background(if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)))
+
+            // Reading Surface Themes (Paper, Parchment, Obsidian, Midnight)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "THEME:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 10.sp
+                    )
+                )
+                val surfaces = listOf(
+                    "📄 Paper",
+                    "📜 Parchment",
+                    "🌑 Obsidian",
+                    "🌌 Midnight"
+                )
+                surfaces.forEachIndexed { idx, label ->
+                    val isSelected = surfaceThemeIndex == idx
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(
+                                if (isSelected) (if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1))
+                                else Color.Transparent
+                            )
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    if (isSelected) (if (isDark) Color.White else Color(0xFF1E293B))
+                                    else (if (isDark) ObsidianSurfaceVariant else Color(0xFFE2E8F0))
+                                ),
+                                RoundedCornerShape(0.dp)
+                            )
+                            .clickable { onSurfaceThemeIndexChange(idx) }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) (if (isDark) Color.White else Color(0xFF0F172A))
+                                        else (if (isDark) ScreenplayTextMuted else Color(0xFF64748B)),
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// TIMELINE ERAS & CHRONOLOGY MANAGER
+// ==========================================
+@Composable
+private fun TimelineErasChronologyManager(
+    eras: List<UniverseTimelineEra>,
+    assignments: List<BlendedAssignment>,
+    onUpdateEras: ((List<UniverseTimelineEra>) -> Unit)?,
+    onOpen3DTree: (() -> Unit)?,
+    isDark: Boolean
+) {
+    val goldAccent = if (isDark) ElectrumGold else Color(0xFFB45309)
+    val cardBg = if (isDark) ObsidianSurface else Color(0xFFF8FAFC)
+    val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+
+    var newEraName by remember { mutableStateOf("") }
+    var newEraTimeSpan by remember { mutableStateOf("") }
+    var isAddingEra by remember { mutableStateOf(false) }
+
+    Surface(
+        color = cardBg,
+        shape = RoundedCornerShape(0.dp),
+        border = BorderStroke(1.dp, borderColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("🌌", fontSize = 14.sp)
+                    Text(
+                        text = "TIMELINE ERAS & CANON PHASES (${eras.size})",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = MainAppFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = goldAccent,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (onOpen3DTree != null) {
+                        Surface(
+                            color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFF818CF8) else Color(0xFF6366F1)),
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable(onClick = onOpen3DTree)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text("🪐", fontSize = 11.sp)
+                                Text(
+                                    text = "3D Orbit",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4338CA),
+                                        fontSize = 10.5.sp
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    if (onUpdateEras != null) {
+                        Surface(
+                            color = goldAccent.copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, goldAccent),
+                            shape = RoundedCornerShape(0.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable { isAddingEra = !isAddingEra }
+                        ) {
+                            Text(
+                                text = if (isAddingEra) "✕ Cancel" else "+ Add Era",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = goldAccent,
+                                    fontSize = 10.5.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Inline Add Era Form
+            if (isAddingEra && onUpdateEras != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newEraName,
+                        onValueChange = { newEraName = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        placeholder = { Text("e.g. Era ${eras.size + 1}: Golden Age", fontSize = 11.sp) },
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp)
+                    )
+                    OutlinedTextField(
+                        value = newEraTimeSpan,
+                        onValueChange = { newEraTimeSpan = it },
+                        modifier = Modifier.weight(0.7f),
+                        singleLine = true,
+                        placeholder = { Text("Timeframe (e.g. Year 1 - 50)", fontSize = 11.sp) },
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp)
+                    )
+                    Button(
+                        onClick = {
+                            val resolvedName = newEraName.trim().ifBlank { "Era ${eras.size + 1}" }
+                            val resolvedSpan = newEraTimeSpan.trim().ifBlank { "Epoch ${eras.size + 1}" }
+                            val created = UniverseTimelineEra(
+                                name = resolvedName,
+                                timeSpan = resolvedSpan,
+                                description = "Chronological era spanning $resolvedSpan."
+                            )
+                            onUpdateEras(eras + created)
+                            newEraName = ""
+                            newEraTimeSpan = ""
+                            isAddingEra = false
+                        },
+                        shape = RoundedCornerShape(0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = goldAccent)
+                    ) {
+                        Text("Add", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    }
+                }
+            }
+
+            // Eras Horizontal Scroll List
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                eras.forEachIndexed { idx, era ->
+                    val assignedProjects = assignments.filter { it.eraTag == era.name }
+                    Surface(
+                        color = if (isDark) ObsidianBlack else Color.White,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier.widthIn(min = 200.dp, max = 260.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "ERA ${idx + 1}",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = ScreenplayCourierFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = goldAccent,
+                                        fontSize = 10.sp
+                                    )
+                                )
+                                if (onUpdateEras != null && eras.size > 1) {
+                                    Text(
+                                        text = "✕",
+                                        color = Color(0xFFEF4444),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(0.dp))
+                                            .clickable {
+                                                onUpdateEras(eras.filterIndexed { i, _ -> i != idx })
+                                            }
+                                            .padding(2.dp)
+                                    )
+                                }
+                            }
+
+                            if (onUpdateEras != null) {
+                                OutlinedTextField(
+                                    value = era.name,
+                                    onValueChange = { updatedName ->
+                                        val updated = eras.toMutableList()
+                                        updated[idx] = era.copy(name = updatedName)
+                                        onUpdateEras(updated)
+                                    },
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.5.sp
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = era.timeSpan,
+                                    onValueChange = { updatedSpan ->
+                                        val updated = eras.toMutableList()
+                                        updated[idx] = era.copy(timeSpan = updatedSpan)
+                                        onUpdateEras(updated)
+                                    },
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp),
+                                    placeholder = { Text("Timeframe", fontSize = 10.5.sp) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                Text(era.name, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                                Text(era.timeSpan, fontSize = 10.5.sp, color = ScreenplayTextMuted)
+                            }
+
+                            if (assignedProjects.isNotEmpty()) {
+                                Text(
+                                    text = "Projects: ${assignedProjects.joinToString { it.title }}",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = if (isDark) ScreenplayTextMuted else Color(0xFF475569),
+                                        fontSize = 9.5.sp
+                                    ),
+                                    maxLines = 2
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// UNIVERSE CHARACTER STARRING ROW
+// ==========================================
+@Composable
+private fun CharacterStarringUniverseRow(
+    characterName: String,
+    activeAssignment: BlendedAssignment?,
+    allAssignments: List<BlendedAssignment>,
+    activeStarringNames: List<String>,
+    onUpdateActiveStarringNames: ((List<String>) -> Unit)?,
+    onUpdateAllAssignments: ((List<BlendedAssignment>) -> Unit)?,
+    isDark: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(0.dp))
+            .background(if (isDark) ObsidianSurface else Color(0xFFF1F5F9))
+            .border(BorderStroke(1.dp, if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)), RoundedCornerShape(0.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Active Assignment Star Toggle
+            if (activeAssignment != null && onUpdateActiveStarringNames != null) {
+                val isStarring = activeStarringNames.contains(characterName)
+                Surface(
+                    color = if (isStarring) (if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.5f) else Color(0xFFDBEAFE)) else Color.Transparent,
+                    border = BorderStroke(1.dp, if (isStarring) (if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)) else (if (isDark) ObsidianSurfaceVariant else Color(0xFF94A3B8))),
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(0.dp))
+                        .clickable {
+                            val updated = if (isStarring) {
+                                activeStarringNames.filter { it != characterName }
+                            } else {
+                                (activeStarringNames + characterName).distinct()
+                            }
+                            onUpdateActiveStarringNames(updated)
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(if (isStarring) "⭐" else "☆", fontSize = 11.sp)
+                        Text(
+                            text = if (isStarring) "Starring in ${activeAssignment.title}" else "Add to ${activeAssignment.title} Cast",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = if (isStarring) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isStarring) (if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)) else (if (isDark) ScreenplayTextMuted else Color(0xFF475569)),
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = "UNIVERSE CASTING",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = ScreenplayCourierFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) LightGold else Color(0xFF991B1B),
+                    fontSize = 9.5.sp
+                )
+            )
+        }
+
+        // Horizontal Project Pills across all Universe projects
+        if (allAssignments.size > 1 && onUpdateAllAssignments != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "Stars in Projects:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = MainAppFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 10.sp
+                    )
+                )
+                allAssignments.forEach { assignment ->
+                    val isStar = assignment.starringCharacterNames.contains(characterName)
+                    val accent = when (assignment.format) {
+                        ProjectFormat.SCREENPLAY -> Color(0xFFEF4444)
+                        ProjectFormat.TV_SERIES -> Color(0xFF3B82F6)
+                        ProjectFormat.NOVEL -> Color(0xFF10B981)
+                        ProjectFormat.STAGE_PLAY -> Color(0xFFF59E0B)
+                        else -> Color(0xFF8B5CF6)
+                    }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .background(if (isStar) accent.copy(alpha = 0.20f) else Color.Transparent)
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    if (isStar) accent else (if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1))
+                                ),
+                                RoundedCornerShape(0.dp)
+                            )
+                            .clickable {
+                                val updated = allAssignments.map { a ->
+                                    if (a.id == assignment.id) {
+                                        val newNames = if (isStar) {
+                                            a.starringCharacterNames.filter { it != characterName }
+                                        } else {
+                                            (a.starringCharacterNames + characterName).distinct()
+                                        }
+                                        a.copy(starringCharacterNames = newNames, lastModified = System.currentTimeMillis())
+                                    } else a
+                                }
+                                onUpdateAllAssignments(updated)
+                            }
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (isStar) "✓ ${assignment.title}" else "+ ${assignment.title}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = if (isStar) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isStar) (if (isDark) Color.White else Color(0xFF0F172A)) else (if (isDark) ScreenplayTextMuted else Color(0xFF64748B)),
+                                fontSize = 10.5.sp
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
 // 1. LORE PILLARS SECTION (4 PILLARS)
 // ==========================================
 @Composable
@@ -746,7 +1449,20 @@ private fun LorePillarsSection(
     onSubTabChange: (Int) -> Unit,
     onUpdateLore: (LoreDocument) -> Unit,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
-    isCompactScreen: Boolean = false
+    isCompactScreen: Boolean = false,
+    blendedUniverseProject: BlendedUniverseProject? = null,
+    activeAssignment: BlendedAssignment? = null,
+    onUpdateAssignmentNotes: ((String) -> Unit)? = null,
+    onUpdateUniverseEras: ((List<UniverseTimelineEra>) -> Unit)? = null,
+    onOpen3DTree: (() -> Unit)? = null,
+    fontIndex: Int = 0,
+    onFontIndexChange: (Int) -> Unit = {},
+    fontSizePt: Int = 14,
+    onFontSizeChange: (Int) -> Unit = {},
+    lineHeightMultiplier: Float = 1.6f,
+    onLineHeightMultiplierChange: (Float) -> Unit = {},
+    surfaceThemeIndex: Int = 0,
+    onSurfaceThemeIndexChange: (Int) -> Unit = {}
 ) {
     val isDark = LocalSeshatDarkTheme.current
     Column(modifier = Modifier.fillMaxSize()) {
@@ -764,12 +1480,18 @@ private fun LorePillarsSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val pillars = listOf(
-                    "✨ Cosmology" to lore.cosmology.isNotBlank(),
-                    "🏛️ Anthropology" to lore.anthropology.isNotBlank(),
-                    "⚡ Technology" to lore.technology.isNotBlank(),
-                    "⏳ Chronology" to lore.chronology.isNotBlank()
-                )
+                val pillars = remember(lore, activeAssignment, blendedUniverseProject) {
+                    val list = mutableListOf(
+                        "✨ Cosmology" to lore.cosmology.isNotBlank(),
+                        "🏛️ Anthropology" to lore.anthropology.isNotBlank(),
+                        "⚡ Technology" to lore.technology.isNotBlank(),
+                        "⏳ Chronology" to (lore.chronology.isNotBlank() || (blendedUniverseProject?.eras?.isNotEmpty() == true))
+                    )
+                    if (activeAssignment != null) {
+                        list.add("📝 ${activeAssignment.title.take(14).uppercase()} Lore" to activeAssignment.projectNotes.isNotBlank())
+                    }
+                    list
+                }
                 pillars.forEachIndexed { index, (label, isFilled) ->
                     val isSelected = subTab == index
                     val subInteraction = remember { MutableInteractionSource() }
@@ -884,11 +1606,16 @@ private fun LorePillarsSection(
                 "Specify scientific paradigm, transport, weapon lethality, energy sources, communication limits, and unique inventions.",
                 lore.technology
             ) { text: String -> onUpdateLore(lore.copy(technology = text)) }
-            else -> Quad(
+            3 -> Quad(
                 "⏳ CHRONOLOGY & WORLD TIMELINE",
                 "Chronicle ancient epochs, recent wars, political treaties, preceding backstory, and sequential milestones leading directly into Scene 1.",
                 lore.chronology
             ) { text: String -> onUpdateLore(lore.copy(chronology = text)) }
+            else -> Quad(
+                "📝 ${activeAssignment?.title?.uppercase() ?: "PROJECT"} • LOCAL LORE SUB-DOCUMENT",
+                "Record installment-specific continuity rules, local canon secrets, and narrative sub-document notes for this individual project branch.",
+                activeAssignment?.projectNotes ?: ""
+            ) { text: String -> onUpdateAssignmentNotes?.invoke(text) }
         }
 
         val maxPillarWords = firstDraftState.maxWordsPerLorePillar()
@@ -907,6 +1634,19 @@ private fun LorePillarsSection(
             } else {
                 updatePillar(clipped)
             }
+        }
+
+        val docFontFamily = when (fontIndex) {
+            0 -> ScreenplayCourierFontFamily
+            1 -> MainAppFontFamily
+            2 -> androidx.compose.ui.text.font.FontFamily.Serif
+            else -> androidx.compose.ui.text.font.FontFamily.Monospace
+        }
+        val (surfaceBg, surfaceTextColor) = when (surfaceThemeIndex) {
+            0 -> Pair(Color.White, Color(0xFF111111))
+            1 -> Pair(Color(0xFFFDF6E2), Color(0xFF2C1810))
+            2 -> Pair(Color(0xFF181820), Color(0xFFEDEDED))
+            else -> Pair(Color(0xFF0B132B), Color(0xFFE0F2FE))
         }
 
         Column(
@@ -948,13 +1688,39 @@ private fun LorePillarsSection(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // White lore document writing surface (pure white in dark mode, crisp dark ink)
+            // In-Tab Chronology Timeline Eras Manager
+            if (subTab == 3 && blendedUniverseProject != null) {
+                TimelineErasChronologyManager(
+                    eras = blendedUniverseProject.eras,
+                    assignments = blendedUniverseProject.assignments,
+                    onUpdateEras = onUpdateUniverseEras,
+                    onOpen3DTree = onOpen3DTree,
+                    isDark = isDark
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+
+            // Typography & Reading Surface Controls Bar
+            LoreTypographyControlsBar(
+                fontIndex = fontIndex,
+                onFontIndexChange = onFontIndexChange,
+                fontSizePt = fontSizePt,
+                onFontSizeChange = onFontSizeChange,
+                lineHeightMultiplier = lineHeightMultiplier,
+                onLineHeightMultiplierChange = onLineHeightMultiplierChange,
+                surfaceThemeIndex = surfaceThemeIndex,
+                onSurfaceThemeIndexChange = onSurfaceThemeIndexChange,
+                isDark = isDark
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Lore Document Writing Surface with live typography and paper styling
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = surfaceBg),
                 shape = RoundedCornerShape(0.dp),
-                border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                border = BorderStroke(1.dp, if (surfaceThemeIndex == 0) Color(0xFFCBD5E1) else surfaceBg.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -966,28 +1732,30 @@ private fun LorePillarsSection(
                     readOnly = !firstDraftState.canEditBible(),
                     modifier = Modifier.fillMaxSize(),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color(0xFF111111),
-                        fontFamily = ScreenplayCourierFontFamily,
-                        fontSize = 14.sp,
-                        lineHeight = 22.sp
+                        color = surfaceTextColor,
+                        fontFamily = docFontFamily,
+                        fontSize = fontSizePt.sp,
+                        lineHeight = (fontSizePt * lineHeightMultiplier).toInt().sp
                     ),
                     placeholder = {
                         Text(
-                            text = "Enter world-building details here...\n\nExample entries:\n• Core rules & limitations\n• Taboos and sacred covenants\n• Technological/magical limits\n• Historical context known to characters",
+                            text = if (subTab == 4) "Enter project-specific lore, branch continuity secrets, and installment rules here..."
+                                   else "Enter world-building details here...\n\nExample entries:\n• Core rules & limitations\n• Taboos and sacred covenants\n• Technological/magical limits\n• Historical context known to characters",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color(0xFF94A3B8),
-                                fontFamily = ScreenplayCourierFontFamily
+                                color = surfaceTextColor.copy(alpha = 0.5f),
+                                fontFamily = docFontFamily,
+                                fontSize = fontSizePt.sp
                             )
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = surfaceBg,
+                        unfocusedContainerColor = surfaceBg,
                         cursorColor = ScribeStarNeonRed,
-                        focusedTextColor = Color(0xFF111111),
-                        unfocusedTextColor = Color(0xFF111111)
+                        focusedTextColor = surfaceTextColor,
+                        unfocusedTextColor = surfaceTextColor
                     )
                 )
             }
@@ -1006,13 +1774,27 @@ private fun CharacterDossiersSection(
     activeCharactersInScript: List<String>,
     onUpdateCharacters: (List<CharacterDossier>) -> Unit,
     firstDraftState: FirstDraftState = FirstDraftState(isFirstDraftMode = false, stage = FirstDraftStage.STUDIO_UNLOCKED),
-    isCompactScreen: Boolean = false
+    isCompactScreen: Boolean = false,
+    blendedUniverseProject: BlendedUniverseProject? = null,
+    activeAssignment: BlendedAssignment? = null,
+    onUpdateActiveStarringNames: ((List<String>) -> Unit)? = null,
+    onUpdateAllAssignments: ((List<BlendedAssignment>) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val isDark = LocalSeshatDarkTheme.current
     val maxSlots = firstDraftState.maxCharacterDossierSlots()
     val maxWordsPerDossier = firstDraftState.maxWordsPerCharacterDossier()
     val canAddSlot = characters.size < maxSlots
+
+    var filterMode by remember { mutableIntStateOf(0) } // 0: All, 1: Starring in Project, 2: Other Universe
+    val activeStarringNames = activeAssignment?.starringCharacterNames ?: emptyList()
+    val displayedCharacters = remember(characters, filterMode, activeStarringNames) {
+        when (filterMode) {
+            1 -> characters.filter { activeStarringNames.contains(it.name) }
+            2 -> characters.filter { !activeStarringNames.contains(it.name) }
+            else -> characters
+        }
+    }
 
     fun tryAddCharacter() {
         if (!canAddSlot) {
@@ -1023,7 +1805,12 @@ private fun CharacterDossiersSection(
             ).show()
             return
         }
-        onUpdateCharacters(characters + CharacterDossier(name = "NEW CHARACTER"))
+        val newChar = CharacterDossier(name = "NEW CHARACTER")
+        onUpdateCharacters(characters + newChar)
+        if (activeAssignment != null && onUpdateActiveStarringNames != null) {
+            onUpdateActiveStarringNames((activeStarringNames + newChar.name).distinct())
+            Toast.makeText(context, "✨ Added to Master Story Bible & starring in ${activeAssignment.title}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun clipDossierIfNeeded(updated: CharacterDossier): CharacterDossier {
@@ -1126,12 +1913,55 @@ private fun CharacterDossiersSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        if (characters.isEmpty()) {
+        // Universe Cast Filter Tabs
+        if (activeAssignment != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val starringCount = characters.count { activeStarringNames.contains(it.name) }
+                val otherCount = characters.count { !activeStarringNames.contains(it.name) }
+                val filterTabs = listOf(
+                    "All Characters (${characters.size})",
+                    "⭐ Starring in ${activeAssignment.title} ($starringCount)",
+                    "Other Universe Characters ($otherCount)"
+                )
+                filterTabs.forEachIndexed { fIdx, fLabel ->
+                    val isSel = filterMode == fIdx
+                    Surface(
+                        color = if (isSel) (if (isDark) ScribeStarNeonRed.copy(alpha = 0.22f) else Color(0xFFFEE2E2)) else Color.Transparent,
+                        border = BorderStroke(1.dp, if (isSel) ScribeStarNeonRed else (if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1))),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(0.dp))
+                            .clickable { filterMode = fIdx }
+                    ) {
+                        Text(
+                            text = fLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSel) (if (isDark) Color.White else Color(0xFF991B1B)) else (if (isDark) ScreenplayTextMuted else Color(0xFF475569)),
+                                fontSize = 11.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        if (displayedCharacters.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "No character dossiers yet. Click 'Add Character' or import names from your script.",
+                    text = if (characters.isEmpty()) "No character dossiers yet. Click 'Add Character' or import names from your script."
+                           else "No characters match the selected filter.",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = if (isDark) ScreenplayTextMuted else Color(0xFF334155),
                         fontWeight = FontWeight.Medium
@@ -1143,7 +1973,7 @@ private fun CharacterDossiersSection(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(characters, key = { it.id }) { char ->
+                items(displayedCharacters, key = { it.id }) { char ->
                     CharacterCardItem(
                         character = char,
                         onUpdate = { updated ->
@@ -1154,7 +1984,12 @@ private fun CharacterDossiersSection(
                             onUpdateCharacters(characters.filter { it.id != char.id })
                         },
                         canUseAiPortrait = firstDraftState.canUseAiCharacterPortraits(),
-                        isCompactScreen = isCompactScreen
+                        isCompactScreen = isCompactScreen,
+                        activeAssignment = activeAssignment,
+                        allAssignments = blendedUniverseProject?.assignments ?: emptyList(),
+                        activeStarringNames = activeStarringNames,
+                        onUpdateActiveStarringNames = onUpdateActiveStarringNames,
+                        onUpdateAllAssignments = onUpdateAllAssignments
                     )
                 }
             }
@@ -1368,7 +2203,12 @@ private fun CharacterCardCompact(
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
     isDark: Boolean,
-    canUseAiPortrait: Boolean = true
+    canUseAiPortrait: Boolean = true,
+    activeAssignment: BlendedAssignment? = null,
+    allAssignments: List<BlendedAssignment> = emptyList(),
+    activeStarringNames: List<String> = emptyList(),
+    onUpdateActiveStarringNames: ((List<String>) -> Unit)? = null,
+    onUpdateAllAssignments: ((List<BlendedAssignment>) -> Unit)? = null
 ) {
     Column(modifier = Modifier.padding(10.dp)) {
         // Name + Delete
@@ -1379,7 +2219,28 @@ private fun CharacterCardCompact(
         ) {
             OutlinedTextField(
                 value = character.name,
-                onValueChange = { onUpdate(character.copy(name = it.uppercase())) },
+                onValueChange = { newRaw ->
+                    val oldName = character.name
+                    val updatedName = newRaw.uppercase()
+                    onUpdate(character.copy(name = updatedName))
+                    if (oldName != updatedName && oldName.isNotBlank() && updatedName.isNotBlank()) {
+                        if (activeStarringNames.contains(oldName) && onUpdateActiveStarringNames != null) {
+                            val updatedStarring = activeStarringNames.map { if (it == oldName) updatedName else it }
+                            onUpdateActiveStarringNames(updatedStarring)
+                        }
+                        if (allAssignments.isNotEmpty() && onUpdateAllAssignments != null) {
+                            val updatedList = allAssignments.map { a ->
+                                if (a.starringCharacterNames.contains(oldName)) {
+                                    a.copy(
+                                        starringCharacterNames = a.starringCharacterNames.map { if (it == oldName) updatedName else it },
+                                        lastModified = System.currentTimeMillis()
+                                    )
+                                } else a
+                            }
+                            onUpdateAllAssignments(updatedList)
+                        }
+                    }
+                },
                 modifier = Modifier.weight(1f),
                 textStyle = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
@@ -1393,6 +2254,19 @@ private fun CharacterCardCompact(
             IconButton(onClick = onDelete) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF5350))
             }
+        }
+
+        if (activeAssignment != null || allAssignments.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(6.dp))
+            CharacterStarringUniverseRow(
+                characterName = character.name,
+                activeAssignment = activeAssignment,
+                allAssignments = allAssignments,
+                activeStarringNames = activeStarringNames,
+                onUpdateActiveStarringNames = onUpdateActiveStarringNames,
+                onUpdateAllAssignments = onUpdateAllAssignments,
+                isDark = isDark
+            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -1562,9 +2436,27 @@ private fun CharacterCardDesktop(
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
     isDark: Boolean,
-    canUseAiPortrait: Boolean = true
+    canUseAiPortrait: Boolean = true,
+    activeAssignment: BlendedAssignment? = null,
+    allAssignments: List<BlendedAssignment> = emptyList(),
+    activeStarringNames: List<String> = emptyList(),
+    onUpdateActiveStarringNames: ((List<String>) -> Unit)? = null,
+    onUpdateAllAssignments: ((List<BlendedAssignment>) -> Unit)? = null
 ) {
     Column(modifier = Modifier.padding(14.dp)) {
+        if (activeAssignment != null || allAssignments.isNotEmpty()) {
+            CharacterStarringUniverseRow(
+                characterName = character.name,
+                activeAssignment = activeAssignment,
+                allAssignments = allAssignments,
+                activeStarringNames = activeStarringNames,
+                onUpdateActiveStarringNames = onUpdateActiveStarringNames,
+                onUpdateAllAssignments = onUpdateAllAssignments,
+                isDark = isDark
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1576,7 +2468,28 @@ private fun CharacterCardDesktop(
             ) {
                 OutlinedTextField(
                     value = character.name,
-                    onValueChange = { onUpdate(character.copy(name = it.uppercase())) },
+                    onValueChange = { newRaw ->
+                        val oldName = character.name
+                        val updatedName = newRaw.uppercase()
+                        onUpdate(character.copy(name = updatedName))
+                        if (oldName != updatedName && oldName.isNotBlank() && updatedName.isNotBlank()) {
+                            if (activeStarringNames.contains(oldName) && onUpdateActiveStarringNames != null) {
+                                val updatedStarring = activeStarringNames.map { if (it == oldName) updatedName else it }
+                                onUpdateActiveStarringNames(updatedStarring)
+                            }
+                            if (allAssignments.isNotEmpty() && onUpdateAllAssignments != null) {
+                                val updatedList = allAssignments.map { a ->
+                                    if (a.starringCharacterNames.contains(oldName)) {
+                                        a.copy(
+                                            starringCharacterNames = a.starringCharacterNames.map { if (it == oldName) updatedName else it },
+                                            lastModified = System.currentTimeMillis()
+                                        )
+                                    } else a
+                                }
+                                onUpdateAllAssignments(updatedList)
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(0.35f),
                     textStyle = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
@@ -1739,7 +2652,12 @@ private fun CharacterCardItem(
     onUpdate: (CharacterDossier) -> Unit,
     onDelete: () -> Unit,
     canUseAiPortrait: Boolean = true,
-    isCompactScreen: Boolean = false
+    isCompactScreen: Boolean = false,
+    activeAssignment: BlendedAssignment? = null,
+    allAssignments: List<BlendedAssignment> = emptyList(),
+    activeStarringNames: List<String> = emptyList(),
+    onUpdateActiveStarringNames: ((List<String>) -> Unit)? = null,
+    onUpdateAllAssignments: ((List<BlendedAssignment>) -> Unit)? = null
 ) {
     val isDark = LocalSeshatDarkTheme.current
     GlassCardItem(
@@ -1751,7 +2669,12 @@ private fun CharacterCardItem(
                 onUpdate = onUpdate,
                 onDelete = onDelete,
                 isDark = isDark,
-                canUseAiPortrait = canUseAiPortrait
+                canUseAiPortrait = canUseAiPortrait,
+                activeAssignment = activeAssignment,
+                allAssignments = allAssignments,
+                activeStarringNames = activeStarringNames,
+                onUpdateActiveStarringNames = onUpdateActiveStarringNames,
+                onUpdateAllAssignments = onUpdateAllAssignments
             )
         } else {
             CharacterCardDesktop(
@@ -1759,7 +2682,12 @@ private fun CharacterCardItem(
                 onUpdate = onUpdate,
                 onDelete = onDelete,
                 isDark = isDark,
-                canUseAiPortrait = canUseAiPortrait
+                canUseAiPortrait = canUseAiPortrait,
+                activeAssignment = activeAssignment,
+                allAssignments = allAssignments,
+                activeStarringNames = activeStarringNames,
+                onUpdateActiveStarringNames = onUpdateActiveStarringNames,
+                onUpdateAllAssignments = onUpdateAllAssignments
             )
         }
     }

@@ -28,6 +28,8 @@ data class BlendedAssignment(
     val spinoffParentId: String? = null,
     val focusCharacterId: String? = null,
     val eraTag: String = "",
+    val starringCharacterNames: List<String> = emptyList(),
+    val projectNotes: String = "",
     val lastModified: Long = System.currentTimeMillis()
 ) {
     fun mediumBadge(): String = when (format) {
@@ -48,6 +50,12 @@ data class BlendedAssignment(
         spinoffParentId?.let { json.put("spinoffParentId", it) }
         focusCharacterId?.let { json.put("focusCharacterId", it) }
         if (eraTag.isNotBlank()) json.put("eraTag", eraTag)
+        if (projectNotes.isNotBlank()) json.put("projectNotes", projectNotes)
+        val charArr = JSONArray()
+        for (name in starringCharacterNames) {
+            charArr.put(name)
+        }
+        json.put("starringCharacterNames", charArr)
         json.put("lastModified", lastModified)
 
         val blocksArr = JSONArray()
@@ -92,7 +100,9 @@ data class BlendedAssignment(
             branchRole: BranchRole = BranchRole.MAIN_SPINE,
             spinoffParentId: String? = null,
             focusCharacterId: String? = null,
-            eraTag: String = ""
+            eraTag: String = "",
+            starringCharacterNames: List<String> = emptyList(),
+            projectNotes: String = ""
         ): BlendedAssignment {
             val resolvedType = if (format == ProjectFormat.TV_SERIES && screenplayType == ScreenplayType.FEATURE) {
                 ScreenplayType.TV_HOUR_DRAMA
@@ -121,7 +131,9 @@ data class BlendedAssignment(
                 branchRole = branchRole,
                 spinoffParentId = spinoffParentId,
                 focusCharacterId = focusCharacterId,
-                eraTag = eraTag
+                eraTag = eraTag,
+                starringCharacterNames = starringCharacterNames,
+                projectNotes = projectNotes
             )
         }
 
@@ -135,6 +147,15 @@ data class BlendedAssignment(
             val spinoffParentId = if (json.has("spinoffParentId")) json.getString("spinoffParentId") else null
             val focusCharacterId = if (json.has("focusCharacterId")) json.getString("focusCharacterId") else null
             val eraTag = json.optString("eraTag", "")
+            val projectNotes = json.optString("projectNotes", "")
+            val starringNames = mutableListOf<String>()
+            val charArr = json.optJSONArray("starringCharacterNames")
+            if (charArr != null) {
+                for (i in 0 until charArr.length()) {
+                    val s = charArr.optString(i)
+                    if (s.isNotBlank()) starringNames.add(s)
+                }
+            }
 
             val blocksList = mutableListOf<ScreenplayBlock>()
             val blocksArr = json.optJSONArray("blocks")
@@ -180,6 +201,8 @@ data class BlendedAssignment(
                 spinoffParentId = spinoffParentId,
                 focusCharacterId = focusCharacterId,
                 eraTag = eraTag,
+                starringCharacterNames = starringNames,
+                projectNotes = projectNotes,
                 lastModified = json.optLong("lastModified", System.currentTimeMillis())
             )
         }

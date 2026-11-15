@@ -12,8 +12,8 @@ android {
         applicationId = "com.seshat.writer"
         minSdk = 26
         targetSdk = 34
-        versionCode = 125
-        versionName = "2.11.5"
+        versionCode = 126
+        versionName = "2.11.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

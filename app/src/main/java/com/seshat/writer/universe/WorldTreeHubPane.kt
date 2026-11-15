@@ -312,12 +312,7 @@ fun WorldTreeHubPane(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(0.dp))
                                         .clickable {
-                                            Universe3DVisualizer.launch3DTree(
-                                                context = context,
-                                                universeTitle = universeTitle,
-                                                bible = bible,
-                                                blendedProject = blended
-                                            )
+                                            viewModel.openUniverse3DTree()
                                         }
                                 ) {
                                     Row(
@@ -421,17 +416,12 @@ fun WorldTreeHubPane(
                     ) {
                         HubActionCardButton(
                             icon = "🪐",
-                            title = "Launch 3D World Tree",
-                            subtitle = "Interactive 3D spatial orbit in browser",
+                            title = "3D Universe Tree",
+                            subtitle = "Interactive in-app 3D spatial orbit visualizer",
                             accentColor = Color(0xFF10B981),
                             isDark = isDark,
                             onClick = {
-                                Universe3DVisualizer.launch3DTree(
-                                    context = context,
-                                    universeTitle = universeTitle,
-                                    bible = bible,
-                                    blendedProject = blended
-                                )
+                                viewModel.openUniverse3DTree()
                             },
                             modifier = if (isCompactScreen) Modifier.fillMaxWidth() else Modifier.widthIn(min = 210.dp)
                         )

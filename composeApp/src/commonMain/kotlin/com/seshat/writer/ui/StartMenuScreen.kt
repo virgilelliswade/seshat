@@ -37,8 +37,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
+import com.seshat.writer.bible.StoryBible
 import com.seshat.writer.universe.UniverseTheme
 import com.seshat.writer.universe.Universe3DVisualizer
+import com.seshat.writer.universe.Universe3DTreeInAppDialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.style.TextOverflow
@@ -1060,9 +1062,20 @@ private fun UniverseThemeSelectContent(
 ) {
     var universeTitleInput by remember { mutableStateOf("") }
     var selectedStarterFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
+    var showInApp3DTree by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val defaultPlaceholder = "e.g. Chronicles of Aethelgard"
+
+    if (showInApp3DTree) {
+        val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
+        Universe3DTreeInAppDialog(
+            universeTitle = resolved,
+            bible = StoryBible(scriptTitle = resolved),
+            blendedProject = null,
+            onDismiss = { showInApp3DTree = false }
+        )
+    }
 
     StartMenuLayout(
         headerTitle = if (isChallengeMode) "🏆 UNIVERSE CHALLENGE GENESIS" else "🪐 CREATE A LIVING UNIVERSE",
@@ -1198,11 +1211,7 @@ private fun UniverseThemeSelectContent(
             ) {
                 OutlinedButton(
                     onClick = {
-                        val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
-                        Universe3DVisualizer.launch3DTree(
-                            context = context,
-                            universeTitle = resolved
-                        )
+                        showInApp3DTree = true
                     },
                     shape = RoundedCornerShape(0.dp),
                     border = BorderStroke(1.dp, Color(0xFF10B981)),
@@ -1214,7 +1223,7 @@ private fun UniverseThemeSelectContent(
                         .height(48.dp)
                 ) {
                     Text(
-                        text = "🌐 PREVIEW 3D TREE",
+                        text = "🪐 PREVIEW 3D TREE",
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.5.sp
                     )

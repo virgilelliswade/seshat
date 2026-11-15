@@ -30,7 +30,7 @@ enum class UniverseTheme(
     STANDARD(
         id = "STANDARD",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
@@ -45,7 +45,7 @@ enum class UniverseTheme(
     ARBOREAL(
         id = "ARBOREAL",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
@@ -60,7 +60,7 @@ enum class UniverseTheme(
     STELLAR(
         id = "STELLAR",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
@@ -75,7 +75,7 @@ enum class UniverseTheme(
     DEOXYRIBONUCLEAR(
         id = "DEOXYRIBONUCLEAR",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
@@ -90,7 +90,7 @@ enum class UniverseTheme(
     TEMPORAL(
         id = "TEMPORAL",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
@@ -105,7 +105,7 @@ enum class UniverseTheme(
     MYTHOLOGICAL(
         id = "MYTHOLOGICAL",
         displayName = "Story Universe",
-        engineName = "The World Tree & Universe Hub",
+        engineName = "Universe Hub",
         foundationsLabel = "Foundational Lore & Rules",
         masterTimelineLabel = "Timeline Axis",
         erasLabel = "Historical Eras",
