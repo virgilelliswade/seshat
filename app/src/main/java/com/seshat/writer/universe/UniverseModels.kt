@@ -267,6 +267,12 @@ data class BlendedUniverseProject(
                 UniverseTimelineEra(name = "Phase III: Multiverse War", timeSpan = "Epoch III", description = "Collapsing timelines, catastrophic incursions, Loom stress."),
                 UniverseTimelineEra(name = "Phase IV: Sacred Order", timeSpan = "Epoch IV", description = "Present continuum protected by anchor beings.")
             )
+            UniverseTheme.MYTHOLOGICAL -> listOf(
+                UniverseTimelineEra(name = "The Golden Age", timeSpan = "Epoch I", description = "The age of primordial deities, cosmic balance, and origin myths."),
+                UniverseTimelineEra(name = "The Silver Age", timeSpan = "Epoch II", description = "Rise of the great heroic pantheons, mythical realms, and dynasties."),
+                UniverseTimelineEra(name = "The Sundering War", timeSpan = "Epoch III", description = "The great war of titans and gods, shattering of divine order."),
+                UniverseTimelineEra(name = "The Heroic Age", timeSpan = "Epoch IV", description = "Present age of mortal champions, epic quests, and legendary sagas.")
+            )
         }
 
         fun fromJson(json: JSONObject): BlendedUniverseProject {

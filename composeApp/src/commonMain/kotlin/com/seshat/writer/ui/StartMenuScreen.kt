@@ -1041,6 +1041,7 @@ private fun UniverseThemeSelectContent(
         UniverseTheme.STELLAR -> "e.g. The Orion Constellation"
         UniverseTheme.DEOXYRIBONUCLEAR -> "e.g. The Stellar Codex"
         UniverseTheme.TEMPORAL -> "e.g. The Sacred Continuum"
+        UniverseTheme.MYTHOLOGICAL -> "e.g. Sagas of Eldoria"
     }
 
     StartMenuLayout(
@@ -1053,7 +1054,7 @@ private fun UniverseThemeSelectContent(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 4 Themed Universe Cards
+            // 5 Themed Universe Cards
             UniverseTheme.entries.forEach { theme ->
                 val isSelected = theme == selectedTheme
                 val accentColor = when (theme) {
@@ -1061,6 +1062,7 @@ private fun UniverseThemeSelectContent(
                     UniverseTheme.STELLAR -> Color(0xFF38BDF8)
                     UniverseTheme.DEOXYRIBONUCLEAR -> Color(0xFF10B981)
                     UniverseTheme.TEMPORAL -> Color(0xFFA855F7)
+                    UniverseTheme.MYTHOLOGICAL -> Color(0xFFF59E0B)
                 }
 
                 Surface(

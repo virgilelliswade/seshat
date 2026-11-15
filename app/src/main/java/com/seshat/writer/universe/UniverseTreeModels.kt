@@ -85,6 +85,21 @@ enum class UniverseTheme(
         archetypesLabel = "Anchor Beings (Character Archetypes)",
         scrappedLabel = "Pruned Timelines (Non-Canon)",
         icon = "⏳"
+    ),
+    MYTHOLOGICAL(
+        id = "MYTHOLOGICAL",
+        displayName = "Mythological (Classical Epics)",
+        engineName = "The Loom of Destiny (Universe Viewer)",
+        foundationsLabel = "Creation Myths (Foundational Lore & Rules)",
+        masterTimelineLabel = "The Thread of Fate (Timeline Axis)",
+        erasLabel = "Mythic Ages (Historical Eras)",
+        mainProjectsLabel = "Great Epics (Core Projects)",
+        spinoffsLabel = "Folklore & Quests (Spinoffs & Sidequests)",
+        microUnitsLabel = "Cantos & Labors (Scenes & Chapters)",
+        deliverablesLabel = "The Sacred Codex (Deliverables: PDF/FDX)",
+        archetypesLabel = "The Pantheon (Character Archetypes)",
+        scrappedLabel = "The Underworld (Non-Canon & Lost Lore)",
+        icon = "🏛️"
     );
 
     companion object {

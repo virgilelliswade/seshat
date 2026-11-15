@@ -3581,6 +3581,7 @@ class ScreenplayViewModel : ViewModel() {
                 UniverseTheme.STELLAR -> "The Celestial Orrery"
                 UniverseTheme.DEOXYRIBONUCLEAR -> "The Stellar Codex"
                 UniverseTheme.TEMPORAL -> "The Sacred Continuum"
+                UniverseTheme.MYTHOLOGICAL -> "The Sacred Mythos"
             }
         }
         val starterAssignmentTitle = when (theme) {
@@ -3588,6 +3589,7 @@ class ScreenplayViewModel : ViewModel() {
             UniverseTheme.STELLAR -> "Vector 1 (${starterFormat.displayName})"
             UniverseTheme.DEOXYRIBONUCLEAR -> "Canon Strand 1 (${starterFormat.displayName})"
             UniverseTheme.TEMPORAL -> "Spine Reality 1 (${starterFormat.displayName})"
+            UniverseTheme.MYTHOLOGICAL -> "Epic 1 (${starterFormat.displayName})"
         }
         val defaultEras = BlendedUniverseProject.defaultUniverseEras(theme)
         val starterAssignment = BlendedAssignment.defaultAssignment(
