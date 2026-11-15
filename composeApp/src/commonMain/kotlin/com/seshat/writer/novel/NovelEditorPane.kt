@@ -163,6 +163,7 @@ fun NovelEditorPane(
     onToggleDictation: () -> Unit,
     onSaveProject: () -> Unit = {},
     onOpenStudioDrawer: () -> Unit = {},
+    onOpenWorldTree: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -322,7 +323,8 @@ fun NovelEditorPane(
                     onOpenCompiler = onOpenCompiler,
                     onSaveProject = onSaveProject,
                     onOpenSettings = { viewModel.openSettingsDialog() },
-                    onOpenPitchDeck = { viewModel.openPitchDeck() }
+                    onOpenPitchDeck = { viewModel.openPitchDeck() },
+                    onOpenWorldTree = onOpenWorldTree
                 )
             } else {
                 DesktopNovelTopBar(
@@ -347,7 +349,8 @@ fun NovelEditorPane(
                     onOpenCompiler = onOpenCompiler,
                     onSaveProject = onSaveProject,
                     onOpenSettings = { viewModel.openSettingsDialog() },
-                    onOpenPitchDeck = { viewModel.openPitchDeck() }
+                    onOpenPitchDeck = { viewModel.openPitchDeck() },
+                    onOpenWorldTree = onOpenWorldTree
                 )
             }
         }
@@ -1159,6 +1162,7 @@ private fun CompactNovelTopBar(
     onSaveProject: () -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenPitchDeck: () -> Unit = {},
+    onOpenWorldTree: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1198,6 +1202,13 @@ private fun CompactNovelTopBar(
                     )
                 }
 
+                if (onOpenWorldTree != null) {
+                    NovelGlassPillButton(
+                        text = "🌳 Hub",
+                        onClick = onOpenWorldTree,
+                        isHighlight = true
+                    )
+                }
                 NovelGlassPillButton(
                     text = binderLabel,
                     onClick = onToggleBinder,
@@ -1277,6 +1288,7 @@ private fun DesktopNovelTopBar(
     onSaveProject: () -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenPitchDeck: () -> Unit = {},
+    onOpenWorldTree: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalSeshatDarkTheme.current
@@ -1365,6 +1377,13 @@ private fun DesktopNovelTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                if (onOpenWorldTree != null) {
+                    NovelGlassPillButton(
+                        text = "🌳 Hub",
+                        onClick = onOpenWorldTree,
+                        isHighlight = true
+                    )
+                }
                 NovelGlassPillButton(
                     text = binderLabel,
                     onClick = onToggleBinder,

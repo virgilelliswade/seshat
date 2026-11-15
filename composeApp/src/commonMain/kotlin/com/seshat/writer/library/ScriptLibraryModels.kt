@@ -139,6 +139,7 @@ enum class ScreenplayType(val displayName: String) {
 }
 
 enum class InitialWorkspaceView(val displayName: String) {
+    WORLD_TREE_HUB("The Hub (World Tree)"),
     LORE_DOC("Lore Doc & Story Bible"),
     OUTLINE("Corkboard Outline"),
     EDITOR("Drafting Canvas"),

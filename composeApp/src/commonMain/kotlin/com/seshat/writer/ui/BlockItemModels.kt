@@ -142,6 +142,7 @@ class EditorCanvasActions(
     fun applySceneTime(id: String, time: String) = viewModel.applySceneTime(id, time)
     fun toggleSidebar() = viewModel.toggleSidebar()
     fun openStudioDrawer() = viewModel.openStudioDrawer()
+    fun openWorldTreeHub() = viewModel.openWorldTreeHub()
     fun toggleZenMode() = viewModel.toggleZenMode()
     fun toggleViewMode() = viewModel.toggleViewMode()
     fun zoomIn() = viewModel.zoomIn()

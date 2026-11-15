@@ -100,6 +100,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.seshat.writer.ai.AiPreferences
 import com.seshat.writer.ai.AiConfig
 import com.seshat.writer.universe.UniverseBinderPane
+import com.seshat.writer.universe.WorldTreeHubPane
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -313,6 +314,14 @@ fun ScreenplayEditorScreen(
                             onOpenDutyRoster = { viewModel.openDutyRoster() },
                             modifier = Modifier.fillMaxSize()
                         )
+                    } else if (uiState.isWorldTreeHubOpen) {
+                        WorldTreeHubPane(
+                            viewModel = viewModel,
+                            uiState = uiState,
+                            onSaveProject = onSaveProject,
+                            isCompactScreen = isCompactScreen,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else if (isCompactScreen && uiState.isSidebarExpanded && !uiState.isZenMode) {
             // Full-screen sidebar drawer on mobile
             if (uiState.blendedUniverseProject != null) {
@@ -460,6 +469,9 @@ fun ScreenplayEditorScreen(
                             onToggleDictation = onToggleDictationWithPermission,
                             onSaveProject = onSaveProject,
                             onOpenStudioDrawer = { viewModel.openStudioDrawer() },
+                            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                                { viewModel.openWorldTreeHub() }
+                            } else null,
                             modifier = Modifier
                                 .weight(if (showCorkboard) 1.1f else 1f)
                                 .fillMaxHeight()
@@ -596,7 +608,10 @@ fun ScreenplayEditorScreen(
             onToggleDictation = onToggleDictationWithPermission,
             onOpenSettings = { viewModel.openSettingsDialog() },
             onOpenWhatsNew = { viewModel.openWhatsNewDialog() },
-            onOpenPitchDeck = { viewModel.openPitchDeck() }
+            onOpenPitchDeck = { viewModel.openPitchDeck() },
+            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                { viewModel.openWorldTreeHub() }
+            } else null
         )
     }
 
@@ -1719,6 +1734,14 @@ private fun CompactScreenplayTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                    GlassEditorPillButton(
+                        text = "🌳 Hub",
+                        onClick = actions::openWorldTreeHub,
+                        isHighlight = true
+                    )
+                }
+
                 GlassEditorPillButton(
                     text = ScreenplayBinderPillLabel(uiState),
                     onClick = actions::toggleSidebar,
@@ -1835,6 +1858,14 @@ private fun DesktopScreenplayTopBar(
                 }
 
                 Box(modifier = Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
+
+                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                    GlassEditorPillButton(
+                        text = "🌳 Hub",
+                        onClick = actions::openWorldTreeHub,
+                        isHighlight = true
+                    )
+                }
 
                 GlassEditorPillButton(
                     text = ScreenplayBinderPillLabel(uiState),

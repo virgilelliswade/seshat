@@ -37,9 +37,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
+import com.seshat.writer.universe.UniverseTheme
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.seshat.writer.library.ScriptLibraryManager
 import com.seshat.writer.library.ScriptProject
 import com.seshat.writer.importer.ScriptImporter
@@ -174,6 +179,7 @@ fun StartMenuScreen(
     val currentStep = navigationStack.lastOrNull() ?: StartMenuStep.TOP_LEVEL
     var selectedFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
     var selectedScreenplayType by remember { mutableStateOf<ScreenplayType?>(ScreenplayType.FEATURE) }
+    var selectedUniverseTheme by remember { mutableStateOf(UniverseTheme.ARBOREAL) }
     var selectedTemplate by remember { mutableStateOf<ProjectTemplate?>(null) }
     var projectTitleInput by remember { mutableStateOf("") }
     var showLibraryDialog by remember { mutableStateOf(false) }
@@ -654,50 +660,29 @@ fun StartMenuScreen(
                             }
 
                             StartMenuStep.UNIVERSE_SELECT -> {
-                                UniverseSelectContent(
+                                UniverseThemeSelectContent(
                                     isChallengeMode = isChallengeFlow,
-                                    onSelectCinematicFeatures = {
-                                        selectedFormat = ProjectFormat.SCREENPLAY
-                                        selectedScreenplayType = ScreenplayType.FEATURE
-                                        selectedTemplate = TemplateRegistry.BLANK_FEATURE
-                                        isUniverseMode = true
-                                        isBlendedUniverseMode = false
-                                        if (isChallengeFlow) {
-                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
-                                        } else {
-                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
-                                        }
-                                    },
-                                    onSelectTelevisionUniverse = {
-                                        selectedFormat = ProjectFormat.TV_SERIES
-                                        selectedScreenplayType = ScreenplayType.TV_HOUR_DRAMA
-                                        selectedTemplate = TemplateRegistry.BLANK_TV
-                                        isUniverseMode = true
-                                        isBlendedUniverseMode = false
-                                        navigateTo(StartMenuStep.SCREENPLAY_TYPE)
-                                    },
-                                    onSelectNovelUniverse = {
-                                        selectedFormat = ProjectFormat.NOVEL
-                                        selectedScreenplayType = null
-                                        selectedTemplate = TemplateRegistry.BLANK_NOVEL
-                                        isUniverseMode = true
-                                        isBlendedUniverseMode = false
-                                        if (isChallengeFlow) {
-                                            navigateTo(StartMenuStep.SPARK_NEW_SETUP)
-                                        } else {
-                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
-                                        }
-                                    },
-                                    onSelectBlendedUniverse = {
-                                        selectedFormat = ProjectFormat.SCREENPLAY
-                                        selectedScreenplayType = ScreenplayType.FEATURE
-                                        selectedTemplate = TemplateRegistry.BLANK_FEATURE
+                                    onLaunchUniverse = { theme, title, format ->
+                                        selectedUniverseTheme = theme
+                                        selectedFormat = format
+                                        selectedScreenplayType = if (format == ProjectFormat.TV_SERIES) ScreenplayType.TV_HOUR_DRAMA else ScreenplayType.FEATURE
                                         isUniverseMode = true
                                         isBlendedUniverseMode = true
                                         if (isChallengeFlow) {
+                                            projectTitleInput = title
                                             navigateTo(StartMenuStep.SPARK_NEW_SETUP)
                                         } else {
-                                            navigateTo(StartMenuStep.WORKSPACE_VIEW)
+                                            viewModel.startNewBlendedUniverseProject(
+                                                context = context,
+                                                universeTitle = title,
+                                                starterFormat = format,
+                                                starterScreenplayType = if (format == ProjectFormat.TV_SERIES) ScreenplayType.TV_HOUR_DRAMA else ScreenplayType.FEATURE,
+                                                initialWorkspaceView = InitialWorkspaceView.WORLD_TREE_HUB,
+                                                enableSparkMode = false,
+                                                universeKind = "BLENDED",
+                                                theme = theme
+                                            )
+                                            onCloseMenu()
                                         }
                                     },
                                     onBack = navigateBack
@@ -722,6 +707,17 @@ fun StartMenuScreen(
                                             selectedTemplate = TemplateRegistry.BLANK_TV
                                             if (isChallengeFlow) {
                                                 navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                            } else if (isUniverseMode) {
+                                                viewModel.startNewProject(
+                                                    context = context,
+                                                    format = ProjectFormat.TV_SERIES,
+                                                    screenplayType = ScreenplayType.TV_HOUR_DRAMA,
+                                                    initialWorkspaceView = InitialWorkspaceView.WORLD_TREE_HUB,
+                                                    template = TemplateRegistry.BLANK_TV,
+                                                    enableSparkMode = false,
+                                                    isUniverseProject = true
+                                                )
+                                                onCloseMenu()
                                             } else {
                                                 navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                             }
@@ -741,6 +737,17 @@ fun StartMenuScreen(
                                             selectedTemplate = TemplateRegistry.BLANK_TV
                                             if (isChallengeFlow) {
                                                 navigateTo(StartMenuStep.SPARK_NEW_SETUP)
+                                            } else if (isUniverseMode) {
+                                                viewModel.startNewProject(
+                                                    context = context,
+                                                    format = ProjectFormat.TV_SERIES,
+                                                    screenplayType = ScreenplayType.TV_HALF_HOUR_COMEDY,
+                                                    initialWorkspaceView = InitialWorkspaceView.WORLD_TREE_HUB,
+                                                    template = TemplateRegistry.BLANK_TV,
+                                                    enableSparkMode = false,
+                                                    isUniverseProject = true
+                                                )
+                                                onCloseMenu()
                                             } else {
                                                 navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                             }
@@ -1020,57 +1027,205 @@ private fun ScreenplayBranchContent(
 }
 
 @Composable
-private fun UniverseSelectContent(
+private fun UniverseThemeSelectContent(
     isChallengeMode: Boolean,
-    onSelectCinematicFeatures: () -> Unit,
-    onSelectTelevisionUniverse: () -> Unit,
-    onSelectNovelUniverse: () -> Unit,
-    onSelectBlendedUniverse: () -> Unit,
+    onLaunchUniverse: (UniverseTheme, String, ProjectFormat) -> Unit,
     onBack: () -> Unit
 ) {
+    var selectedTheme by remember { mutableStateOf(UniverseTheme.ARBOREAL) }
+    var universeTitleInput by remember { mutableStateOf("") }
+    var selectedStarterFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
+
+    val defaultPlaceholder = when (selectedTheme) {
+        UniverseTheme.ARBOREAL -> "e.g. Chronicles of Aethelgard"
+        UniverseTheme.STELLAR -> "e.g. The Orion Constellation"
+        UniverseTheme.DEOXYRIBONUCLEAR -> "e.g. The Stellar Codex"
+        UniverseTheme.TEMPORAL -> "e.g. The Sacred Continuum"
+    }
+
     StartMenuLayout(
-        headerTitle = if (isChallengeMode) "🏆 UNIVERSE CHALLENGE" else "🪐 CREATE A UNIVERSE",
-        headerSubtitle = "Choose the interconnected scope of your story world",
+        headerTitle = if (isChallengeMode) "🏆 UNIVERSE CHALLENGE GENESIS" else "🪐 CREATE A LIVING UNIVERSE",
+        headerSubtitle = "Select an architectural theme for your universe. Every universe is medium-agnostic with an interactive Living World Tree.",
         showBackButton = true,
         onBack = onBack
     ) {
-        StartMenuBigButton(
-            badgeText = "🎬",
-            title = if (isChallengeMode) "CINEMATIC UNIVERSE CHALLENGE" else "CINEMATIC UNIVERSE",
-            subtitle = "Multi-film franchise, trilogy, or connected features • Shared Master Lore Bible & continuity",
-            badgeColor = ElectrumGold,
-            onClick = onSelectCinematicFeatures
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 4 Themed Universe Cards
+            UniverseTheme.entries.forEach { theme ->
+                val isSelected = theme == selectedTheme
+                val accentColor = when (theme) {
+                    UniverseTheme.ARBOREAL -> ElectrumGold
+                    UniverseTheme.STELLAR -> Color(0xFF38BDF8)
+                    UniverseTheme.DEOXYRIBONUCLEAR -> Color(0xFF10B981)
+                    UniverseTheme.TEMPORAL -> Color(0xFFA855F7)
+                }
 
-        Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    color = if (isSelected) accentColor.copy(alpha = 0.16f) else ObsidianSurface,
+                    shape = RoundedCornerShape(0.dp),
+                    border = BorderStroke(
+                        width = if (isSelected) 2.dp else 1.dp,
+                        color = if (isSelected) accentColor else ObsidianSurfaceVariant
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(0.dp))
+                        .clickable { selectedTheme = theme }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(text = theme.icon, fontSize = 20.sp)
+                                Text(
+                                    text = theme.displayName,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = MainAppFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) accentColor else Color.White
+                                    )
+                                )
+                            }
+                            if (isSelected) {
+                                Surface(
+                                    color = accentColor,
+                                    shape = RoundedCornerShape(0.dp)
+                                ) {
+                                    Text(
+                                        text = "SELECTED",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 9.sp
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
 
-        StartMenuBigButton(
-            badgeText = "📺",
-            title = if (isChallengeMode) "TELEVISION UNIVERSE CHALLENGE" else "TELEVISION UNIVERSE",
-            subtitle = "Serialized multi-season TV show • Episode binders (101, 102...), writers room & Series Lore Bible",
-            badgeColor = Color(0xFF3B82F6),
-            onClick = onSelectTelevisionUniverse
-        )
+                        Text(
+                            text = "${theme.foundationsLabel} ➔ ${theme.masterTimelineLabel} ➔ ${theme.erasLabel} ➔ ${theme.mainProjectsLabel} ➔ ${theme.spinoffsLabel} ➔ ${theme.deliverablesLabel}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = if (isSelected) Color.White else ScreenplayTextMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp
+                            )
+                        )
+                    }
+                }
+            }
 
-        Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        StartMenuBigButton(
-            badgeText = "📚",
-            title = if (isChallengeMode) "NOVEL UNIVERSE CHALLENGE" else "NOVEL UNIVERSE",
-            subtitle = "Multi-book saga, trilogy, or interconnected prose world • Master Lore Bible & chapter binders",
-            badgeColor = Color(0xFF8B5CF6),
-            onClick = onSelectNovelUniverse
-        )
+            // Universe Title Input
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "UNIVERSE TITLE:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = ElectrumGold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                )
+                OutlinedTextField(
+                    value = universeTitleInput,
+                    onValueChange = { universeTitleInput = it },
+                    placeholder = { Text(defaultPlaceholder, color = ScreenplayTextMuted, fontSize = 13.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ElectrumGold,
+                        unfocusedBorderColor = ObsidianSurfaceVariant,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        Spacer(modifier = Modifier.height(14.dp))
+            // Starter Project Medium Picker
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "FIRST PROJECT MEDIUM (${selectedTheme.mainProjectsLabel}):",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = ScreenplayTextMuted,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.5.sp
+                    )
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        "🎬 Film (Screenplay)" to ProjectFormat.SCREENPLAY,
+                        "📺 TV Series" to ProjectFormat.TV_SERIES,
+                        "📖 Novel Manuscript" to ProjectFormat.NOVEL,
+                        "💥 Comic Book" to ProjectFormat.COMIC_BOOK,
+                        "🎭 Stage Play" to ProjectFormat.STAGE_PLAY
+                    ).forEach { (label, fmt) ->
+                        val isSel = selectedStarterFormat == fmt
+                        Surface(
+                            color = if (isSel) ElectrumGold.copy(alpha = 0.22f) else ObsidianSurface,
+                            shape = RoundedCornerShape(0.dp),
+                            border = BorderStroke(1.dp, if (isSel) ElectrumGold else ObsidianSurfaceVariant),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(0.dp))
+                                .clickable { selectedStarterFormat = fmt }
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = if (isSel) ElectrumGold else Color(0xFFCBD5E1),
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+            }
 
-        StartMenuBigButton(
-            badgeText = "🪐",
-            title = if (isChallengeMode) "BLENDED UNIVERSE CHALLENGE" else "BLENDED UNIVERSE",
-            subtitle = "Combine Films, TV Series, Novels, Comic Books & Stage Plays inside one universe • Add any assignment medium anytime",
-            badgeColor = ScribeStarNeonRed,
-            onClick = onSelectBlendedUniverse
-        )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Big Launch Button
+            Button(
+                onClick = {
+                    val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
+                    onLaunchUniverse(selectedTheme, resolved, selectedStarterFormat)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ElectrumGold,
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text(
+                    text = "🚀 LAUNCH LIVING WORLD TREE (${selectedTheme.displayName.substringBefore(" ")}) →",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 13.sp,
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
     }
 }
 
@@ -2670,6 +2825,167 @@ private fun SplashColumnHeaderPill(
 }
 
 @Composable
+private fun GlassPillarHeroCard(
+    title: String,
+    subtitle: String,
+    detail: String,
+    icon: String,
+    badgeTag: String,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isCompact: Boolean = false
+) {
+    val isDark = LocalSeshatDarkTheme.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHighlighted = isHovered || isPressed
+
+    val glowRadius by animateDpAsState(
+        targetValue = if (isHighlighted) 20.dp else 4.dp,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "PillarCardGlowRadius"
+    )
+    val outerAlpha by animateFloatAsState(
+        targetValue = if (isHighlighted) 0.65f else 0.12f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "PillarCardOuterAlpha"
+    )
+    val midAlpha by animateFloatAsState(
+        targetValue = if (isHighlighted) 0.92f else 0.24f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "PillarCardMidAlpha"
+    )
+    val strokeWidth by animateDpAsState(
+        targetValue = if (isHighlighted) 2.2.dp else 1.2.dp,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "PillarCardStrokeWidth"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else if (isHovered) 1.025f else 1.0f,
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+        label = "PillarCardScale"
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .shadow(
+                elevation = if (isHighlighted) 20.dp else 10.dp,
+                shape = RoundedCornerShape(0.dp),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.78f else 0.20f),
+                spotColor = if (isHighlighted) accentColor else Color.Black.copy(alpha = if (isDark) 0.88f else 0.28f)
+            )
+            .neonBloom(
+                color = if (isHighlighted) accentColor else (if (isDark) Color.White else Color(0xFF64748B)),
+                cornerRadius = 0.dp,
+                glowRadius = glowRadius,
+                strokeWidth = strokeWidth,
+                outerAlpha = outerAlpha,
+                midAlpha = midAlpha,
+                coreAlpha = if (isHighlighted) 0.95f else 0.40f
+            )
+            .clip(RoundedCornerShape(0.dp))
+            .background(
+                if (isHighlighted) opticalPillBrush(isDark = isDark, isHighlighted = true, highlightColor = accentColor)
+                else opticalGlassBrush(glassOpacity = if (isDark) 0.84f else 0.92f)
+            )
+            .border(
+                prismaticGlassBorder(
+                    width = strokeWidth,
+                    isLit = isHighlighted,
+                    accentColor = accentColor,
+                    isDark = isDark
+                ),
+                shape = RoundedCornerShape(0.dp)
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = if (isCompact) 14.dp else 18.dp, vertical = if (isCompact) 12.dp else 16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(if (isCompact) 36.dp else 42.dp)
+                            .background(accentColor.copy(alpha = 0.18f), RoundedCornerShape(0.dp))
+                            .border(1.dp, accentColor.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
+                    ) {
+                        Text(text = icon, fontSize = if (isCompact) 18.sp else 22.sp)
+                    }
+                    Column {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isHighlighted) accentColor else (if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)),
+                                fontSize = if (isCompact) 14.sp else 16.sp
+                            )
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = if (isCompact) 10.5.sp else 11.5.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Surface(
+                    color = accentColor.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(0.dp),
+                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        text = badgeTag,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = accentColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.5.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            if (!isCompact && detail.isNotBlank()) {
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun GlassStartMenuHubWide(
     availableWidth: Dp,
     onSelectScreenplayBranch: () -> Unit,
@@ -2685,146 +3001,76 @@ private fun GlassStartMenuHubWide(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Center justified with smooth outward expansion as window expands
-    val cardWidth = (255.dp + (availableWidth - 680.dp) * 0.14f).coerceIn(255.dp, 330.dp)
-    val centerGap = (90.dp + (availableWidth - 680.dp) * 0.16f).coerceIn(90.dp, 220.dp)
+    val cardWidth = (280.dp + (availableWidth - 680.dp) * 0.16f).coerceIn(280.dp, 420.dp)
+    val centerGap = (24.dp + (availableWidth - 680.dp) * 0.08f).coerceIn(24.dp, 48.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Midsection: Left Column (All 5 Standard Projects) vs Right Column (All 5 Writing Challenges)
+        // 4 Pillars: 2x2 Grid
+        // Row 1: Create A Universe & Write Individual Project
         Row(
-            modifier = Modifier
-                .wrapContentWidth()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
-            // LEFT COLUMN: STANDARD STUDIO (Screenplay -> Novel -> Comic Book -> Stage Play -> Create A Universe)
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
-            ) {
-                SplashColumnHeaderPill(
-                    title = "🏛️ STANDARD STUDIO",
-                    subtitle = "",
-                    isSpark = false
-                )
-                GlassFormatCard(
-                    title = "Screenplay",
-                    subtitle = "Film or Television Script",
-                    iconType = 0,
-                    onClick = onSelectScreenplayBranch,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Novel",
-                    subtitle = "Book Manuscript & Chapters",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book",
-                    subtitle = "Pages, Panels & SFX",
-                    iconType = 4,
-                    onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play",
-                    subtitle = "Theatrical Script & Acts",
-                    iconType = 3,
-                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Create A Universe",
-                    subtitle = "Film, TV, Novel or Blended",
-                    iconType = 5,
-                    onClick = onSelectUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Pitch Deck",
-                    subtitle = "45s Elevator Pitch & 16:9 Slides",
-                    iconType = 1,
-                    onClick = onOpenPitchDeck,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            GlassPillarHeroCard(
+                title = "Create A Universe",
+                subtitle = "Multi-Medium World Tree • Shared Mythos",
+                detail = "Build an interconnected mythos with shared lore, canon spines, spinoffs, and living arbor view.",
+                icon = "🪐",
+                badgeTag = "WORLD TREE",
+                accentColor = ElectrumGold,
+                onClick = onSelectUniverse,
+                modifier = Modifier.width(cardWidth)
+            )
 
-            // RIGHT COLUMN: WRITING CHALLENGES (FIRST DRAFT ENGINE)
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
-            ) {
-                SplashColumnHeaderPill(
-                    title = "🏆 WRITING CHALLENGES",
-                    subtitle = "",
-                    isSpark = true
-                )
-                GlassFormatCard(
-                    title = "Screenplay Challenge",
-                    subtitle = "Film or TV Quest • Earn XP & Loot",
-                    iconType = 0,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = onSelectSparkScreenplayBranch,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Novel Challenge",
-                    subtitle = "75k–100k Word RPG • Chapter Quests",
-                    iconType = 2,
-                    isSparkCard = true,
-                    badgeTag = "75k-100k",
-                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book Challenge",
-                    subtitle = "Issue Boss-Run • Timed Panel Locks",
-                    iconType = 4,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play Challenge",
-                    subtitle = "Theatrical Gauntlet • Timed Airlocks",
-                    iconType = 3,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Universe Challenge",
-                    subtitle = "Cinematic, TV, Novel or Blended",
-                    iconType = 5,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = onSelectSparkUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Pitch Deck Challenge",
-                    subtitle = "Pitch Night Prep • 45s & Deck",
-                    iconType = 1,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            GlassPillarHeroCard(
+                title = "Write Individual Project",
+                subtitle = "Screenplay, Novel, Comic, Stage, Pitch",
+                detail = "Draft a standalone film, television script, novel manuscript, comic book, or stage play in Seshat's precision engine.",
+                icon = "✍️",
+                badgeTag = "STANDALONE",
+                accentColor = ScribeStarNeonRed,
+                onClick = onNewProject,
+                modifier = Modifier.width(cardWidth)
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Row 2: Take A Writing Challenge & Continue Existing Project
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.Top
+        ) {
+            GlassPillarHeroCard(
+                title = "Take A Writing Challenge",
+                subtitle = "Anti-Procrastination Arcade • 500w to 90-Pages",
+                detail = "Ignite hyper-focus with high-stakes sprints, dynamic soundtracks, XP progression, and First Draft receipts.",
+                icon = "🏆",
+                badgeTag = "ARCADE",
+                accentColor = Color(0xFF10B981),
+                onClick = onOpenSparkMode,
+                modifier = Modifier.width(cardWidth)
+            )
+
+            GlassPillarHeroCard(
+                title = "Continue Existing Project",
+                subtitle = "Resume Active Script • Project Library • Files",
+                detail = "Resume your current writing session, browse your saved project library, or open existing .seshat, .fdx, or fountain files.",
+                icon = "📂",
+                badgeTag = "RESUME",
+                accentColor = Color(0xFF38BDF8),
+                onClick = onContinue,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Bottom Center Dock: Open/Import, Continue Studio Project, Continue Writing Challenge
         ConceptBActionDock(
@@ -2853,146 +3099,77 @@ private fun GlassStartMenuHubMedium(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardWidth = ((availableWidth - 48.dp) * 0.45f).coerceIn(195.dp, 255.dp)
-    val centerGap = (20.dp + (availableWidth - 480.dp) * 0.14f).coerceIn(20.dp, 64.dp)
+    val cardWidth = ((availableWidth - 48.dp) * 0.47f).coerceIn(210.dp, 320.dp)
+    val centerGap = 16.dp
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Row(
-            modifier = Modifier
-                .wrapContentWidth()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.Top
         ) {
-            // Left Column: Standard Studio
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SplashColumnHeaderPill(
-                    title = "🏛️ STANDARD STUDIO",
-                    subtitle = "",
-                    isSpark = false,
-                    isCompact = true
-                )
-                GlassFormatCard(
-                    title = "Screenplay",
-                    subtitle = "Film or TV Script",
-                    iconType = 0,
-                    onClick = onSelectScreenplayBranch,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Novel",
-                    subtitle = "Book Manuscript",
-                    iconType = 2,
-                    onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book",
-                    subtitle = "Pages & Panels",
-                    iconType = 4,
-                    onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play",
-                    subtitle = "Theatrical Script",
-                    iconType = 3,
-                    onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Create A Universe",
-                    subtitle = "Film, TV, Novel or Blended",
-                    iconType = 5,
-                    onClick = onSelectUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Pitch Deck",
-                    subtitle = "45s Elevator Pitch & 16:9 Slides",
-                    iconType = 1,
-                    onClick = onOpenPitchDeck,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            GlassPillarHeroCard(
+                title = "Create Universe",
+                subtitle = "Living World Tree • Lore",
+                detail = "Interconnect multi-medium works with shared story bibles.",
+                icon = "🪐",
+                badgeTag = "WORLD TREE",
+                accentColor = ElectrumGold,
+                onClick = onSelectUniverse,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
 
-            // Right Column: Writing Challenges
-            Column(
-                modifier = Modifier.width(cardWidth),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SplashColumnHeaderPill(
-                    title = "🏆 WRITING CHALLENGES",
-                    subtitle = "",
-                    isSpark = true,
-                    isCompact = true
-                )
-                GlassFormatCard(
-                    title = "Screenplay Challenge",
-                    subtitle = "Film or TV • XP & Loot",
-                    iconType = 0,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = onSelectSparkScreenplayBranch,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Novel Challenge",
-                    subtitle = "75k–100k Word RPG",
-                    iconType = 2,
-                    isSparkCard = true,
-                    badgeTag = "75k-100k",
-                    onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Comic Book Challenge",
-                    subtitle = "Issue Boss-Run",
-                    iconType = 4,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Stage Play Challenge",
-                    subtitle = "Theatrical Gauntlet",
-                    iconType = 3,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Universe Challenge",
-                    subtitle = "Film, TV, Novel or Blended",
-                    iconType = 5,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = onSelectSparkUniverse,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                GlassFormatCard(
-                    title = "Pitch Deck Challenge",
-                    subtitle = "Pitch Night Prep",
-                    iconType = 1,
-                    isSparkCard = true,
-                    badgeTag = "Play →",
-                    onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            GlassPillarHeroCard(
+                title = "Individual Project",
+                subtitle = "Film, TV, Novel, Comic",
+                detail = "Focus on a standalone manuscript in the drafting engine.",
+                icon = "✍️",
+                badgeTag = "STANDALONE",
+                accentColor = ScribeStarNeonRed,
+                onClick = onNewProject,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.wrapContentWidth(),
+            horizontalArrangement = Arrangement.spacedBy(centerGap, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.Top
+        ) {
+            GlassPillarHeroCard(
+                title = "Writing Challenge",
+                subtitle = "Arcade Mode • Receipts",
+                detail = "High-stakes timed drafting with music and XP rewards.",
+                icon = "🏆",
+                badgeTag = "ARCADE",
+                accentColor = Color(0xFF10B981),
+                onClick = onOpenSparkMode,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+
+            GlassPillarHeroCard(
+                title = "Continue Project",
+                subtitle = "Resume • Script Library",
+                detail = "Pick up your current script or browse saved projects.",
+                icon = "📂",
+                badgeTag = "RESUME",
+                accentColor = Color(0xFF38BDF8),
+                onClick = onContinue,
+                isCompact = true,
+                modifier = Modifier.width(cardWidth)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         ConceptBActionDock(
             isCompact = false,
@@ -3020,167 +3197,60 @@ private fun GlassStartMenuHubCompact(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardWidth = ((availableWidth - 32.dp) / 2).coerceIn(142.dp, 200.dp)
-
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Column Headers
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            SplashColumnHeaderPill(
-                title = "🏛️ STANDARD",
-                subtitle = "",
-                isSpark = false,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            SplashColumnHeaderPill(
-                title = "🏆 CHALLENGES",
-                subtitle = "",
-                isSpark = true,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
+        GlassPillarHeroCard(
+            title = "🪐 Create A Universe",
+            subtitle = "Multi-Medium World Tree • Shared Mythos",
+            detail = "",
+            icon = "🪐",
+            badgeTag = "WORLD TREE",
+            accentColor = ElectrumGold,
+            onClick = onSelectUniverse,
+            isCompact = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-        // Row 1: Screenplay vs Screenplay Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Screenplay",
-                iconType = 0,
-                onClick = onSelectScreenplayBranch,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Screenplay Challenge",
-                iconType = 0,
-                isSparkCard = true,
-                onClick = onSelectSparkScreenplayBranch,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
+        GlassPillarHeroCard(
+            title = "✍️ Write Individual Project",
+            subtitle = "Screenplay, Novel, Comic, Stage, Pitch",
+            detail = "",
+            icon = "✍️",
+            badgeTag = "STANDALONE",
+            accentColor = ScribeStarNeonRed,
+            onClick = onNewProject,
+            isCompact = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-        // Row 2: Novel vs Novel Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Novel",
-                iconType = 2,
-                onClick = { onSelectFormat(ProjectFormat.NOVEL, null) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Novel Challenge",
-                iconType = 2,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.NOVEL, null, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
+        GlassPillarHeroCard(
+            title = "🏆 Take A Writing Challenge",
+            subtitle = "Anti-Procrastination Arcade • 500w to 90-Pages",
+            detail = "",
+            icon = "🏆",
+            badgeTag = "ARCADE",
+            accentColor = Color(0xFF10B981),
+            onClick = onOpenSparkMode,
+            isCompact = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-        // Row 3: Comic Book vs Comic Book Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Comic Book",
-                iconType = 4,
-                onClick = { onSelectFormat(ProjectFormat.COMIC_BOOK, null) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Comic Challenge",
-                iconType = 4,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.COMIC_BOOK, null, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 4: Stage Play vs Stage Play Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Stage Play",
-                iconType = 3,
-                onClick = { onSelectFormat(ProjectFormat.STAGE_PLAY, null) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Stage Challenge",
-                iconType = 3,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.STAGE_PLAY, null, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 5 (Last): Create A Universe vs Universe Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Create A Universe",
-                iconType = 5,
-                onClick = onSelectUniverse,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Universe Challenge",
-                iconType = 5,
-                isSparkCard = true,
-                onClick = onSelectSparkUniverse,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
-
-        // Row 6: Pitch Deck vs Pitch Deck Challenge
-        Row(
-            modifier = Modifier.wrapContentWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            GlassFormatCard(
-                title = "Pitch Deck",
-                iconType = 1,
-                onClick = onOpenPitchDeck,
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-            GlassFormatCard(
-                title = "Pitch Challenge",
-                iconType = 1,
-                isSparkCard = true,
-                onClick = { onSelectSparkFormat(ProjectFormat.SCREENPLAY, ScreenplayType.FEATURE, false) },
-                isCompact = true,
-                modifier = Modifier.width(cardWidth)
-            )
-        }
+        GlassPillarHeroCard(
+            title = "📂 Continue Existing Project",
+            subtitle = "Resume Active Script • Project Library • Files",
+            detail = "",
+            icon = "📂",
+            badgeTag = "RESUME",
+            accentColor = Color(0xFF38BDF8),
+            onClick = onContinue,
+            isCompact = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(10.dp))
 

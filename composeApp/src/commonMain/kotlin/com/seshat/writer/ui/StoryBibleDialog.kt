@@ -39,6 +39,7 @@ import com.seshat.writer.library.ScreenplayType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -55,6 +56,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -431,19 +433,12 @@ fun StoryBibleDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            val showSeriesHub = isUniverseProject || tvSeriesProject != null || blendedUniverseProject != null || bible.tvConfig.isTvSeries
-                            val hubTabLabel = when {
-                                blendedUniverseProject != null -> "🪐 Universe Hub"
-                                tvSeriesProject != null -> "📺 Series Hub"
-                                else -> hubDescriptor.tabLabel
-                            }
-                            val tabs = buildList {
-                                add("📖 Lore Pillars (4)")
-                                add("🎭 Characters (${bible.characters.size})")
-                                add("🔍 Locations (${bible.locations.size})")
-                                add("📌 Beats (${bible.beats.size})")
-                                if (showSeriesHub) add(hubTabLabel)
-                            }
+                            val tabs = listOf(
+                                "📖 Lore Pillars (4)",
+                                "🎭 Characters (${bible.characters.size})",
+                                "🔍 Locations (${bible.locations.size})",
+                                "📌 Beats (${bible.beats.size})"
+                            )
                             Row(
                                 modifier = Modifier
                                     .horizontalScroll(rememberScrollState())
@@ -590,6 +585,9 @@ fun StoryBibleDialog(
                             onUpdateTvConfig = { updatedTv ->
                                 updateAndPersist(bible.copy(tvConfig = updatedTv))
                             },
+                            characterCount = bible.characters.size,
+                            locationCount = bible.locations.size,
+                            beatCount = bible.beats.size,
                             tvSeriesProject = tvSeriesProject,
                             blendedUniverseProject = blendedUniverseProject,
                             onSelectBlendedAssignment = onSelectBlendedAssignment,
@@ -2294,6 +2292,9 @@ private fun SeriesHubSection(
     descriptor: SeriesHubDescriptor,
     tvConfig: TvSeriesBibleConfig,
     onUpdateTvConfig: (TvSeriesBibleConfig) -> Unit,
+    characterCount: Int = 0,
+    locationCount: Int = 0,
+    beatCount: Int = 0,
     tvSeriesProject: com.seshat.writer.tv.TvSeriesProject? = null,
     blendedUniverseProject: com.seshat.writer.universe.BlendedUniverseProject? = null,
     onSelectBlendedAssignment: ((Int) -> Unit)? = null,
@@ -2309,6 +2310,14 @@ private fun SeriesHubSection(
     var newBranchTitle by remember { mutableStateOf("") }
     var newBranchFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
     var showAddBranchRow by remember { mutableStateOf(false) }
+    var selectedInstallmentIndex by remember { mutableStateOf(0) }
+
+    val goldAccent = if (isDark) ElectrumGold else Color(0xFF991B1B)
+    val subGoldAccent = if (isDark) LightGold else Color(0xFF991B1B)
+    val cardInsetBg = if (isDark) ObsidianBlack else Color(0xFFF8FAFC)
+    val cardInsetBorder = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val primaryTextColor = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
+    val mutedTextColor = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
 
     Column(
         modifier = Modifier
@@ -2316,48 +2325,93 @@ private fun SeriesHubSection(
             .verticalScroll(scroll)
             .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
-        // Architectural Roadmap Callout
+        // 1. Header Callout + Unified Master Lore Strip
         GlassCardItem(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = if (blendedUniverseProject != null) "🪐 BLENDED UNIVERSE & PROJECT TREE" else "${descriptor.icon} ${descriptor.headerTitle}",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = MainAppFontFamily,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFF90CAF9) else Color(0xFF1D4ED8)
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(color = if (isDark) ScribeStarNeonRed else Color(0xFF1D4ED8), shape = RoundedCornerShape(0.dp)) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "UNIVERSE TREE",
-                            style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            text = if (blendedUniverseProject != null) "🪐 BLENDED UNIVERSE & PROJECT TREE" else "${descriptor.icon} ${descriptor.headerTitle}",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = goldAccent
+                            )
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(color = ScribeStarNeonRed, shape = RoundedCornerShape(0.dp)) {
+                            Text(
+                                text = "UNIVERSE TREE",
+                                style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (blendedUniverseProject != null) {
-                        "Unified Master Lore Bible branching into Film, TV, Novel, Comic Book, and Stage Play assignments."
+                        "Unified Master Lore Document branching into Film, TV, Novel, Comic Book, and Stage Play assignments."
                     } else {
                         descriptor.description
                     },
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = if (isDark) Color(0xFFBBDEFB) else Color(0xFF1E293B),
+                        color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium
                     )
                 )
+
+                // Unified Master Lore Inheritance Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(cardInsetBg, RoundedCornerShape(0.dp))
+                        .border(1.dp, goldAccent.copy(alpha = 0.35f), RoundedCornerShape(0.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.horizontalScroll(rememberScrollState()).weight(1f)
+                    ) {
+                        Text(
+                            text = "MASTER LORE:",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = goldAccent,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        )
+                        MasterLoreChip("🎭 Characters: $characterCount", isDark)
+                        MasterLoreChip("🔍 Locations: $locationCount", isDark)
+                        MasterLoreChip("📖 Lore Pillars: 4", isDark)
+                        MasterLoreChip("📌 Beats: $beatCount", isDark)
+                    }
+                    if (!isCompactScreen) {
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Edit Lore once → Every branch stays in continuity",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = mutedTextColor,
+                                fontSize = 10.sp
+                            )
+                        )
+                    }
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Interactive Universe / Series Project Branch Tree
+        // 2. Interactive Universe / Series Project Branch Tree
         GlassCardItem(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
@@ -2371,22 +2425,21 @@ private fun SeriesHubSection(
                     Text(
                         text = "🌳 ROOT: ${rootTitle.uppercase()}",
                         style = MaterialTheme.typography.titleSmall.copy(
-                            color = if (isDark) ElectrumGold else Color(0xFF991B1B),
+                            color = goldAccent,
                             fontWeight = FontWeight.Bold
                         )
                     )
                     Surface(
-                        color = ScribeStarNeonRed.copy(alpha = 0.16f),
+                        color = if (showAddBranchRow) ObsidianSurfaceVariant else ElectrumGold,
                         shape = RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .clip(RoundedCornerShape(0.dp))
                             .clickable { showAddBranchRow = !showAddBranchRow }
-                            .border(1.dp, ScribeStarNeonRed, RoundedCornerShape(0.dp))
                     ) {
                         Text(
                             text = if (showAddBranchRow) "Cancel" else "+ Add Branch",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (isDark) Color.White else Color(0xFF991B1B),
+                                color = if (showAddBranchRow) Color.White else Color.Black,
                                 fontWeight = FontWeight.Bold
                             ),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -2398,7 +2451,7 @@ private fun SeriesHubSection(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(ObsidianBlack, RoundedCornerShape(0.dp))
+                            .background(cardInsetBg, RoundedCornerShape(0.dp))
                             .border(1.dp, ElectrumGold.copy(alpha = 0.5f), RoundedCornerShape(0.dp))
                             .padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -2444,9 +2497,9 @@ private fun SeriesHubSection(
                             OutlinedTextField(
                                 value = newBranchTitle,
                                 onValueChange = { newBranchTitle = it },
-                                placeholder = { Text("New branch / installment title...", color = ScreenplayTextMuted, fontSize = 11.sp) },
+                                placeholder = { Text("New branch / installment title...", color = mutedTextColor, fontSize = 11.sp) },
                                 singleLine = true,
-                                textStyle = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextDark),
+                                textStyle = MaterialTheme.typography.bodySmall.copy(color = primaryTextColor),
                                 modifier = Modifier.weight(1f)
                             )
                             Button(
@@ -2469,6 +2522,7 @@ private fun SeriesHubSection(
                                                     episodes = tvConfig.episodes + TvEpisodeOutline(episodeNumber = nextNum, title = titleToAdd)
                                                 )
                                             )
+                                            selectedInstallmentIndex = nextNum - 1
                                         }
                                     }
                                     newBranchTitle = ""
@@ -2501,9 +2555,9 @@ private fun SeriesHubSection(
                     }
                     else -> tvConfig.episodes.mapIndexed { idx, ep ->
                         Triple(
-                            "${descriptor.itemPrefix} ${ep.episodeNumber}: ${ep.title.ifBlank { "Untitled" }}",
+                            "${descriptor.icon} ${descriptor.itemPrefix} ${ep.episodeNumber}: ${ep.title.ifBlank { "Untitled" }}",
                             ep.status,
-                            idx == 0
+                            idx == selectedInstallmentIndex.coerceIn(0, (tvConfig.episodes.size - 1).coerceAtLeast(0))
                         )
                     }
                 }
@@ -2511,102 +2565,108 @@ private fun SeriesHubSection(
                 if (branchRows.isEmpty()) {
                     Text(
                         text = "No branches yet — click '+ Add Branch' to add a Film, Episode, Book, or Spin-off under this Universe.",
-                        style = MaterialTheme.typography.bodySmall.copy(color = ScreenplayTextMuted)
+                        style = MaterialTheme.typography.bodySmall.copy(color = mutedTextColor)
                     )
                 } else {
-                    branchRows.forEachIndexed { idx, (branchTitle, branchMeta, isActiveBranch) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Tree Trunk + Horizontal Arm Connector
-                            Box(
+                    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        branchRows.forEachIndexed { idx, (branchTitle, branchMeta, isActiveBranch) ->
+                            val isLast = idx == branchRows.lastIndex
+                            Row(
                                 modifier = Modifier
-                                    .width(24.dp)
-                                    .height(40.dp),
-                                contentAlignment = Alignment.CenterStart
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Min),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Continuous Tree Trunk + Horizontal Arm Connector
                                 Box(
                                     modifier = Modifier
-                                        .padding(start = 6.dp)
-                                        .width(2.dp)
+                                        .width(26.dp)
                                         .fillMaxHeight()
-                                        .background(ElectrumGold.copy(alpha = 0.55f))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .padding(start = 6.dp)
-                                        .fillMaxWidth()
-                                        .height(2.dp)
-                                        .background(ElectrumGold.copy(alpha = 0.55f))
-                                )
-                            }
-
-                            Surface(
-                                color = if (isActiveBranch) ElectrumGold.copy(alpha = 0.14f) else ObsidianBlack,
-                                shape = RoundedCornerShape(0.dp),
-                                border = BorderStroke(
-                                    width = if (isActiveBranch) 1.4.dp else 1.dp,
-                                    color = if (isActiveBranch) ElectrumGold else ObsidianSurfaceVariant
-                                ),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = branchTitle,
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                color = if (isActiveBranch) (if (isDark) ElectrumGold else Color(0xFF991B1B)) else ScreenplayTextDark,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = branchMeta,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                color = ScreenplayTextMuted,
-                                                fontSize = 10.sp
-                                            )
-                                        )
-                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .width(1.5.dp)
+                                            .fillMaxHeight(if (isLast) 0.5f else 1f)
+                                            .align(Alignment.TopStart)
+                                            .background(ElectrumGold.copy(alpha = 0.6f))
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .fillMaxWidth()
+                                            .height(1.5.dp)
+                                            .align(Alignment.CenterStart)
+                                            .background(ElectrumGold.copy(alpha = 0.6f))
+                                    )
+                                }
 
-                                    if (blendedUniverseProject != null && onSelectBlendedAssignment != null) {
-                                        Surface(
-                                            color = if (isActiveBranch) ElectrumGold else ObsidianSurface,
-                                            shape = RoundedCornerShape(0.dp),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(0.dp))
-                                                .clickable { onSelectBlendedAssignment(idx) }
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
-                                        ) {
-                                            Text(
-                                                text = if (isActiveBranch) "Active ✓" else "Open →",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    color = if (isActiveBranch) Color.Black else ElectrumGold,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 10.sp
-                                                ),
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
+                                Surface(
+                                    color = if (isActiveBranch) ElectrumGold.copy(alpha = 0.14f) else cardInsetBg,
+                                    shape = RoundedCornerShape(0.dp),
+                                    border = BorderStroke(
+                                        width = if (isActiveBranch) 1.5.dp else 1.dp,
+                                        color = if (isActiveBranch) ElectrumGold else cardInsetBorder
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(vertical = 3.dp)
+                                        .clickable {
+                                            when {
+                                                blendedUniverseProject != null && onSelectBlendedAssignment != null -> onSelectBlendedAssignment(idx)
+                                                tvSeriesProject != null && onSelectTvEpisode != null -> onSelectTvEpisode(idx)
+                                                else -> selectedInstallmentIndex = idx
+                                            }
                                         }
-                                    } else if (tvSeriesProject != null && onSelectTvEpisode != null) {
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = branchTitle,
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    color = if (isActiveBranch) goldAccent else primaryTextColor,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+                                            if (branchMeta.isNotBlank()) {
+                                                Text(
+                                                    text = "• $branchMeta",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        color = mutedTextColor,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        val actionText = when {
+                                            isActiveBranch -> "Active ✓"
+                                            blendedUniverseProject != null || tvSeriesProject != null -> "Open →"
+                                            else -> "Focus →"
+                                        }
                                         Surface(
                                             color = if (isActiveBranch) ElectrumGold else ObsidianSurface,
                                             shape = RoundedCornerShape(0.dp),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(0.dp))
-                                                .clickable { onSelectTvEpisode(idx) }
-                                                .border(1.dp, ElectrumGold.copy(alpha = 0.6f), RoundedCornerShape(0.dp))
+                                            border = BorderStroke(1.dp, if (isActiveBranch) ElectrumGold else cardInsetBorder)
                                         ) {
                                             Text(
-                                                text = if (isActiveBranch) "Active ✓" else "Open →",
+                                                text = actionText,
                                                 style = MaterialTheme.typography.labelSmall.copy(
-                                                    color = if (isActiveBranch) Color.Black else ElectrumGold,
+                                                    color = if (isActiveBranch) Color.Black else primaryTextColor,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 10.sp
                                                 ),
@@ -2624,78 +2684,104 @@ private fun SeriesHubSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Series Metadata
-        if (isCompactScreen) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = tvConfig.seriesTitle,
-                    onValueChange = { onUpdateTvConfig(tvConfig.copy(seriesTitle = it, isTvSeries = true)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(descriptor.seriesTitleLabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold) },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = if (isDark) ElectrumGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.Bold
+        // 3. Series Metadata & Cinematic Universe Arc (2-Column Glass Card on Desktop)
+        GlassCardItem(modifier = Modifier.fillMaxWidth()) {
+            if (isCompactScreen) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = tvConfig.seriesTitle,
+                        onValueChange = { onUpdateTvConfig(tvConfig.copy(seriesTitle = it, isTvSeries = true)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(descriptor.seriesTitleLabel, color = subGoldAccent, fontWeight = FontWeight.Bold) },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = goldAccent,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
-                )
-                SeriesHubFormatDropdown(
-                    currentFormat = tvConfig.format,
-                    options = descriptor.formatOptions,
-                    label = descriptor.formatLabel,
-                    onSelectFormat = { onUpdateTvConfig(tvConfig.copy(format = it)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        } else {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = tvConfig.seriesTitle,
-                    onValueChange = { onUpdateTvConfig(tvConfig.copy(seriesTitle = it, isTvSeries = true)) },
-                    modifier = Modifier.weight(1f),
-                    label = { Text(descriptor.seriesTitleLabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold) },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = if (isDark) ElectrumGold else Color(0xFF991B1B),
-                        fontWeight = FontWeight.Bold
+                    SeriesHubFormatDropdown(
+                        currentFormat = tvConfig.format,
+                        options = descriptor.formatOptions,
+                        label = descriptor.formatLabel,
+                        onSelectFormat = { onUpdateTvConfig(tvConfig.copy(format = it)) },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                )
-                SeriesHubFormatDropdown(
-                    currentFormat = tvConfig.format,
-                    options = descriptor.formatOptions,
-                    label = descriptor.formatLabel,
-                    onSelectFormat = { onUpdateTvConfig(tvConfig.copy(format = it)) },
-                    modifier = Modifier.weight(1f)
-                )
+                    OutlinedTextField(
+                        value = tvConfig.seasonalArcSummary,
+                        onValueChange = {
+                            val clipped = if (firstDraftState.isArcadeLocked) {
+                                FirstDraftTextMetrics.clipToWordLimit(it, maxArcWords)
+                            } else it
+                            onUpdateTvConfig(tvConfig.copy(seasonalArcSummary = clipped))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = {
+                            val arcWords = FirstDraftTextMetrics.countWords(tvConfig.seasonalArcSummary)
+                            val suffix = if (firstDraftState.isArcadeLocked) " ($arcWords/$maxArcWords words)" else ""
+                            Text(descriptor.arcLabel + suffix, color = subGoldAccent, fontWeight = FontWeight.Bold)
+                        },
+                        placeholder = { Text(descriptor.arcPlaceholder, color = mutedTextColor) },
+                        minLines = 3,
+                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                            color = primaryTextColor,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(0.45f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = tvConfig.seriesTitle,
+                            onValueChange = { onUpdateTvConfig(tvConfig.copy(seriesTitle = it, isTvSeries = true)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(descriptor.seriesTitleLabel, color = subGoldAccent, fontWeight = FontWeight.Bold) },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                color = goldAccent,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        SeriesHubFormatDropdown(
+                            currentFormat = tvConfig.format,
+                            options = descriptor.formatOptions,
+                            label = descriptor.formatLabel,
+                            onSelectFormat = { onUpdateTvConfig(tvConfig.copy(format = it)) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    OutlinedTextField(
+                        value = tvConfig.seasonalArcSummary,
+                        onValueChange = {
+                            val clipped = if (firstDraftState.isArcadeLocked) {
+                                FirstDraftTextMetrics.clipToWordLimit(it, maxArcWords)
+                            } else it
+                            onUpdateTvConfig(tvConfig.copy(seasonalArcSummary = clipped))
+                        },
+                        modifier = Modifier.weight(0.55f),
+                        label = {
+                            val arcWords = FirstDraftTextMetrics.countWords(tvConfig.seasonalArcSummary)
+                            val suffix = if (firstDraftState.isArcadeLocked) " ($arcWords/$maxArcWords words)" else ""
+                            Text(descriptor.arcLabel + suffix, color = subGoldAccent, fontWeight = FontWeight.Bold)
+                        },
+                        placeholder = { Text(descriptor.arcPlaceholder, color = mutedTextColor) },
+                        minLines = 4,
+                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                            color = primaryTextColor,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        OutlinedTextField(
-            value = tvConfig.seasonalArcSummary,
-            onValueChange = {
-                val clipped = if (firstDraftState.isArcadeLocked) {
-                    FirstDraftTextMetrics.clipToWordLimit(it, maxArcWords)
-                } else it
-                onUpdateTvConfig(tvConfig.copy(seasonalArcSummary = clipped))
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-                val arcWords = FirstDraftTextMetrics.countWords(tvConfig.seasonalArcSummary)
-                val suffix = if (firstDraftState.isArcadeLocked) " ($arcWords/$maxArcWords words)" else ""
-                Text(descriptor.arcLabel + suffix, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold)
-            },
-            placeholder = { Text(descriptor.arcPlaceholder, color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)) },
-            minLines = 3,
-            textStyle = MaterialTheme.typography.bodySmall.copy(
-                color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                fontWeight = FontWeight.Medium
-            )
-        )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Items Grid (Episodes / Volumes / Films / Acts / Issues)
+        // 4. Films & Installments Beat Board
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -2703,14 +2789,14 @@ private fun SeriesHubSection(
         ) {
             Text(
                 text = "${descriptor.itemsSectionTitle} (${tvConfig.episodes.size})",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    color = if (isDark) LightGold else Color(0xFF991B1B),
-                    fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = goldAccent,
+                    fontWeight = FontWeight.Bold
                 )
             )
 
             GlassActionButton(
-                text = descriptor.addItemButtonLabel,
+                text = "+ ${descriptor.addItemButtonLabel}",
                 icon = { Icon(imageVector = Icons.Default.Add, contentDescription = descriptor.addItemButtonLabel, tint = Color.White, modifier = Modifier.size(15.dp)) },
                 onClick = {
                     val nextNum = tvConfig.episodes.size + 1
@@ -2730,198 +2816,159 @@ private fun SeriesHubSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val statusCycle = listOf("Outline", "Drafting", "In Production", "Locked")
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             tvConfig.episodes.forEachIndexed { index, ep ->
+                val isFocused = index == selectedInstallmentIndex
                 GlassCardItem(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (isFocused && blendedUniverseProject == null && tvSeriesProject == null) {
+                                Modifier.border(1.dp, ElectrumGold.copy(alpha = 0.7f), RoundedCornerShape(0.dp))
+                            } else Modifier
+                        )
                 ) {
-                    if (isCompactScreen) {
-                        Column(modifier = Modifier.padding(10.dp)) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Clean Card Header: FILM N: [Inline Editable Title] [Status Pill] [Delete]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
                             ) {
                                 Text(
                                     text = "${descriptor.itemPrefix} ${ep.episodeNumber}:",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        color = if (isDark) ElectrumGold else Color(0xFF991B1B),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        color = goldAccent,
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                OutlinedTextField(
+                                Spacer(modifier = Modifier.width(8.dp))
+                                BasicTextField(
                                     value = ep.title,
                                     onValueChange = { newTitle ->
                                         val updated = tvConfig.episodes.toMutableList()
                                         updated[index] = ep.copy(title = newTitle)
                                         onUpdateTvConfig(tvConfig.copy(episodes = updated))
                                     },
-                                    modifier = Modifier.weight(1f),
                                     singleLine = true,
                                     textStyle = MaterialTheme.typography.titleSmall.copy(
-                                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                                        color = primaryTextColor,
                                         fontWeight = FontWeight.Bold
                                     ),
-                                    label = { Text(descriptor.itemTitleLabel, fontSize = 10.sp, color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontWeight = FontWeight.Bold) }
+                                    cursorBrush = SolidColor(goldAccent),
+                                    modifier = Modifier.weight(1f),
+                                    decorationBox = { inner ->
+                                        if (ep.title.isEmpty()) {
+                                            Text(
+                                                text = descriptor.itemTitleLabel,
+                                                style = MaterialTheme.typography.titleSmall.copy(color = mutedTextColor)
+                                            )
+                                        }
+                                        inner()
+                                    }
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                OutlinedTextField(
-                                    value = ep.status,
-                                    onValueChange = { newStatus ->
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Clickable Status Pill (cycles Outline -> Drafting -> In Production -> Locked)
+                            Surface(
+                                color = if (ep.status.equals("Locked", ignoreCase = true)) ElectrumGold.copy(alpha = 0.2f) else cardInsetBg,
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, if (ep.status.equals("Locked", ignoreCase = true)) ElectrumGold else cardInsetBorder),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable {
+                                        val nextIdx = (statusCycle.indexOfFirst { it.equals(ep.status, ignoreCase = true) } + 1) % statusCycle.size
                                         val updated = tvConfig.episodes.toMutableList()
-                                        updated[index] = ep.copy(status = newStatus)
+                                        updated[index] = ep.copy(status = statusCycle[nextIdx])
+                                        onUpdateTvConfig(tvConfig.copy(episodes = updated))
+                                    }
+                            ) {
+                                Text(
+                                    text = ep.status.ifBlank { "Outline" },
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = if (ep.status.equals("Locked", ignoreCase = true)) goldAccent else primaryTextColor,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            if (tvConfig.episodes.size > 1) {
+                                IconButton(
+                                    onClick = {
+                                        val updated = tvConfig.episodes.filterIndexed { i, _ -> i != index }
                                         onUpdateTvConfig(tvConfig.copy(episodes = updated))
                                     },
-                                    modifier = Modifier.width(90.dp),
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.labelSmall.copy(
-                                        color = if (isDark) LightGold else Color(0xFF991B1B),
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    label = { Text("Status", fontSize = 10.sp, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold) }
-                                )
-                                if (tvConfig.episodes.size > 1) {
-                                    IconButton(onClick = {
-                                        val updated = tvConfig.episodes.filterIndexed { i, _ -> i != index }
-                                        onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                    }) {
-                                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF5350))
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            OutlinedTextField(
-                                value = ep.aStory,
-                                onValueChange = { newA ->
-                                    val updated = tvConfig.episodes.toMutableList()
-                                    updated[index] = ep.copy(aStory = newA)
-                                    onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = MaterialTheme.typography.bodySmall.copy(
-                                    color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                placeholder = { Text("Primary narrative focus...", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-                                label = { Text(descriptor.itemStoryALabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                                maxLines = 3
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            OutlinedTextField(
-                                value = ep.bStory,
-                                onValueChange = { newB ->
-                                    val updated = tvConfig.episodes.toMutableList()
-                                    updated[index] = ep.copy(bStory = newB)
-                                    onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = MaterialTheme.typography.bodySmall.copy(
-                                    color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                placeholder = { Text("Secondary narrative or character thread...", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-                                label = { Text(descriptor.itemStoryBLabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                                maxLines = 3
-                            )
-                        }
-                    } else {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.size(30.dp)
                                 ) {
-                                    Text(
-                                        text = "${descriptor.itemPrefix} ${ep.episodeNumber}:",
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            color = if (isDark) ElectrumGold else Color(0xFF991B1B),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    OutlinedTextField(
-                                        value = ep.title,
-                                        onValueChange = { newTitle ->
-                                            val updated = tvConfig.episodes.toMutableList()
-                                            updated[index] = ep.copy(title = newTitle)
-                                            onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        singleLine = true,
-                                        label = { Text(descriptor.itemTitleLabel, fontSize = 10.sp, color = if (isDark) ScreenplayTextMuted else Color(0xFF334155), fontWeight = FontWeight.Bold) },
-                                        textStyle = MaterialTheme.typography.titleSmall.copy(
-                                            color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    OutlinedTextField(
-                                        value = ep.status,
-                                        onValueChange = { newStatus ->
-                                            val updated = tvConfig.episodes.toMutableList()
-                                            updated[index] = ep.copy(status = newStatus)
-                                            onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                        },
-                                        modifier = Modifier.width(130.dp),
-                                        singleLine = true,
-                                        label = { Text("Status", fontSize = 10.sp, color = if (isDark) LightGold else Color(0xFF991B1B), fontWeight = FontWeight.Bold) },
-                                        textStyle = MaterialTheme.typography.labelSmall.copy(
-                                            color = if (isDark) LightGold else Color(0xFF991B1B),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                }
-
-                                if (tvConfig.episodes.size > 1) {
-                                    IconButton(onClick = {
-                                        val updated = tvConfig.episodes.filterIndexed { i, _ -> i != index }
-                                        onUpdateTvConfig(tvConfig.copy(episodes = updated))
-                                    }) {
-                                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF5350))
-                                    }
+                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF5350), modifier = Modifier.size(16.dp))
                                 }
                             }
+                        }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                OutlinedTextField(
+                        // Dual Inset Plot & Franchise Thread Boxes
+                        if (isCompactScreen) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                InsetPlotEditor(
+                                    label = descriptor.itemStoryALabel,
                                     value = ep.aStory,
+                                    placeholder = "Primary narrative focus...",
                                     onValueChange = { newA ->
                                         val updated = tvConfig.episodes.toMutableList()
                                         updated[index] = ep.copy(aStory = newA)
                                         onUpdateTvConfig(tvConfig.copy(episodes = updated))
                                     },
-                                    modifier = Modifier.weight(1f),
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    placeholder = { Text("Primary narrative focus...", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-                                    label = { Text(descriptor.itemStoryALabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                                    isDark = isDark
                                 )
-                                OutlinedTextField(
+                                InsetPlotEditor(
+                                    label = descriptor.itemStoryBLabel,
                                     value = ep.bStory,
+                                    placeholder = "Connective tissue, post-credits, or franchise thread...",
                                     onValueChange = { newB ->
                                         val updated = tvConfig.episodes.toMutableList()
                                         updated[index] = ep.copy(bStory = newB)
                                         onUpdateTvConfig(tvConfig.copy(episodes = updated))
                                     },
-                                    modifier = Modifier.weight(1f),
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    placeholder = { Text("Secondary narrative or character thread...", color = if (isDark) ScreenplayTextMuted else Color(0xFF64748B), fontSize = 11.sp) },
-                                    label = { Text(descriptor.itemStoryBLabel, color = if (isDark) LightGold else Color(0xFF991B1B), fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                                    isDark = isDark
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                InsetPlotEditor(
+                                    label = descriptor.itemStoryALabel,
+                                    value = ep.aStory,
+                                    placeholder = "Primary narrative focus...",
+                                    onValueChange = { newA ->
+                                        val updated = tvConfig.episodes.toMutableList()
+                                        updated[index] = ep.copy(aStory = newA)
+                                        onUpdateTvConfig(tvConfig.copy(episodes = updated))
+                                    },
+                                    isDark = isDark,
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                                )
+                                InsetPlotEditor(
+                                    label = descriptor.itemStoryBLabel,
+                                    value = ep.bStory,
+                                    placeholder = "Connective tissue, post-credits, or franchise thread...",
+                                    onValueChange = { newB ->
+                                        val updated = tvConfig.episodes.toMutableList()
+                                        updated[index] = ep.copy(bStory = newB)
+                                        onUpdateTvConfig(tvConfig.copy(episodes = updated))
+                                    },
+                                    isDark = isDark,
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
                                 )
                             }
                         }
@@ -2929,5 +2976,78 @@ private fun SeriesHubSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MasterLoreChip(label: String, isDark: Boolean) {
+    Surface(
+        color = if (isDark) ObsidianSurface else Color.White,
+        shape = RoundedCornerShape(0.dp),
+        border = BorderStroke(1.dp, if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1))
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+        )
+    }
+}
+
+@Composable
+private fun InsetPlotEditor(
+    label: String,
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val bg = if (isDark) ObsidianBlack else Color(0xFFF8FAFC)
+    val border = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val textColor = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A)
+    val mutedColor = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
+    val labelColor = if (isDark) Color(0xFFF8FAFC) else Color(0xFF991B1B)
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(bg, RoundedCornerShape(0.dp))
+            .border(1.dp, border, RoundedCornerShape(0.dp))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                color = labelColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp
+            )
+        )
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = MaterialTheme.typography.bodySmall.copy(
+                color = textColor,
+                fontWeight = FontWeight.Normal,
+                lineHeight = 16.sp
+            ),
+            cursorBrush = SolidColor(if (isDark) ElectrumGold else Color(0xFF991B1B)),
+            modifier = Modifier.fillMaxWidth(),
+            decorationBox = { inner ->
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodySmall.copy(color = mutedColor, fontSize = 11.sp)
+                    )
+                }
+                inner()
+            }
+        )
     }
 }

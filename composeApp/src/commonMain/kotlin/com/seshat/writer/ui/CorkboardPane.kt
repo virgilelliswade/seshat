@@ -166,6 +166,24 @@ fun CorkboardPane(
                                 .weight(1f, fill = false)
                                 .horizontalScroll(rememberScrollState())
                         ) {
+                            if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                                Surface(
+                                    color = ElectrumGold.copy(alpha = 0.16f),
+                                    shape = RoundedCornerShape(0.dp),
+                                    border = BorderStroke(1.dp, ElectrumGold),
+                                    modifier = Modifier.clickable { viewModel.openWorldTreeHub() }
+                                ) {
+                                    Text(
+                                        text = "🌳 Hub",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = ElectrumGold,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
                             val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "📚 Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "🎬 Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "🎬 Script"
                             Surface(
                                 color = ObsidianSurfaceVariant,
@@ -399,6 +417,27 @@ fun CorkboardPane(
                         )
 
                         Box(modifier = Modifier.width(1.dp).height(18.dp).background(ObsidianSurfaceVariant))
+
+                        if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                            Surface(
+                                color = ElectrumGold.copy(alpha = 0.16f),
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, ElectrumGold),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable { viewModel.openWorldTreeHub() }
+                            ) {
+                                Text(
+                                    text = "🌳 Hub",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = ElectrumGold,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
 
                         // Unified Workspace Switcher Strip
                         val editorLabel = if (uiState.projectFormat == ProjectFormat.NOVEL) "Novel" else if (uiState.projectFormat == ProjectFormat.TV_SERIES) "Ep ${uiState.tvSeriesProject?.getActiveEpisode()?.episodeNumber ?: "101"}" else "Script"

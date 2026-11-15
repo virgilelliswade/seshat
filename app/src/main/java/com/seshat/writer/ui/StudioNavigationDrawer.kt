@@ -114,6 +114,7 @@ fun StudioNavigationDrawer(
     onOpenSettings: () -> Unit,
     onOpenWhatsNew: () -> Unit = {},
     onOpenPitchDeck: () -> Unit = {},
+    onOpenWorldTree: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -291,6 +292,19 @@ fun StudioNavigationDrawer(
                     ) {
                         // SECTION: WORKSPACES & VIEWS
                         DrawerSection(title = "WORKSPACES & VIEWS") {
+                            if (onOpenWorldTree != null) {
+                                DrawerNavItem(
+                                    icon = "🌳",
+                                    title = "The Hub (World Tree)",
+                                    subtitle = "Universe centerpiece & branch switcher",
+                                    isActive = uiState.isWorldTreeHubOpen,
+                                    onClick = {
+                                        onCloseDrawer()
+                                        onOpenWorldTree()
+                                    }
+                                )
+                            }
+
                             DrawerNavItem(
                                 icon = "✍️",
                                 title = if (isNovel) "Novel Editor" else if (isTv) "Episode Script" else "Screenplay Canvas",

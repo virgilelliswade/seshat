@@ -56,7 +56,10 @@ import com.seshat.writer.library.ScreenplayType
 import com.seshat.writer.library.ScriptLibraryManager
 import com.seshat.writer.universe.BlendedAssignment
 import com.seshat.writer.universe.BlendedUniverseProject
+import com.seshat.writer.universe.BranchRole
 import com.seshat.writer.universe.UniverseRepository
+import com.seshat.writer.universe.UniverseTheme
+import com.seshat.writer.universe.UniverseTimelineEra
 import com.seshat.writer.library.ScriptTemplate
 import com.seshat.writer.importer.ScriptImporter
 import com.seshat.writer.novel.NovelChapter
@@ -195,6 +198,7 @@ data class ScreenplayUiState(
     val tvSeriesProject: TvSeriesProject? = null,
     val blendedUniverseProject: BlendedUniverseProject? = null,
     val isUniverseProject: Boolean = false,
+    val isWorldTreeHubOpen: Boolean = false,
     val isWritersRoomOpen: Boolean = false,
     val isStudioDrawerOpen: Boolean = false,
     val isCoverCreatorOpen: Boolean = false,
@@ -3541,6 +3545,7 @@ class ScreenplayViewModel : ViewModel() {
                 tvSeriesProject = null,
                 blendedUniverseProject = null,
                 isUniverseProject = isUniverseProject,
+                isWorldTreeHubOpen = if (enableSparkMode) false else (isUniverseProject && initialWorkspaceView == InitialWorkspaceView.WORLD_TREE_HUB),
                 corkboardDoc = initialCorkboard,
                 storyBible = initialBible,
                 novelManuscript = starterManuscript,
@@ -3564,22 +3569,43 @@ class ScreenplayViewModel : ViewModel() {
         universeTitle: String,
         starterFormat: ProjectFormat = ProjectFormat.SCREENPLAY,
         starterScreenplayType: ScreenplayType = ScreenplayType.FEATURE,
-        initialWorkspaceView: InitialWorkspaceView = InitialWorkspaceView.LORE_DOC,
+        initialWorkspaceView: InitialWorkspaceView = InitialWorkspaceView.WORLD_TREE_HUB,
         enableSparkMode: Boolean = false,
-        campaignGenre: CampaignGenre = CampaignGenre.SCIFI
+        campaignGenre: CampaignGenre = CampaignGenre.SCIFI,
+        universeKind: String = "BLENDED",
+        theme: UniverseTheme = UniverseTheme.ARBOREAL
     ) {
-        val resolvedTitle = universeTitle.ifBlank { "Untitled Blended Universe" }
+        val resolvedTitle = universeTitle.ifBlank {
+            when (theme) {
+                UniverseTheme.ARBOREAL -> "The Living World Tree"
+                UniverseTheme.STELLAR -> "The Celestial Orrery"
+                UniverseTheme.DEOXYRIBONUCLEAR -> "The Stellar Codex"
+                UniverseTheme.TEMPORAL -> "The Sacred Continuum"
+            }
+        }
+        val starterAssignmentTitle = when (theme) {
+            UniverseTheme.ARBOREAL -> "Main Branch 1 (${starterFormat.displayName})"
+            UniverseTheme.STELLAR -> "Vector 1 (${starterFormat.displayName})"
+            UniverseTheme.DEOXYRIBONUCLEAR -> "Canon Strand 1 (${starterFormat.displayName})"
+            UniverseTheme.TEMPORAL -> "Spine Reality 1 (${starterFormat.displayName})"
+        }
+        val defaultEras = BlendedUniverseProject.defaultUniverseEras(theme)
         val starterAssignment = BlendedAssignment.defaultAssignment(
-            title = "Assignment 1 (${starterFormat.displayName})",
+            title = starterAssignmentTitle,
             format = starterFormat,
-            screenplayType = starterScreenplayType
+            screenplayType = starterScreenplayType,
+            branchRole = BranchRole.MAIN_SPINE,
+            eraTag = defaultEras.firstOrNull()?.name ?: "Epoch I"
         )
         val bible = StoryBible(scriptTitle = resolvedTitle)
         val blendedProject = BlendedUniverseProject(
             title = resolvedTitle,
+            universeKind = universeKind,
             universeBible = bible,
             assignments = listOf(starterAssignment),
-            activeAssignmentIndex = 0
+            activeAssignmentIndex = 0,
+            theme = theme,
+            eras = defaultEras
         )
         StoryBibleRepository.saveBible(context, bible)
         CorkboardRepository.saveCorkboard(context, starterAssignment.corkboard)
@@ -3612,6 +3638,7 @@ class ScreenplayViewModel : ViewModel() {
                     tvSeriesProject = null,
                     blendedUniverseProject = blendedProject,
                     isUniverseProject = true,
+                    isWorldTreeHubOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.WORLD_TREE_HUB,
                     title = "${resolvedTitle} — ${starterAssignment.title}",
                     blocks = starterAssignment.blocks,
                     focusedBlockId = starterAssignment.blocks.firstOrNull()?.id ?: "",
@@ -3627,6 +3654,187 @@ class ScreenplayViewModel : ViewModel() {
                 ),
                 starterAssignment.blocks,
                 focusedBlockId = starterAssignment.blocks.firstOrNull()?.id ?: ""
+            )
+        }
+    }
+
+    fun openWorldTreeHub() {
+        val state = _uiState.value
+        val ctx = latestAppContext
+        // Snapshot active branch state so edits are preserved before climbing up to The Hub
+        val blended = state.blendedUniverseProject
+        if (blended != null) {
+            val oldIdx = blended.activeAssignmentIndex
+            val mutable = blended.assignments.toMutableList()
+            if (oldIdx in mutable.indices) {
+                mutable[oldIdx] = mutable[oldIdx].copy(
+                    blocks = state.blocks,
+                    novelManuscript = state.novelManuscript,
+                    corkboard = state.corkboardDoc,
+                    lastModified = System.currentTimeMillis()
+                )
+            }
+            val updated = blended.copy(
+                universeBible = state.storyBible,
+                assignments = mutable,
+                lastModified = System.currentTimeMillis()
+            )
+            if (ctx != null) UniverseRepository.saveProject(ctx, updated)
+            _uiState.update {
+                it.copy(
+                    blendedUniverseProject = updated,
+                    isWorldTreeHubOpen = true,
+                    isCorkboardOpen = false,
+                    isStoryBibleOpen = false,
+                    isPitchDeckOpen = false
+                )
+            }
+            return
+        }
+
+        val tv = state.tvSeriesProject
+        if (tv != null) {
+            val oldIdx = tv.activeEpisodeIndex.coerceIn(0, (tv.episodes.size - 1).coerceAtLeast(0))
+            val updatedEpisodes = tv.episodes.toMutableList()
+            if (oldIdx in updatedEpisodes.indices) {
+                updatedEpisodes[oldIdx] = updatedEpisodes[oldIdx].copy(
+                    blocks = state.blocks,
+                    corkboard = state.corkboardDoc,
+                    sceneCount = state.sceneCount,
+                    pageCount = state.pageCount,
+                    revisionColor = state.currentRevisionColor,
+                    lastModified = System.currentTimeMillis()
+                )
+            }
+            val updated = tv.copy(
+                seriesBible = state.storyBible,
+                episodes = updatedEpisodes,
+                lastModified = System.currentTimeMillis()
+            )
+            if (ctx != null) TvSeriesRepository.saveProject(ctx, updated)
+            _uiState.update {
+                it.copy(
+                    tvSeriesProject = updated,
+                    isWorldTreeHubOpen = true,
+                    isCorkboardOpen = false,
+                    isStoryBibleOpen = false,
+                    isPitchDeckOpen = false
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isWorldTreeHubOpen = true,
+                isCorkboardOpen = false,
+                isStoryBibleOpen = false,
+                isPitchDeckOpen = false
+            )
+        }
+    }
+
+    fun closeWorldTreeHub() {
+        _uiState.update { it.copy(isWorldTreeHubOpen = false) }
+    }
+
+    fun openHubCorkboard() {
+        _uiState.update {
+            it.copy(
+                isWorldTreeHubOpen = false,
+                isCorkboardOpen = true,
+                isCorkboardSideBySide = false
+            )
+        }
+    }
+
+    fun openBranchFromHub(context: Context, index: Int, openCorkboard: Boolean = false) {
+        val state = _uiState.value
+        when {
+            state.blendedUniverseProject != null -> {
+                if (index != state.blendedUniverseProject.activeAssignmentIndex) {
+                    selectBlendedAssignment(context, index)
+                }
+                _uiState.update {
+                    it.copy(
+                        isWorldTreeHubOpen = false,
+                        isCorkboardOpen = openCorkboard,
+                        isCorkboardSideBySide = false
+                    )
+                }
+            }
+            state.tvSeriesProject != null -> {
+                if (index != state.tvSeriesProject.activeEpisodeIndex) {
+                    selectTvEpisode(context, index)
+                }
+                _uiState.update {
+                    it.copy(
+                        isWorldTreeHubOpen = false,
+                        isCorkboardOpen = openCorkboard,
+                        isCorkboardSideBySide = false
+                    )
+                }
+            }
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        isWorldTreeHubOpen = false,
+                        isCorkboardOpen = openCorkboard,
+                        isCorkboardSideBySide = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun renameUniverse(context: Context, newTitle: String) {
+        val trimmed = newTitle.trim().ifBlank { return }
+        val state = _uiState.value
+        val updatedBible = state.storyBible.copy(scriptTitle = trimmed)
+        StoryBibleRepository.saveBible(context, updatedBible)
+
+        val blended = state.blendedUniverseProject
+        if (blended != null) {
+            val active = blended.getActiveAssignment()
+            val updated = blended.copy(
+                title = trimmed,
+                universeBible = updatedBible,
+                lastModified = System.currentTimeMillis()
+            )
+            UniverseRepository.saveProject(context, updated)
+            _uiState.update {
+                it.copy(
+                    blendedUniverseProject = updated,
+                    storyBible = updatedBible,
+                    title = if (active != null) "$trimmed — ${active.title}" else trimmed
+                )
+            }
+            return
+        }
+
+        val tv = state.tvSeriesProject
+        if (tv != null) {
+            val activeEp = tv.getActiveEpisode()
+            val updated = tv.copy(
+                title = trimmed,
+                seriesBible = updatedBible,
+                lastModified = System.currentTimeMillis()
+            )
+            TvSeriesRepository.saveProject(context, updated)
+            _uiState.update {
+                it.copy(
+                    tvSeriesProject = updated,
+                    storyBible = updatedBible,
+                    title = if (activeEp != null) "$trimmed - Ep ${activeEp.episodeNumber}: ${activeEp.title}" else trimmed
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                storyBible = updatedBible,
+                title = trimmed
             )
         }
     }
@@ -3675,11 +3883,31 @@ class ScreenplayViewModel : ViewModel() {
         }
     }
 
+    fun setUniverseTheme(context: Context, newTheme: UniverseTheme) {
+        val current = _uiState.value.blendedUniverseProject ?: return
+        val updated = current.copy(
+            theme = newTheme,
+            eras = if (current.eras.isEmpty() || current.eras == BlendedUniverseProject.defaultUniverseEras(current.theme)) {
+                BlendedUniverseProject.defaultUniverseEras(newTheme)
+            } else {
+                current.eras
+            },
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updated)
+        _uiState.update { it.copy(blendedUniverseProject = updated) }
+    }
+
     fun addBlendedAssignment(
         context: Context,
         assignmentTitle: String,
         format: ProjectFormat,
-        screenplayType: ScreenplayType = ScreenplayType.FEATURE
+        screenplayType: ScreenplayType = ScreenplayType.FEATURE,
+        branchRole: BranchRole = BranchRole.MAIN_SPINE,
+        spinoffParentId: String? = null,
+        focusCharacterId: String? = null,
+        eraTag: String? = null,
+        openImmediately: Boolean = true
     ) {
         val currentProject = _uiState.value.blendedUniverseProject ?: return
         val oldIdx = currentProject.activeAssignmentIndex
@@ -3696,18 +3924,28 @@ class ScreenplayViewModel : ViewModel() {
         val newAssignment = BlendedAssignment.defaultAssignment(
             title = assignmentTitle,
             format = format,
-            screenplayType = screenplayType
+            screenplayType = screenplayType,
+            branchRole = branchRole,
+            spinoffParentId = spinoffParentId,
+            focusCharacterId = focusCharacterId,
+            eraTag = eraTag ?: currentProject.eras.firstOrNull()?.name ?: "Epoch I"
         )
         mutable.add(newAssignment)
         val newIndex = mutable.lastIndex
 
+        val targetActiveIdx = if (openImmediately) newIndex else oldIdx.coerceIn(0, mutable.lastIndex)
         val updatedProject = currentProject.copy(
             universeBible = _uiState.value.storyBible,
             assignments = mutable,
-            activeAssignmentIndex = newIndex,
+            activeAssignmentIndex = targetActiveIdx,
             lastModified = System.currentTimeMillis()
         )
         UniverseRepository.saveProject(context, updatedProject)
+
+        if (!openImmediately) {
+            _uiState.update { it.copy(blendedUniverseProject = updatedProject) }
+            return
+        }
 
         _uiState.update { current ->
             buildUpdatedState(
@@ -3715,6 +3953,7 @@ class ScreenplayViewModel : ViewModel() {
                     projectFormat = newAssignment.format,
                     screenplayType = newAssignment.screenplayType,
                     blendedUniverseProject = updatedProject,
+                    isWorldTreeHubOpen = false,
                     title = "${updatedProject.title} — ${newAssignment.title}",
                     blocks = newAssignment.blocks,
                     focusedBlockId = newAssignment.blocks.firstOrNull()?.id ?: "",
@@ -3841,6 +4080,7 @@ class ScreenplayViewModel : ViewModel() {
                     screenplayType = format,
                     tvSeriesProject = series,
                     isUniverseProject = true,
+                    isWorldTreeHubOpen = if (enableSparkMode) false else initialWorkspaceView == InitialWorkspaceView.WORLD_TREE_HUB,
                     title = "${series.title} - Ep ${activeEp.episodeNumber}: ${activeEp.title}",
                     author = showrunner,
                     blocks = activeEp.blocks,
@@ -4020,7 +4260,8 @@ class ScreenplayViewModel : ViewModel() {
         context: Context,
         episodeNumber: String,
         episodeTitle: String,
-        writerCredit: String = ""
+        writerCredit: String = "",
+        openImmediately: Boolean = true
     ) {
         // Rule Zero: Lock Episode 102+ creation until Episode 101 reaches STUDIO_UNLOCKED
         if (_uiState.value.firstDraftState.isArcadeLocked &&
@@ -4061,8 +4302,10 @@ class ScreenplayViewModel : ViewModel() {
         _uiState.update { it.copy(tvSeriesProject = updatedSeries) }
         TvSeriesRepository.saveProject(context, updatedSeries)
 
-        // Automatically switch to the newly created episode
-        selectTvEpisode(context, updatedEpisodes.size - 1)
+        // Automatically switch to the newly created episode if requested
+        if (openImmediately) {
+            selectTvEpisode(context, updatedEpisodes.size - 1)
+        }
     }
 
     fun reorderTvEpisodes(context: Context, fromIndex: Int, toIndex: Int) {

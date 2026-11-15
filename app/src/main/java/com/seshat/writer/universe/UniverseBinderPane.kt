@@ -149,6 +149,31 @@ fun UniverseBinderPane(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Back up to World Tree / Hub button
+        Surface(
+            color = ElectrumGold.copy(alpha = 0.14f),
+            shape = RoundedCornerShape(0.dp),
+            border = BorderStroke(1.dp, ElectrumGold),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(0.dp))
+                .clickable {
+                    onCloseBinder()
+                    viewModel.openWorldTreeHub()
+                }
+        ) {
+            Text(
+                text = "🌳 ↑ Back to The Hub (World Tree)",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = ElectrumGold,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // Shared Master Story Bible Jump Button
         Surface(
             color = ObsidianSurfaceVariant,
