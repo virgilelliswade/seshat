@@ -242,12 +242,37 @@ data class BlendedUniverseProject(
     }
 
     companion object {
-        fun defaultUniverseEras(theme: UniverseTheme = UniverseTheme.STANDARD): List<UniverseTimelineEra> = listOf(
-            UniverseTimelineEra(name = "Ancient Era (Origin)", timeSpan = "Era I", description = "Foundational lore, world origin, primordial events, and ancient legends."),
-            UniverseTimelineEra(name = "The Classical Era (Ascendance)", timeSpan = "Era II", description = "The great empires, golden age, and major historic milestones."),
-            UniverseTimelineEra(name = "The Cataclysm / Schism", timeSpan = "Era III", description = "The historic crisis, turning point, or world-altering conflict."),
-            UniverseTimelineEra(name = "The Modern Era (Main Canon)", timeSpan = "Era IV", description = "Contemporary timeline where the core projects and primary narratives take place.")
+        fun genericEras(prefix: String = "Era", count: Int = 4): List<UniverseTimelineEra> = (1..count).map { i ->
+            UniverseTimelineEra(
+                name = "$prefix $i",
+                timeSpan = "$prefix $i",
+                description = "Timeline segment $i of your story world."
+            )
+        }
+
+        fun genericPhases(count: Int = 4): List<UniverseTimelineEra> = (1..count).map { i ->
+            UniverseTimelineEra(
+                name = "Phase $i",
+                timeSpan = "Phase $i",
+                description = "Narrative saga / phase $i."
+            )
+        }
+
+        fun classicalEpochs(): List<UniverseTimelineEra> = listOf(
+            UniverseTimelineEra(name = "Epoch I", timeSpan = "Epoch I", description = "Primordial origin, world creation, and ancient elder lore."),
+            UniverseTimelineEra(name = "Epoch II", timeSpan = "Epoch II", description = "The Golden Age, rise of kingdoms and civilization."),
+            UniverseTimelineEra(name = "Epoch III", timeSpan = "Epoch III", description = "The Great Sundering, cataclysmic turning point."),
+            UniverseTimelineEra(name = "Epoch IV", timeSpan = "Epoch IV", description = "Modern era where the core canon narratives unfold.")
         )
+
+        fun narrativeSagas(): List<UniverseTimelineEra> = listOf(
+            UniverseTimelineEra(name = "Origin Era", timeSpan = "Origin", description = "World foundation, origin myths, and first civilization."),
+            UniverseTimelineEra(name = "Classical Age", timeSpan = "Classical", description = "The height of civilization and classical history."),
+            UniverseTimelineEra(name = "The Cataclysm", timeSpan = "Crisis", description = "The major turning point, conflict, or collapse."),
+            UniverseTimelineEra(name = "Modern Canon", timeSpan = "Modern", description = "The contemporary timeline of the core projects.")
+        )
+
+        fun defaultUniverseEras(theme: UniverseTheme = UniverseTheme.STANDARD): List<UniverseTimelineEra> = genericEras("Era", 4)
 
         fun fromJson(json: JSONObject): BlendedUniverseProject {
             val title = json.optString("title", "UNTITLED UNIVERSE")

@@ -3886,6 +3886,16 @@ class ScreenplayViewModel : ViewModel() {
         _uiState.update { it.copy(blendedUniverseProject = updated) }
     }
 
+    fun updateUniverseEras(context: Context, newEras: List<UniverseTimelineEra>) {
+        val current = _uiState.value.blendedUniverseProject ?: return
+        val updated = current.copy(
+            eras = newEras,
+            lastModified = System.currentTimeMillis()
+        )
+        UniverseRepository.saveProject(context, updated)
+        _uiState.update { it.copy(blendedUniverseProject = updated) }
+    }
+
     fun addBlendedAssignment(
         context: Context,
         assignmentTitle: String,

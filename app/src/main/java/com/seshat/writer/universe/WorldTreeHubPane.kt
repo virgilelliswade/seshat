@@ -31,12 +31,15 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -115,7 +118,8 @@ fun WorldTreeHubPane(
     var newBranchFormat by remember(defaultBranchFormat) { mutableStateOf(defaultBranchFormat) }
     var newBranchRole by remember { mutableStateOf(BranchRole.MAIN_SPINE) }
     var selectedParentId by remember { mutableStateOf<String?>(null) }
-    var selectedEraTag by remember(theme) { mutableStateOf(blended?.eras?.firstOrNull()?.name ?: "Epoch I") }
+    var selectedEraTag by remember(theme) { mutableStateOf(blended?.eras?.firstOrNull()?.name ?: "Era 1") }
+    var showErasDialog by remember { mutableStateOf(false) }
 
     var arcDraft by remember(bible.tvConfig.seasonalArcSummary) { mutableStateOf(bible.tvConfig.seasonalArcSummary) }
 
@@ -395,7 +399,7 @@ fun WorldTreeHubPane(
                             HubLoreChip("🎭 ${theme.archetypesLabel}: ${bible.characters.size}", isDark)
                             HubLoreChip("🔍 Locations: ${bible.locations.size}", isDark)
                             HubLoreChip("📌 Beats & Events: ${bible.beats.size}", isDark)
-                            HubLoreChip("⏳ ${theme.erasLabel}: ${blended?.eras?.size ?: 4}", isDark)
+                            HubLoreChip("⏳ ${theme.erasLabel}: ${blended?.eras?.size ?: 4} ✎", isDark, onClick = { showErasDialog = true })
                         }
                         if (!isCompactScreen) {
                             Spacer(modifier = Modifier.width(10.dp))
@@ -719,14 +723,33 @@ fun WorldTreeHubPane(
                             // 4. Historical Era Selector (theme.erasLabel)
                             if (blended != null && blended.eras.isNotEmpty()) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                        text = "HISTORICAL ERA / TIMELINE PLACEMENT:",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = mutedText,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "HISTORICAL ERA / TIMELINE PLACEMENT:",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = mutedText,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         )
-                                    )
+                                        Surface(
+                                            color = Color.Transparent,
+                                            modifier = Modifier.clickable { showErasDialog = true }
+                                        ) {
+                                            Text(
+                                                text = "✎ Manage / Rename Eras",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = goldAccent,
+                                                    fontSize = 10.5.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                        }
+                                    }
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -753,6 +776,25 @@ fun WorldTreeHubPane(
                                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                                 )
                                             }
+                                        }
+
+                                        Surface(
+                                            color = cardInsetBg,
+                                            shape = RoundedCornerShape(0.dp),
+                                            border = BorderStroke(1.dp, goldAccent.copy(alpha = 0.5f)),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(0.dp))
+                                                .clickable { showErasDialog = true }
+                                        ) {
+                                            Text(
+                                                text = "+ Custom Era...",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = goldAccent,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -1126,6 +1168,20 @@ fun WorldTreeHubPane(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+
+        if (showErasDialog && blended != null) {
+            UniverseTimelineErasDialog(
+                initialEras = blended.eras,
+                isDark = isDark,
+                onSaveEras = { newEras ->
+                    viewModel.updateUniverseEras(context, newEras)
+                    if (selectedEraTag !in newEras.map { it.name }) {
+                        selectedEraTag = newEras.firstOrNull()?.name ?: "Era 1"
+                    }
+                },
+                onDismiss = { showErasDialog = false }
+            )
+        }
     }
 }
 
@@ -1175,10 +1231,15 @@ private fun HubTopPill(
 }
 
 @Composable
-private fun HubLoreChip(text: String, isDark: Boolean) {
+private fun HubLoreChip(
+    text: String,
+    isDark: Boolean,
+    onClick: (() -> Unit)? = null
+) {
     Surface(
         color = if (isDark) ObsidianSurfaceVariant else Color(0xFFE2E8F0),
-        shape = RoundedCornerShape(0.dp)
+        shape = RoundedCornerShape(0.dp),
+        modifier = if (onClick != null) Modifier.clip(RoundedCornerShape(0.dp)).clickable { onClick() } else Modifier
     ) {
         Text(
             text = text,
@@ -1189,6 +1250,325 @@ private fun HubLoreChip(text: String, isDark: Boolean) {
             ),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
+    }
+}
+
+@Composable
+fun UniverseTimelineErasDialog(
+    initialEras: List<UniverseTimelineEra>,
+    isDark: Boolean,
+    onSaveEras: (List<UniverseTimelineEra>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var editableEras by remember {
+        mutableStateOf(if (initialEras.isNotEmpty()) initialEras else BlendedUniverseProject.defaultUniverseEras())
+    }
+
+    val goldAccent = if (isDark) ElectrumGold else Color(0xFFB45309)
+    val cardBg = if (isDark) ObsidianSurface else Color(0xFFF8FAFC)
+    val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val textColor = if (isDark) Color.White else Color(0xFF0F172A)
+    val mutedColor = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(min = 320.dp, max = 640.dp)
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(0.dp))
+                .border(BorderStroke(1.dp, goldAccent.copy(alpha = 0.6f)), RoundedCornerShape(0.dp)),
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Header Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("⏳", fontSize = 20.sp)
+                            Text(
+                                text = "MASTER TIMELINE ERAS",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = MainAppFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = goldAccent,
+                                    fontSize = 16.sp
+                                )
+                            )
+                        }
+                        Text(
+                            text = "Name and structure your universe's chronological eras. Projects branch into these eras.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = mutedColor,
+                                fontSize = 11.5.sp
+                            )
+                        )
+                    }
+                    Surface(
+                        color = Color.Transparent,
+                        modifier = Modifier.clickable { onDismiss() }
+                    ) {
+                        Text(
+                            text = "✕",
+                            color = mutedColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
+                }
+
+                // Quick Presets Row
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "QUICK PRESETS:",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = goldAccent,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp
+                        )
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            "⚡ Generic Eras (Era 1...)" to { BlendedUniverseProject.genericEras("Era", 4) },
+                            "⚡ Generic Phases (Phase 1...)" to { BlendedUniverseProject.genericPhases(4) },
+                            "⚡ Classical Epochs (Epoch I...)" to { BlendedUniverseProject.classicalEpochs() },
+                            "⚡ Narrative Sagas (Origin...)" to { BlendedUniverseProject.narrativeSagas() }
+                        ).forEach { (label, presetGen) ->
+                            Surface(
+                                color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                                shape = RoundedCornerShape(0.dp),
+                                border = BorderStroke(1.dp, borderColor),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable { editableEras = presetGen() }
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = if (isDark) Color.White else Color(0xFF1E293B),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 10.5.sp
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Scrollable Eras List
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    editableEras.forEachIndexed { index, era ->
+                        Surface(
+                            color = if (isDark) ObsidianBlack else Color.White,
+                            shape = RoundedCornerShape(0.dp),
+                            border = BorderStroke(1.dp, borderColor),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Surface(
+                                            color = goldAccent.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(0.dp)
+                                        ) {
+                                            Text(
+                                                text = "${index + 1}",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = goldAccent,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp
+                                                ),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = era.name.ifBlank { "Era ${index + 1}" },
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = textColor,
+                                                fontSize = 12.sp
+                                            )
+                                        )
+                                    }
+
+                                    if (editableEras.size > 1) {
+                                        Surface(
+                                            color = Color.Transparent,
+                                            modifier = Modifier.clickable {
+                                                editableEras = editableEras.filterIndexed { i, _ -> i != index }
+                                            }
+                                        ) {
+                                            Text(
+                                                text = "🗑️ Remove",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = ScribeStarNeonRed,
+                                                    fontSize = 10.sp
+                                                ),
+                                                modifier = Modifier.padding(4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = era.name,
+                                        onValueChange = { newName ->
+                                            editableEras = editableEras.mapIndexed { i, e ->
+                                                if (i == index) e.copy(name = newName) else e
+                                            }
+                                        },
+                                        label = { Text("Era Name", fontSize = 10.sp) },
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = goldAccent,
+                                            unfocusedBorderColor = borderColor,
+                                            focusedTextColor = textColor,
+                                            unfocusedTextColor = textColor
+                                        ),
+                                        modifier = Modifier.weight(1.5f)
+                                    )
+
+                                    OutlinedTextField(
+                                        value = era.timeSpan,
+                                        onValueChange = { newSpan ->
+                                            editableEras = editableEras.mapIndexed { i, e ->
+                                                if (i == index) e.copy(timeSpan = newSpan) else e
+                                            }
+                                        },
+                                        label = { Text("Time Span", fontSize = 10.sp) },
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = goldAccent,
+                                            unfocusedBorderColor = borderColor,
+                                            focusedTextColor = textColor,
+                                            unfocusedTextColor = textColor
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+
+                                OutlinedTextField(
+                                    value = era.description,
+                                    onValueChange = { newDesc ->
+                                        editableEras = editableEras.mapIndexed { i, e ->
+                                            if (i == index) e.copy(description = newDesc) else e
+                                        }
+                                    },
+                                    label = { Text("Description / World State", fontSize = 10.sp) },
+                                    singleLine = true,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = goldAccent,
+                                        unfocusedBorderColor = borderColor,
+                                        focusedTextColor = textColor,
+                                        unfocusedTextColor = textColor
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+
+                    // Add Era Button
+                    Button(
+                        onClick = {
+                            val nextNum = editableEras.size + 1
+                            editableEras = editableEras + UniverseTimelineEra(
+                                name = "Era $nextNum",
+                                timeSpan = "Era $nextNum",
+                                description = "Timeline era $nextNum."
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFE2E8F0),
+                            contentColor = textColor
+                        ),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.fillMaxWidth().height(36.dp)
+                    ) {
+                        Text(
+                            text = "+ Add New Timeline Era",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp
+                        )
+                    }
+                }
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(0.dp),
+                        border = BorderStroke(1.dp, borderColor),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = mutedColor),
+                        modifier = Modifier.weight(1f).height(44.dp)
+                    ) {
+                        Text("Cancel", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            onSaveEras(editableEras)
+                            onDismiss()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = goldAccent,
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.weight(1.5f).height(44.dp)
+                    ) {
+                        Text("Save Timeline Eras ✓", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
     }
 }
 
