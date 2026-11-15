@@ -297,82 +297,68 @@ fun WorldTreeHubPane(
                                     )
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                color = cardInsetBg,
-                                shape = RoundedCornerShape(0.dp),
-                                border = BorderStroke(1.dp, cardInsetBorder),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(0.dp))
-                                    .clickable {
-                                        draftUniverseTitle = universeTitle
-                                        isEditingTitle = true
-                                    }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Rename Universe",
-                                        tint = goldAccent,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Text(
-                                        text = "Rename",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = goldAccent,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Universe Theme Switcher Strip
-                    if (blended != null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "THEME:",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = mutedText,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                )
-                            )
-                            UniverseTheme.entries.forEach { th ->
-                                val isCurrent = th == theme
                                 Surface(
-                                    color = if (isCurrent) goldAccent.copy(alpha = 0.22f) else cardInsetBg,
+                                    color = goldAccent.copy(alpha = 0.18f),
                                     shape = RoundedCornerShape(0.dp),
-                                    border = BorderStroke(1.dp, if (isCurrent) goldAccent else cardInsetBorder),
+                                    border = BorderStroke(1.dp, goldAccent),
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(0.dp))
                                         .clickable {
-                                            if (!isCurrent) viewModel.setUniverseTheme(context, th)
+                                            Universe3DVisualizer.launch3DTree(
+                                                context = context,
+                                                universeTitle = universeTitle,
+                                                bible = bible,
+                                                blendedProject = blended
+                                            )
+                                        }
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("🪐", fontSize = 13.sp)
+                                        Text(
+                                            text = "Launch 3D Tree",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = goldAccent,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    color = cardInsetBg,
+                                    shape = RoundedCornerShape(0.dp),
+                                    border = BorderStroke(1.dp, cardInsetBorder),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(0.dp))
+                                        .clickable {
+                                            draftUniverseTitle = universeTitle
+                                            isEditingTitle = true
                                         }
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                     ) {
-                                        Text(text = th.icon, fontSize = 12.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Rename Universe",
+                                            tint = goldAccent,
+                                            modifier = Modifier.size(14.dp)
+                                        )
                                         Text(
-                                            text = th.displayName,
+                                            text = "Rename",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                color = if (isCurrent) goldAccent else secondaryText,
-                                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                                                fontSize = 11.sp
+                                                color = goldAccent,
+                                                fontWeight = FontWeight.Bold
                                             )
                                         )
                                     }
@@ -399,7 +385,7 @@ fun WorldTreeHubPane(
                                 .horizontalScroll(rememberScrollState())
                         ) {
                             Text(
-                                text = "${theme.foundationsLabel.substringBefore("(").trim().uppercase()}:",
+                                text = "${theme.foundationsLabel.uppercase()}:",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = goldAccent,
                                     fontWeight = FontWeight.Bold,
@@ -429,6 +415,22 @@ fun WorldTreeHubPane(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        HubActionCardButton(
+                            icon = "🪐",
+                            title = "Launch 3D World Tree",
+                            subtitle = "Interactive 3D spatial orbit in browser",
+                            accentColor = Color(0xFF10B981),
+                            isDark = isDark,
+                            onClick = {
+                                Universe3DVisualizer.launch3DTree(
+                                    context = context,
+                                    universeTitle = universeTitle,
+                                    bible = bible,
+                                    blendedProject = blended
+                                )
+                            },
+                            modifier = if (isCompactScreen) Modifier.fillMaxWidth() else Modifier.widthIn(min = 210.dp)
+                        )
                         HubActionCardButton(
                             icon = "📖",
                             title = "Master Lore Doc",
@@ -583,7 +585,7 @@ fun WorldTreeHubPane(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
-                                text = "🌱 SPROUT A NEW ${theme.mainProjectsLabel.uppercase()} OR ${theme.spinoffsLabel.uppercase()}",
+                                text = "🌱 CREATE A NEW CORE PROJECT OR SPINOFF",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = goldAccent,
                                     fontWeight = FontWeight.Bold,
@@ -718,7 +720,7 @@ fun WorldTreeHubPane(
                             if (blended != null && blended.eras.isNotEmpty()) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(
-                                        text = "HISTORICAL ERA (${theme.erasLabel.uppercase()}):",
+                                        text = "HISTORICAL ERA / TIMELINE PLACEMENT:",
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             color = mutedText,
                                             fontSize = 10.sp,

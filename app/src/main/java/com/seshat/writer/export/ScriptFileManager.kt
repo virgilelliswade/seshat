@@ -28,8 +28,13 @@ object ScriptFileManager {
         return dir
     }
 
-    fun getExportsDirectory(context: Context): File {
-        val dir = File(context.cacheDir, EXPORTS_DIR)
+    fun getExportsDirectory(context: Context? = null): File {
+        val baseDir = if (context != null) {
+            context.cacheDir
+        } else {
+            File(System.getProperty("java.io.tmpdir") ?: ".")
+        }
+        val dir = File(baseDir, EXPORTS_DIR)
         if (!dir.exists()) dir.mkdirs()
         return dir
     }

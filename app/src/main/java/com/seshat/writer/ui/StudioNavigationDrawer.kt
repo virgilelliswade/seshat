@@ -73,6 +73,7 @@ import com.seshat.writer.ui.theme.ScreenplayTextDark
 import com.seshat.writer.ui.theme.ScreenplayTextMuted
 import com.seshat.writer.ui.theme.ScribeStarNeonRed
 import com.seshat.writer.ui.theme.StudioIconType
+import com.seshat.writer.universe.Universe3DVisualizer
 import com.seshat.writer.ui.theme.StudioMonoIcon
 import com.seshat.writer.ui.theme.parseStudioButtonLabel
 
@@ -301,6 +302,21 @@ fun StudioNavigationDrawer(
                                     onClick = {
                                         onCloseDrawer()
                                         onOpenWorldTree()
+                                    }
+                                )
+                                DrawerNavItem(
+                                    icon = "🪐",
+                                    title = "3D World Tree",
+                                    subtitle = "Interactive 3D orbit & branch visualizer",
+                                    isActive = false,
+                                    onClick = {
+                                        onCloseDrawer()
+                                        Universe3DVisualizer.launch3DTree(
+                                            context = context,
+                                            universeTitle = uiState.blendedUniverseProject?.title ?: uiState.title,
+                                            bible = uiState.storyBible,
+                                            blendedProject = uiState.blendedUniverseProject
+                                        )
                                     }
                                 )
                             }

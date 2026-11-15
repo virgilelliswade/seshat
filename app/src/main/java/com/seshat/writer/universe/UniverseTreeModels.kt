@@ -5,11 +5,12 @@ import org.json.JSONObject
 import java.util.UUID
 
 /**
- * 4 Themed Universe Builder Modes for Seshat:
- * 1. Arboreal: World Tree / Yggdrasil / Nature (Mythic & Epic Worldbuilding)
- * 2. Stellar: Celestial Orrery / Astronomy (Hard Sci-Fi & Cosmic Space Opera)
- * 3. Deoxyribonuclear: The Genome Loom / DNA (Biopunk & The Stellar Codex Model)
- * 4. Temporal: The Chrono-Loom / MCU-ish (Multiverse, Timelines & Sagas)
+ * Standard terminology for the Living Universe and World Tree architecture:
+ * 1. Foundational Lore & Rules (World rules, characters, locations)
+ * 2. Timeline Axis & Historical Eras (Chronological spine)
+ * 3. Core Projects & Spinoffs (Medium-agnostic story branches)
+ * 4. Scenes & Chapters (Micro narrative units)
+ * 5. Deliverables (PDF/FDX exports)
  */
 enum class UniverseTheme(
     val id: String,
@@ -26,85 +27,100 @@ enum class UniverseTheme(
     val scrappedLabel: String,
     val icon: String
 ) {
+    STANDARD(
+        id = "STANDARD",
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
+    ),
     ARBOREAL(
         id = "ARBOREAL",
-        displayName = "Arboreal (World Tree)",
-        engineName = "The World Tree (Universe Viewer)",
-        foundationsLabel = "Roots (Foundational Lore & Rules)",
-        masterTimelineLabel = "The Trunk (Timeline Axis)",
-        erasLabel = "Ages (Historical Eras)",
-        mainProjectsLabel = "Main Branches (Core Projects)",
-        spinoffsLabel = "Offshoots (Spinoffs & Sidequests)",
-        microUnitsLabel = "Leaves (Scenes & Chapters)",
-        deliverablesLabel = "The Harvest (Deliverables: PDF/FDX)",
-        archetypesLabel = "The Pantheon (Character Archetypes)",
-        scrappedLabel = "Pruned Branches (Non-Canon)",
-        icon = "🌲"
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
     ),
     STELLAR(
         id = "STELLAR",
-        displayName = "Stellar (Celestial Orrery)",
-        engineName = "The Celestial Orrery (Universe Viewer)",
-        foundationsLabel = "Universal Constants (Foundational Lore & Rules)",
-        masterTimelineLabel = "The Prime Meridian (Timeline Axis)",
-        erasLabel = "Epochs (Historical Eras)",
-        mainProjectsLabel = "Major Vectors (Core Projects)",
-        spinoffsLabel = "Orbital Offshoots (Spinoffs & Sidequests)",
-        microUnitsLabel = "Luminaries (Scenes & Chapters)",
-        deliverablesLabel = "Zenith Artifacts (Deliverables: PDF/FDX)",
-        archetypesLabel = "The Stellarium (Character Archetypes)",
-        scrappedLabel = "Dark Nebula (Non-Canon)",
-        icon = "🔭"
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
     ),
     DEOXYRIBONUCLEAR(
         id = "DEOXYRIBONUCLEAR",
-        displayName = "Deoxyribonuclear (DNA / Stellar Codex)",
-        engineName = "The Genome Loom (Universe Viewer)",
-        foundationsLabel = "Base Pairs (Foundational Lore & Rules)",
-        masterTimelineLabel = "The Chromosome Axis (Timeline Axis)",
-        erasLabel = "Helical Cycles (Historical Eras)",
-        mainProjectsLabel = "Canon Strands (Core Projects)",
-        spinoffsLabel = "Splices (Spinoffs & Sidequests)",
-        microUnitsLabel = "Codons (Scenes & Chapters)",
-        deliverablesLabel = "Expressed Phenotypes (Deliverables: PDF/FDX)",
-        archetypesLabel = "Gene Lineages (Character Archetypes)",
-        scrappedLabel = "Silenced Introns (Non-Canon)",
-        icon = "🧬"
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
     ),
     TEMPORAL(
         id = "TEMPORAL",
-        displayName = "Temporal (Chrono-Loom / Multiverse)",
-        engineName = "The Chrono-Loom (Universe Viewer)",
-        foundationsLabel = "Absolute Points (Foundational Lore & Rules)",
-        masterTimelineLabel = "The Sacred Timeline (Timeline Axis)",
-        erasLabel = "Phases & Sagas (Historical Eras)",
-        mainProjectsLabel = "Spine Realities (Core Projects)",
-        spinoffsLabel = "Nexus Branches (Spinoffs & Sidequests)",
-        microUnitsLabel = "Nexus Moments (Scenes & Chapters)",
-        deliverablesLabel = "Nexus Artifacts (Deliverables: PDF/FDX)",
-        archetypesLabel = "Anchor Beings (Character Archetypes)",
-        scrappedLabel = "Pruned Timelines (Non-Canon)",
-        icon = "⏳"
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
     ),
     MYTHOLOGICAL(
         id = "MYTHOLOGICAL",
-        displayName = "Mythological (Classical Epics)",
-        engineName = "The Loom of Destiny (Universe Viewer)",
-        foundationsLabel = "Creation Myths (Foundational Lore & Rules)",
-        masterTimelineLabel = "The Thread of Fate (Timeline Axis)",
-        erasLabel = "Mythic Ages (Historical Eras)",
-        mainProjectsLabel = "Great Epics (Core Projects)",
-        spinoffsLabel = "Folklore & Quests (Spinoffs & Sidequests)",
-        microUnitsLabel = "Cantos & Labors (Scenes & Chapters)",
-        deliverablesLabel = "The Sacred Codex (Deliverables: PDF/FDX)",
-        archetypesLabel = "The Pantheon (Character Archetypes)",
-        scrappedLabel = "The Underworld (Non-Canon & Lost Lore)",
-        icon = "🏛️"
+        displayName = "Story Universe",
+        engineName = "The World Tree & Universe Hub",
+        foundationsLabel = "Foundational Lore & Rules",
+        masterTimelineLabel = "Timeline Axis",
+        erasLabel = "Historical Eras",
+        mainProjectsLabel = "Core Projects",
+        spinoffsLabel = "Spinoffs & Sidequests",
+        microUnitsLabel = "Scenes & Chapters",
+        deliverablesLabel = "Deliverables (PDF/FDX)",
+        archetypesLabel = "Character Archetypes",
+        scrappedLabel = "Non-Canon / Scrapped",
+        icon = "🪐"
     );
 
     companion object {
         fun fromId(id: String?): UniverseTheme =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: ARBOREAL
+            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: STANDARD
     }
 }
 

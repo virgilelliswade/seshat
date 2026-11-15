@@ -3573,24 +3573,10 @@ class ScreenplayViewModel : ViewModel() {
         enableSparkMode: Boolean = false,
         campaignGenre: CampaignGenre = CampaignGenre.SCIFI,
         universeKind: String = "BLENDED",
-        theme: UniverseTheme = UniverseTheme.ARBOREAL
+        theme: UniverseTheme = UniverseTheme.STANDARD
     ) {
-        val resolvedTitle = universeTitle.ifBlank {
-            when (theme) {
-                UniverseTheme.ARBOREAL -> "The Living World Tree"
-                UniverseTheme.STELLAR -> "The Celestial Orrery"
-                UniverseTheme.DEOXYRIBONUCLEAR -> "The Stellar Codex"
-                UniverseTheme.TEMPORAL -> "The Sacred Continuum"
-                UniverseTheme.MYTHOLOGICAL -> "The Sacred Mythos"
-            }
-        }
-        val starterAssignmentTitle = when (theme) {
-            UniverseTheme.ARBOREAL -> "Main Branch 1 (${starterFormat.displayName})"
-            UniverseTheme.STELLAR -> "Vector 1 (${starterFormat.displayName})"
-            UniverseTheme.DEOXYRIBONUCLEAR -> "Canon Strand 1 (${starterFormat.displayName})"
-            UniverseTheme.TEMPORAL -> "Spine Reality 1 (${starterFormat.displayName})"
-            UniverseTheme.MYTHOLOGICAL -> "Epic 1 (${starterFormat.displayName})"
-        }
+        val resolvedTitle = universeTitle.ifBlank { "Living Story Universe" }
+        val starterAssignmentTitle = "Core Project 1 (${starterFormat.displayName})"
         val defaultEras = BlendedUniverseProject.defaultUniverseEras(theme)
         val starterAssignment = BlendedAssignment.defaultAssignment(
             title = starterAssignmentTitle,

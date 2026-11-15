@@ -38,11 +38,13 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import com.seshat.writer.universe.UniverseTheme
+import com.seshat.writer.universe.Universe3DVisualizer
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.seshat.writer.library.ScriptLibraryManager
@@ -1032,108 +1034,68 @@ private fun UniverseThemeSelectContent(
     onLaunchUniverse: (UniverseTheme, String, ProjectFormat) -> Unit,
     onBack: () -> Unit
 ) {
-    var selectedTheme by remember { mutableStateOf(UniverseTheme.ARBOREAL) }
     var universeTitleInput by remember { mutableStateOf("") }
     var selectedStarterFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
+    val context = LocalContext.current
 
-    val defaultPlaceholder = when (selectedTheme) {
-        UniverseTheme.ARBOREAL -> "e.g. Chronicles of Aethelgard"
-        UniverseTheme.STELLAR -> "e.g. The Orion Constellation"
-        UniverseTheme.DEOXYRIBONUCLEAR -> "e.g. The Stellar Codex"
-        UniverseTheme.TEMPORAL -> "e.g. The Sacred Continuum"
-        UniverseTheme.MYTHOLOGICAL -> "e.g. Sagas of Eldoria"
-    }
+    val defaultPlaceholder = "e.g. Chronicles of Aethelgard"
 
     StartMenuLayout(
         headerTitle = if (isChallengeMode) "🏆 UNIVERSE CHALLENGE GENESIS" else "🪐 CREATE A LIVING UNIVERSE",
-        headerSubtitle = "Select an architectural theme for your universe. Every universe is medium-agnostic with an interactive Living World Tree.",
+        headerSubtitle = "Build a persistent story world with shared lore, characters, timeline eras, and multiple interconnected projects across any medium.",
         showBackButton = true,
         onBack = onBack
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 5 Themed Universe Cards
-            UniverseTheme.entries.forEach { theme ->
-                val isSelected = theme == selectedTheme
-                val accentColor = when (theme) {
-                    UniverseTheme.ARBOREAL -> ElectrumGold
-                    UniverseTheme.STELLAR -> Color(0xFF38BDF8)
-                    UniverseTheme.DEOXYRIBONUCLEAR -> Color(0xFF10B981)
-                    UniverseTheme.TEMPORAL -> Color(0xFFA855F7)
-                    UniverseTheme.MYTHOLOGICAL -> Color(0xFFF59E0B)
-                }
-
-                Surface(
-                    color = if (isSelected) accentColor.copy(alpha = 0.16f) else ObsidianSurface,
-                    shape = RoundedCornerShape(0.dp),
-                    border = BorderStroke(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) accentColor else ObsidianSurfaceVariant
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(0.dp))
-                        .clickable { selectedTheme = theme }
+            // Universe Architecture Card
+            Surface(
+                color = ObsidianSurface,
+                shape = RoundedCornerShape(0.dp),
+                border = BorderStroke(1.dp, ElectrumGold.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(text = theme.icon, fontSize = 20.sp)
-                                Text(
-                                    text = theme.displayName,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = MainAppFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) accentColor else Color.White
-                                    )
-                                )
-                            }
-                            if (isSelected) {
-                                Surface(
-                                    color = accentColor,
-                                    shape = RoundedCornerShape(0.dp)
-                                ) {
-                                    Text(
-                                        text = "SELECTED",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            fontSize = 9.sp
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-
+                        Text(text = "🪐", fontSize = 20.sp)
                         Text(
-                            text = "${theme.foundationsLabel} ➔ ${theme.masterTimelineLabel} ➔ ${theme.erasLabel} ➔ ${theme.mainProjectsLabel} ➔ ${theme.spinoffsLabel} ➔ ${theme.deliverablesLabel}",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = if (isSelected) Color.White else ScreenplayTextMuted,
-                                fontSize = 11.sp,
-                                lineHeight = 16.sp
+                            text = "LIVING WORLD TREE ARCHITECTURE",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = ElectrumGold
                             )
                         )
                     }
+                    Text(
+                        text = "Foundational Lore & Rules ➔ Timeline Axis & Historical Eras ➔ Core Projects & Spinoffs ➔ Deliverables (PDF/FDX)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.White,
+                            fontSize = 11.5.sp,
+                            lineHeight = 16.sp
+                        )
+                    )
+                    Text(
+                        text = "Every branch inherits the shared master story bible (characters, locations, lore rules). Write screenplays, TV pilots, novels, or comic books all connected inside one living universe with interactive 3D spatial orbit visualization.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = ScreenplayTextMuted,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
+                        )
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
             // Universe Title Input
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = "UNIVERSE TITLE:",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -1158,9 +1120,9 @@ private fun UniverseThemeSelectContent(
             }
 
             // Starter Project Medium Picker
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "FIRST PROJECT MEDIUM (${selectedTheme.mainProjectsLabel}):",
+                    text = "FIRST PROJECT MEDIUM (CORE PROJECT):",
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = ScreenplayTextMuted,
                         fontWeight = FontWeight.Bold,
@@ -1196,36 +1158,65 @@ private fun UniverseThemeSelectContent(
                                     fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
                                     fontSize = 11.sp
                                 ),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Big Launch Button
-            Button(
-                onClick = {
-                    val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
-                    onLaunchUniverse(selectedTheme, resolved, selectedStarterFormat)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ElectrumGold,
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
+            // Action Buttons Row: Preview 3D Tree & Launch Universe
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "🚀 LAUNCH LIVING WORLD TREE (${selectedTheme.displayName.substringBefore(" ")}) →",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 13.sp,
-                    letterSpacing = 0.5.sp
-                )
+                OutlinedButton(
+                    onClick = {
+                        val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
+                        Universe3DVisualizer.launch3DTree(
+                            context = context,
+                            universeTitle = resolved
+                        )
+                    },
+                    shape = RoundedCornerShape(0.dp),
+                    border = BorderStroke(1.dp, Color(0xFF10B981)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF10B981)
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = "🌐 PREVIEW 3D TREE",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
+                        onLaunchUniverse(UniverseTheme.STANDARD, resolved, selectedStarterFormat)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ElectrumGold,
+                        contentColor = Color.Black
+                    ),
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier
+                        .weight(1.5f)
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = "🚀 LAUNCH WORLD TREE →",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 12.5.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
         }
     }
