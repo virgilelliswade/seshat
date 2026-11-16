@@ -526,7 +526,8 @@ fun StoryBibleDialog(
                                 isCompact = isCompactScreen
                             )
 
-                            if (onOpen3DTree != null) {
+                            val isUniverse = isUniverseProject || blendedUniverseProject != null
+                            if (onOpen3DTree != null && isUniverse) {
                                 Surface(
                                     color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
                                     border = BorderStroke(1.dp, if (isDark) Color(0xFF818CF8) else Color(0xFF6366F1)),
@@ -1202,7 +1203,11 @@ private fun ChronologyTimelineEventsManager(
                             }
                         }
                         Text(
-                            text = "Historical timeline events populate the trunk of your 3D Universe Tree by date, era, cast, and project.",
+                            text = if (onOpen3DTree != null) {
+                                "Historical timeline events populate the trunk of your 3D Universe Tree by date, era, cast, and project."
+                            } else {
+                                "Historical timeline events organize your story canon by date, era, cast, and milestones."
+                            },
                             style = MaterialTheme.typography.bodySmall.copy(color = mutedText, fontSize = 11.5.sp)
                         )
                     }

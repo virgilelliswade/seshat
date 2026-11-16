@@ -166,7 +166,7 @@ fun CorkboardPane(
                                 .weight(1f, fill = false)
                                 .horizontalScroll(rememberScrollState())
                         ) {
-                            if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                            if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                                 Surface(
                                     color = ElectrumGold.copy(alpha = 0.16f),
                                     shape = RoundedCornerShape(0.dp),
@@ -418,7 +418,7 @@ fun CorkboardPane(
 
                         Box(modifier = Modifier.width(1.dp).height(18.dp).background(ObsidianSurfaceVariant))
 
-                        if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                        if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                             Surface(
                                 color = ElectrumGold.copy(alpha = 0.16f),
                                 shape = RoundedCornerShape(0.dp),

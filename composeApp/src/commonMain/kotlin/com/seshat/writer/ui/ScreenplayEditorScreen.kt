@@ -470,7 +470,7 @@ fun ScreenplayEditorScreen(
                             onToggleDictation = onToggleDictationWithPermission,
                             onSaveProject = onSaveProject,
                             onOpenStudioDrawer = { viewModel.openStudioDrawer() },
-                            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                                 { viewModel.openWorldTreeHub() }
                             } else null,
                             modifier = Modifier
@@ -610,10 +610,12 @@ fun ScreenplayEditorScreen(
             onOpenSettings = { viewModel.openSettingsDialog() },
             onOpenWhatsNew = { viewModel.openWhatsNewDialog() },
             onOpenPitchDeck = { viewModel.openPitchDeck() },
-            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+            onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                 { viewModel.openWorldTreeHub() }
             } else null,
-            onOpenUniverse3DTree = { viewModel.openUniverse3DTree() }
+            onOpenUniverse3DTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
+                { viewModel.openUniverse3DTree() }
+            } else null
         )
     }
 
@@ -770,7 +772,7 @@ fun ScreenplayEditorScreen(
             activeLocationsInScript = activeLocations,
             projectFormat = uiState.projectFormat,
             screenplayType = uiState.screenplayType,
-            isUniverseProject = uiState.isUniverseProject || uiState.tvSeriesProject != null || uiState.blendedUniverseProject != null || uiState.storyBible.tvConfig.isTvSeries,
+            isUniverseProject = uiState.isUniverseProject || uiState.blendedUniverseProject != null,
             tvSeriesProject = uiState.tvSeriesProject,
             blendedUniverseProject = uiState.blendedUniverseProject,
             activeAssignment = uiState.blendedUniverseProject?.getActiveAssignment(),
@@ -793,7 +795,9 @@ fun ScreenplayEditorScreen(
             onUpdateAssignmentNotes = { notes -> viewModel.updateActiveAssignmentNotes(context, notes) },
             onUpdateUniverseEras = { eras -> viewModel.updateUniverseEras(context, eras) },
             onUpdateUniverseTimelineEvents = { events -> viewModel.updateUniverseTimelineEvents(context, events) },
-            onOpen3DTree = { viewModel.openUniverse3DTree() },
+            onOpen3DTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
+                { viewModel.openUniverse3DTree() }
+            } else null,
             firstDraftState = uiState.firstDraftState,
             onSaveBible = { updated -> viewModel.saveStoryBible(context, updated) },
             onDismiss = { viewModel.closeStoryBible() },
@@ -801,7 +805,7 @@ fun ScreenplayEditorScreen(
         )
     }
 
-    if (uiState.isUniverse3DTreeOpen) {
+    if (uiState.isUniverse3DTreeOpen && (uiState.isUniverseProject || uiState.blendedUniverseProject != null)) {
         val universeTitle = uiState.blendedUniverseProject?.title ?: uiState.title.ifBlank { "UNIVERSE TREE" }
         Universe3DTreeInAppDialog(
             universeTitle = universeTitle,
@@ -1757,7 +1761,7 @@ private fun CompactScreenplayTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                     GlassEditorPillButton(
                         text = "🌳 Hub",
                         onClick = actions::openWorldTreeHub,
@@ -1882,7 +1886,7 @@ private fun DesktopScreenplayTopBar(
 
                 Box(modifier = Modifier.padding(horizontal = 4.dp).width(1.dp).height(20.dp).background(ObsidianSurfaceVariant))
 
-                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null || uiState.tvSeriesProject != null) {
+                if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
                     GlassEditorPillButton(
                         text = "🌳 Hub",
                         onClick = actions::openWorldTreeHub,

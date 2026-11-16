@@ -305,16 +305,18 @@ fun StudioNavigationDrawer(
                                         onOpenWorldTree()
                                     }
                                 )
-                                DrawerNavItem(
-                                    icon = "🪐",
-                                    title = "3D Universe Tree",
-                                    subtitle = "Interactive in-app 3D spatial orbit",
-                                    isActive = false,
-                                    onClick = {
-                                        onCloseDrawer()
-                                        onOpenUniverse3DTree?.invoke()
-                                    }
-                                )
+                                if (onOpenUniverse3DTree != null) {
+                                    DrawerNavItem(
+                                        icon = "🪐",
+                                        title = "3D Universe Tree",
+                                        subtitle = "Interactive in-app 3D spatial orbit",
+                                        isActive = false,
+                                        onClick = {
+                                            onCloseDrawer()
+                                            onOpenUniverse3DTree.invoke()
+                                        }
+                                    )
+                                }
                             }
 
                             DrawerNavItem(

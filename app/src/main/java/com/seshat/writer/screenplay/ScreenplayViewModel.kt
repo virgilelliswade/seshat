@@ -3809,6 +3809,8 @@ class ScreenplayViewModel : ViewModel() {
     }
 
     fun openUniverse3DTree() {
+        val state = _uiState.value
+        if (!state.isUniverseProject && state.blendedUniverseProject == null) return
         _uiState.update { it.copy(isUniverse3DTreeOpen = true) }
     }
 
