@@ -104,6 +104,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -112,7 +113,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.layout.ContentScale
 import com.seshat.writer.ai.AiClient
@@ -132,6 +132,7 @@ import com.seshat.writer.bible.TvEpisodeOutline
 import com.seshat.writer.bible.TvSeriesBibleConfig
 import com.seshat.writer.universe.BlendedAssignment
 import com.seshat.writer.universe.BlendedUniverseProject
+import com.seshat.writer.universe.BranchRole
 import com.seshat.writer.universe.UniverseTimelineEra
 import com.seshat.writer.universe.UniverseTimelineEvent
 import com.seshat.writer.firstdraft.FirstDraftStage
@@ -320,7 +321,7 @@ fun StoryBibleDialog(
     blendedUniverseProject: com.seshat.writer.universe.BlendedUniverseProject? = null,
     activeAssignment: com.seshat.writer.universe.BlendedAssignment? = null,
     onSelectBlendedAssignment: ((Int) -> Unit)? = null,
-    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType) -> Unit)? = null,
+    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType, BranchRole, String?) -> Unit)? = null,
     onSelectTvEpisode: ((Int) -> Unit)? = null,
     onAddTvEpisode: ((String, String) -> Unit)? = null,
     onUpdateAssignmentCharacters: ((List<String>) -> Unit)? = null,
@@ -609,6 +610,7 @@ fun StoryBibleDialog(
                             onUpdateUniverseEras = onUpdateUniverseEras,
                             onUpdateUniverseTimelineEvents = onUpdateUniverseTimelineEvents,
                             onOpen3DTree = onOpen3DTree,
+                            onAddBlendedAssignment = onAddBlendedAssignment,
                             fontIndex = docFontFamilyIndex,
                             onFontIndexChange = { docFontFamilyIndex = it },
                             fontSizePt = docFontSizePt,
@@ -658,7 +660,9 @@ fun StoryBibleDialog(
                             tvSeriesProject = tvSeriesProject,
                             blendedUniverseProject = blendedUniverseProject,
                             onSelectBlendedAssignment = onSelectBlendedAssignment,
-                            onAddBlendedAssignment = onAddBlendedAssignment,
+                            onAddBlendedAssignment = onAddBlendedAssignment?.let { fn ->
+                                { title, fmt, sType -> fn(title, fmt, sType, BranchRole.MAIN_SPINE, null) }
+                            },
                             onSelectTvEpisode = onSelectTvEpisode,
                             onAddTvEpisode = onAddTvEpisode,
                             firstDraftState = firstDraftState,
@@ -1112,6 +1116,7 @@ private fun ChronologyTimelineEventsManager(
     onUpdateEvents: ((List<UniverseTimelineEvent>) -> Unit)?,
     onUpdateChronologyNotes: ((String) -> Unit)?,
     onOpen3DTree: (() -> Unit)?,
+    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType, BranchRole, String?) -> Unit)? = null,
     isDark: Boolean
 ) {
     val goldAccent = if (isDark) ElectrumGold else Color(0xFFB45309)
@@ -1133,6 +1138,9 @@ private fun ChronologyTimelineEventsManager(
     var isAddingEra by remember { mutableStateOf(false) }
     var newEraName by remember { mutableStateOf("") }
     var newEraTimeSpan by remember { mutableStateOf("") }
+
+    var showAddProjectDialog by remember { mutableStateOf(false) }
+    var pendingEventDraftProjectSelection by remember { mutableStateOf(false) }
 
     var selectedEraFilter by remember { mutableStateOf("ALL") }
     var selectedProjectFilter by remember { mutableStateOf("ALL") }
@@ -1292,6 +1300,37 @@ private fun ChronologyTimelineEventsManager(
                                     ),
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 )
+                            }
+                        }
+
+                        if (onAddBlendedAssignment != null) {
+                            Surface(
+                                color = if (isDark) Color(0xFF064E3B) else Color(0xFFECFDF5),
+                                border = BorderStroke(1.dp, if (isDark) Color(0xFF10B981) else Color(0xFF059669)),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(0.dp))
+                                    .clickable {
+                                        pendingEventDraftProjectSelection = false
+                                        showAddProjectDialog = true
+                                    }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("🎬", fontSize = 12.sp)
+                                    Text(
+                                        text = "+ Add Project",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = MainAppFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857),
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
                             }
                         }
 
@@ -1518,6 +1557,32 @@ private fun ChronologyTimelineEventsManager(
                                         color = if (isSel) Color(0xFF38BDF8) else primaryText,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
+                                }
+                            }
+
+                            if (onAddBlendedAssignment != null) {
+                                Surface(
+                                    color = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
+                                    border = BorderStroke(1.dp, if (isDark) Color(0xFF10B981) else Color(0xFF059669)),
+                                    shape = RoundedCornerShape(0.dp),
+                                    modifier = Modifier.clickable {
+                                        pendingEventDraftProjectSelection = true
+                                        showAddProjectDialog = true
+                                    }
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("+", fontSize = 10.sp, color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857))
+                                        Text(
+                                            text = "New Project...",
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -2040,6 +2105,224 @@ private fun ChronologyTimelineEventsManager(
             }
         }
     }
+
+    if (showAddProjectDialog && onAddBlendedAssignment != null) {
+        TimelineAddProjectDialog(
+            eras = eras,
+            isDark = isDark,
+            onDismiss = { showAddProjectDialog = false },
+            onConfirm = { title, format, role, eraTag ->
+                val sType = if (format == ProjectFormat.TV_SERIES) ScreenplayType.TV_HOUR_DRAMA else ScreenplayType.FEATURE
+                onAddBlendedAssignment(title, format, sType, role, eraTag)
+                if (pendingEventDraftProjectSelection) {
+                    draftEventProject = title
+                    pendingEventDraftProjectSelection = false
+                }
+                showAddProjectDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun TimelineAddProjectDialog(
+    eras: List<UniverseTimelineEra>,
+    isDark: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, format: ProjectFormat, role: BranchRole, eraTag: String?) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var selectedFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
+    var selectedRole by remember { mutableStateOf(BranchRole.MAIN_SPINE) }
+    var selectedEra by remember(eras) { mutableStateOf(eras.firstOrNull()?.name) }
+
+    val goldAccent = if (isDark) ElectrumGold else Color(0xFFB45309)
+    val cardBg = if (isDark) ObsidianSurface else Color.White
+    val borderColor = if (isDark) ObsidianSurfaceVariant else Color(0xFFCBD5E1)
+    val primaryText = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A)
+    val secondaryText = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
+    val mutedText = if (isDark) ScreenplayTextMuted else Color(0xFF64748B)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            color = cardBg,
+            shape = RoundedCornerShape(0.dp),
+            border = BorderStroke(1.5.dp, goldAccent),
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("🎬", fontSize = 16.sp)
+                        Text(
+                            text = "ADD PROJECT TO TIMELINE",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontFamily = MainAppFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = goldAccent,
+                                fontSize = 13.sp
+                            )
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(16.dp).clickable(onClick = onDismiss),
+                        tint = mutedText
+                    )
+                }
+
+                Text(
+                    text = "Introduce a new storytelling installment into your universe canon. You can specify its title, medium format, narrative role, and timeline era placement.",
+                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryText, fontSize = 11.5.sp)
+                )
+
+                val placeholderText = when (selectedFormat) {
+                    ProjectFormat.SCREENPLAY -> "e.g. Iron Man or The King's Gambit"
+                    ProjectFormat.TV_SERIES -> "e.g. Pilot: Winter is Coming or Scribes of Thebes"
+                    ProjectFormat.NOVEL -> "e.g. Book 1: The Fellowship of the Ring"
+                    ProjectFormat.COMIC_BOOK -> "e.g. Issue #1: Dawn of the Scribe"
+                    ProjectFormat.STAGE_PLAY -> "e.g. Act I: The Court of Alexandria"
+                    else -> "e.g. New Installment"
+                }
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Project Title *", fontSize = 11.sp) },
+                    placeholder = { Text(placeholderText, fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                )
+
+                // Medium / Format Selector
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("STORYTELLING MEDIUM / FORMAT:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            Triple(ProjectFormat.SCREENPLAY, "🎬 Film / Screenplay", Color(0xFF38BDF8)),
+                            Triple(ProjectFormat.TV_SERIES, "📺 TV Series", Color(0xFFA855F7)),
+                            Triple(ProjectFormat.NOVEL, "📖 Novel", Color(0xFFF59E0B)),
+                            Triple(ProjectFormat.COMIC_BOOK, "💬 Comic Book", Color(0xFF10B981)),
+                            Triple(ProjectFormat.STAGE_PLAY, "🎭 Stage Play", Color(0xFFEC4899))
+                        ).forEach { (fmt, label, chipColor) ->
+                            val isSel = selectedFormat == fmt
+                            Surface(
+                                color = if (isSel) chipColor.copy(alpha = 0.22f) else (if (isDark) ObsidianSurfaceVariant else Color(0xFFF1F5F9)),
+                                border = BorderStroke(1.dp, if (isSel) chipColor else borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier.clickable { selectedFormat = fmt }
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSel) chipColor else primaryText,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Branch Role Selector
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("UNIVERSE NARRATIVE ROLE:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        BranchRole.entries.forEach { role ->
+                            val isSel = selectedRole == role
+                            Surface(
+                                color = if (isSel) goldAccent.copy(alpha = 0.22f) else (if (isDark) ObsidianSurfaceVariant else Color(0xFFF1F5F9)),
+                                border = BorderStroke(1.dp, if (isSel) goldAccent else borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier.clickable { selectedRole = role }
+                            ) {
+                                Text(
+                                    text = "${role.icon} ${role.label}",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSel) goldAccent else primaryText,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Era Placement Selector
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("TIMELINE ERA PLACEMENT:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = mutedText)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val eraChoices = listOf<Pair<String?, String>>(null to "🪐 Universal / Unbound") + eras.map { it.name to "⏳ ${it.name}" }
+                        eraChoices.forEach { (eTag, label) ->
+                            val isSel = selectedEra == eTag
+                            Surface(
+                                color = if (isSel) goldAccent.copy(alpha = 0.22f) else (if (isDark) ObsidianSurfaceVariant else Color(0xFFF1F5F9)),
+                                border = BorderStroke(1.dp, if (isSel) goldAccent else borderColor),
+                                shape = RoundedCornerShape(0.dp),
+                                modifier = Modifier.clickable { selectedEra = eTag }
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSel) goldAccent else primaryText,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(0.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Cancel", fontSize = 11.5.sp)
+                    }
+                    Button(
+                        onClick = {
+                            val resolvedTitle = title.trim().ifBlank {
+                                "New ${selectedFormat.displayName} Project"
+                            }
+                            onConfirm(resolvedTitle, selectedFormat, selectedRole, selectedEra)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = goldAccent),
+                        shape = RoundedCornerShape(0.dp)
+                    ) {
+                        Text("✓ Add to Universe", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // ==========================================
@@ -2205,6 +2488,7 @@ private fun LorePillarsSection(
     onUpdateUniverseEras: ((List<UniverseTimelineEra>) -> Unit)? = null,
     onUpdateUniverseTimelineEvents: ((List<UniverseTimelineEvent>) -> Unit)? = null,
     onOpen3DTree: (() -> Unit)? = null,
+    onAddBlendedAssignment: ((String, ProjectFormat, ScreenplayType, BranchRole, String?) -> Unit)? = null,
     fontIndex: Int = 0,
     onFontIndexChange: (Int) -> Unit = {},
     fontSizePt: Int = 14,
@@ -2352,6 +2636,7 @@ private fun LorePillarsSection(
                     onUpdateEvents = onUpdateUniverseTimelineEvents,
                     onUpdateChronologyNotes = { text -> onUpdateLore(lore.copy(chronology = text)) },
                     onOpen3DTree = onOpen3DTree,
+                    onAddBlendedAssignment = onAddBlendedAssignment,
                     isDark = isDark
                 )
             }

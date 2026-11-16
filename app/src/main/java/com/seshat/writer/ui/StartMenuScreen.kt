@@ -684,14 +684,14 @@ fun StartMenuScreen(
                             StartMenuStep.UNIVERSE_SELECT -> {
                                 UniverseThemeSelectContent(
                                     isChallengeMode = isChallengeFlow,
-                                    onLaunchUniverse = { theme, title, format ->
+                                    onLaunchUniverse = { theme, title, format, starterProjectTitle ->
                                         selectedUniverseTheme = theme
                                         selectedFormat = format
                                         selectedScreenplayType = if (format == ProjectFormat.TV_SERIES) ScreenplayType.TV_HOUR_DRAMA else ScreenplayType.FEATURE
                                         isUniverseMode = true
                                         isBlendedUniverseMode = true
                                         if (isChallengeFlow) {
-                                            projectTitleInput = title
+                                            projectTitleInput = starterProjectTitle.ifBlank { title }
                                             navigateTo(StartMenuStep.SPARK_NEW_SETUP)
                                         } else {
                                             viewModel.startNewBlendedUniverseProject(
@@ -702,7 +702,8 @@ fun StartMenuScreen(
                                                 initialWorkspaceView = InitialWorkspaceView.WORLD_TREE_HUB,
                                                 enableSparkMode = false,
                                                 universeKind = "BLENDED",
-                                                theme = theme
+                                                theme = theme,
+                                                starterProjectTitle = starterProjectTitle
                                             )
                                             onCloseMenu()
                                         }
@@ -1039,10 +1040,11 @@ private fun ScreenplayBranchContent(
 @Composable
 private fun UniverseThemeSelectContent(
     isChallengeMode: Boolean,
-    onLaunchUniverse: (UniverseTheme, String, ProjectFormat) -> Unit,
+    onLaunchUniverse: (UniverseTheme, String, ProjectFormat, String) -> Unit,
     onBack: () -> Unit
 ) {
     var universeTitleInput by remember { mutableStateOf("") }
+    var starterProjectTitleInput by remember { mutableStateOf("") }
     var selectedStarterFormat by remember { mutableStateOf(ProjectFormat.SCREENPLAY) }
     var showInApp3DTree by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -1184,6 +1186,38 @@ private fun UniverseThemeSelectContent(
                 }
             }
 
+            // First Project Title Input
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val projectPlaceholder = when (selectedStarterFormat) {
+                    ProjectFormat.TV_SERIES -> "e.g. Pilot: Scribes of Thebes"
+                    ProjectFormat.NOVEL -> "e.g. Book 1: The Library of Alexandria"
+                    ProjectFormat.COMIC_BOOK -> "e.g. Issue #1: First Light"
+                    ProjectFormat.STAGE_PLAY -> "e.g. Act I: The Crucible"
+                    else -> "e.g. The Emerald Tablet"
+                }
+                Text(
+                    text = "FIRST PROJECT TITLE:",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = ElectrumGold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                )
+                OutlinedTextField(
+                    value = starterProjectTitleInput,
+                    onValueChange = { starterProjectTitleInput = it },
+                    placeholder = { Text(projectPlaceholder, color = ScreenplayTextMuted, fontSize = 13.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ElectrumGold,
+                        unfocusedBorderColor = ObsidianSurfaceVariant,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
 
             // Action Buttons Row: Preview 3D Tree & Launch Universe
@@ -1214,7 +1248,8 @@ private fun UniverseThemeSelectContent(
                 Button(
                     onClick = {
                         val resolved = universeTitleInput.trim().ifBlank { defaultPlaceholder.removePrefix("e.g. ") }
-                        onLaunchUniverse(UniverseTheme.STANDARD, resolved, selectedStarterFormat)
+                        val starterTitle = starterProjectTitleInput.trim()
+                        onLaunchUniverse(UniverseTheme.STANDARD, resolved, selectedStarterFormat, starterTitle)
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectrumGold,

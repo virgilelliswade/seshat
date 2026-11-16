@@ -780,8 +780,16 @@ fun ScreenplayEditorScreen(
                 viewModel.selectBlendedAssignment(context, idx)
                 viewModel.closeStoryBible()
             },
-            onAddBlendedAssignment = { title, fmt, sType ->
-                viewModel.addBlendedAssignment(context, title, fmt, sType)
+            onAddBlendedAssignment = { title, fmt, sType, role, era ->
+                viewModel.addBlendedAssignment(
+                    context = context,
+                    assignmentTitle = title,
+                    format = fmt,
+                    screenplayType = sType,
+                    branchRole = role,
+                    eraTag = era,
+                    openImmediately = false
+                )
             },
             onSelectTvEpisode = { idx ->
                 viewModel.selectTvEpisode(context, idx)

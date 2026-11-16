@@ -3575,10 +3575,13 @@ class ScreenplayViewModel : ViewModel() {
         enableSparkMode: Boolean = false,
         campaignGenre: CampaignGenre = CampaignGenre.SCIFI,
         universeKind: String = "BLENDED",
-        theme: UniverseTheme = UniverseTheme.STANDARD
+        theme: UniverseTheme = UniverseTheme.STANDARD,
+        starterProjectTitle: String = ""
     ) {
         val resolvedTitle = universeTitle.ifBlank { "Living Story Universe" }
-        val starterAssignmentTitle = "Core Project 1 (${starterFormat.displayName})"
+        val starterAssignmentTitle = starterProjectTitle.trim().ifBlank {
+            "Core Project 1 (${starterFormat.displayName})"
+        }
         val defaultEras = BlendedUniverseProject.defaultUniverseEras(theme)
         val starterAssignment = BlendedAssignment.defaultAssignment(
             title = starterAssignmentTitle,
