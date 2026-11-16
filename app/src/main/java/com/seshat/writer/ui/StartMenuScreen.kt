@@ -651,12 +651,6 @@ fun StartMenuScreen(
                                         isChallengeFlow = false
                                         navigateTo(StartMenuStep.WORKSPACE_VIEW)
                                     },
-                                    onSelectUniverse = {
-                                        isUniverseMode = true
-                                        isBlendedUniverseMode = false
-                                        isChallengeFlow = false
-                                        navigateTo(StartMenuStep.UNIVERSE_SELECT)
-                                    },
                                     onBack = navigateBack
                                 )
                             }
@@ -957,7 +951,6 @@ private fun FormatSelectContent(
     onSelectNovel: () -> Unit,
     onSelectComicBook: () -> Unit,
     onSelectStagePlay: () -> Unit,
-    onSelectUniverse: () -> Unit,
     onBack: () -> Unit
 ) {
     StartMenuLayout(
@@ -1006,17 +999,6 @@ private fun FormatSelectContent(
             subtitle = "Proscenium, black box & musical theatre • Acts, scenes, stage directions & rapid dialogue",
             badgeColor = ElectrumGold,
             onClick = onSelectStagePlay
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 5. CREATE A UNIVERSE
-        StartMenuBigButton(
-            badgeText = "🪐",
-            title = "CREATE A UNIVERSE",
-            subtitle = "Build a Cinematic, Television, Novel, or Blended multi-medium story universe with a shared Lore Bible",
-            badgeColor = ScribeStarNeonRed,
-            onClick = onSelectUniverse
         )
     }
 }
