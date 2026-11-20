@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -208,6 +209,7 @@ fun ScreenplayEditorScreen(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
     val isCompactScreen = screenWidthDp < 600
+    val foldableState = LocalFoldableWindowState.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var isKeyboardActive by remember { mutableStateOf(false) }
 
@@ -392,17 +394,30 @@ fun ScreenplayEditorScreen(
                 }
 
                 // Adaptive Left Sidebar (Concept C Floating Glass Island with 10dp spatial reveal)
+                val isBookHalfSplit = foldableState.posture == FoldablePosture.BOOK_HALF_OPENED && foldableState.isVerticalHinge
+                val sidebarWidthDp = when {
+                    foldableState.isSquareInnerScreen -> 244.dp
+                    else -> 268.dp
+                }
                 AnimatedVisibility(
-                    visible = uiState.isSidebarExpanded && !uiState.isZenMode && !isCompactScreen
+                    visible = uiState.isSidebarExpanded && !uiState.isZenMode && !isCompactScreen && !foldableState.isTabletopFlex
                 ) {
                     val isDarkSidebar = LocalSeshatDarkTheme.current
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 2.dp)
-                            .width(268.dp)
-                            .fillMaxHeight()
-                            .floatingGlassIsland(isDark = isDarkSidebar, elevation = 16.dp)
-                    ) {
+                    Row(modifier = Modifier.fillMaxHeight()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 2.dp)
+                                .width(
+                                    if (isBookHalfSplit && screenWidthDp >= 600) {
+                                        ((screenWidthDp * foldableState.hingeSplitRatio) - (foldableState.safeHingeGutterDp / 2f) - 12f)
+                                            .coerceIn(220f, 380f).dp
+                                    } else {
+                                        sidebarWidthDp
+                                    }
+                                )
+                                .fillMaxHeight()
+                                .floatingGlassIsland(isDark = isDarkSidebar, elevation = 16.dp)
+                        ) {
                         if (uiState.blendedUniverseProject != null) {
                             UniverseBinderPane(
                                 viewModel = viewModel,
@@ -448,11 +463,25 @@ fun ScreenplayEditorScreen(
                             )
                         }
                     }
+                    if (isBookHalfSplit) {
+                        Spacer(modifier = Modifier.width(foldableState.safeHingeGutterDp.dp))
+                    }
+                    }
                 }
 
                 // Screenplay Canvas & Corkboard Outline Area
                 val showCorkboard = uiState.isCorkboardOpen
                 val showEditorCanvas = if (isCompactScreen) !uiState.isCorkboardOpen else (!uiState.isCorkboardOpen || uiState.isCorkboardSideBySide)
+                val editorSplitWeight = when {
+                    !showCorkboard -> 1f
+                    foldableState.shouldAlignToVerticalHinge && !uiState.isSidebarExpanded -> foldableState.hingeSplitRatio
+                    else -> 1.1f
+                }
+                val corkboardSplitWeight = when {
+                    !showEditorCanvas -> 1f
+                    foldableState.shouldAlignToVerticalHinge && !uiState.isSidebarExpanded -> (1f - foldableState.hingeSplitRatio)
+                    else -> 0.9f
+                }
 
                 if (showEditorCanvas) {
                     if (uiState.projectFormat == ProjectFormat.NOVEL) {
@@ -474,7 +503,7 @@ fun ScreenplayEditorScreen(
                                 { viewModel.openWorldTreeHub() }
                             } else null,
                             modifier = Modifier
-                                .weight(if (showCorkboard) 1.1f else 1f)
+                                .weight(editorSplitWeight)
                                 .fillMaxHeight()
                         )
                     } else {
@@ -497,14 +526,20 @@ fun ScreenplayEditorScreen(
                                 }
                             },
                             modifier = Modifier
-                                .weight(if (showCorkboard) 1.1f else 1f)
+                                .weight(editorSplitWeight)
                                 .fillMaxHeight()
                         )
                     }
                 }
 
                 if (showEditorCanvas && showCorkboard) {
-                    VerticalDivider(color = ObsidianSurfaceVariant)
+                    if (foldableState.shouldAlignToVerticalHinge && !uiState.isSidebarExpanded && foldableState.safeHingeGutterDp > 0) {
+                        Spacer(modifier = Modifier.width((foldableState.safeHingeGutterDp / 2).dp))
+                        VerticalDivider(color = ObsidianSurfaceVariant)
+                        Spacer(modifier = Modifier.width((foldableState.safeHingeGutterDp / 2).dp))
+                    } else {
+                        VerticalDivider(color = ObsidianSurfaceVariant)
+                    }
                 }
 
                 if (showCorkboard) {
@@ -514,12 +549,45 @@ fun ScreenplayEditorScreen(
                         isCompactScreen = isCompactScreen,
                         onSaveProject = onSaveProject,
                         modifier = Modifier
-                            .weight(if (showEditorCanvas) 0.9f else 1f)
+                            .weight(corkboardSplitWeight)
                             .fillMaxHeight()
                     )
                 }
             }
         }
+                }
+
+                // Foldable Tabletop / Flex Mode Lower Writer's Deck (Horizontal Hinge Split)
+                if (foldableState.isTabletopFlex && !uiState.isStartMenuOpen) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(foldableState.safeHingeGutterDp.dp)
+                            .background(Color.Black.copy(alpha = 0.65f))
+                    )
+                    FoldableTabletopDeck(
+                        uiState = uiState,
+                        onSelectBlockType = { type ->
+                            if (uiState.focusedBlockId.isNotBlank()) {
+                                viewModel.changeBlockType(uiState.focusedBlockId, type)
+                            }
+                        },
+                        onToggleDictation = onToggleDictationWithPermission,
+                        onOpenStoryBible = { viewModel.openStoryBible(context) },
+                        onToggleCorkboard = { viewModel.toggleCorkboard(context) },
+                        onSaveProject = onSaveProject,
+                        onToggleKeyboard = {
+                            isKeyboardActive = !isKeyboardActive
+                            if (isKeyboardActive) {
+                                keyboardController?.show()
+                            } else {
+                                keyboardController?.hide()
+                            }
+                        },
+                        onOpenWorldTree = if (uiState.isUniverseProject || uiState.blendedUniverseProject != null) {
+                            { viewModel.openWorldTreeHub() }
+                        } else null
+                    )
                 }
 
                 // Gemini AI Bouncer / 60s Idle Instigator Bottom Banner (Hidden in Focus Mode)
@@ -2002,11 +2070,13 @@ private fun EditorCanvas(
     val formattingController = rememberEditorFormattingController()
 
     CompositionLocalProvider(LocalEditorFormattingController provides formattingController) {
-        Box(
+        BoxWithConstraints(
             modifier = modifier
                 .background(ambientWorkspaceBrush(LocalSeshatDarkTheme.current))
                 .fillMaxSize()
         ) {
+        val availableWidthDp = maxWidth.value
+        val isNarrowPane = isCompactScreen || availableWidthDp < 620f
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -2057,7 +2127,7 @@ private fun EditorCanvas(
     ) {
         // Top Floating Action Bar (Hidden in Distraction-Free Focus Mode)
         if (!uiState.isZenMode) {
-            if (isCompactScreen) {
+            if (isNarrowPane) {
                 CompactScreenplayTopBar(
                     uiState = uiState,
                     actions = actions,
@@ -2206,7 +2276,8 @@ private fun EditorCanvas(
                         } else {
                             Color.White
                         }
-                        val cardWidth = if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else (780 * zoom).dp
+                        val responsiveMargins = computeResponsivePageMargins(availableWidthDp, zoom, isCompactScreen)
+                        val cardWidth = computeResponsivePageWidthDp(availableWidthDp, zoom, 780f).dp
                         Card(
                             colors = CardDefaults.cardColors(containerColor = pageBgColor),
                             shape = RoundedCornerShape(0.dp),
@@ -2222,7 +2293,7 @@ private fun EditorCanvas(
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
-                                        .width(if (isCompactScreen) 24.dp else (100 * zoom).dp)
+                                        .width(responsiveMargins.dragGutterDp.dp)
                                         .fillMaxHeight()
                                         .pointerHoverIcon(PointerIcon.Hand)
                                         .pointerInput(pageNum) {
@@ -2256,10 +2327,10 @@ private fun EditorCanvas(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(
-                                            start = if (isCompactScreen) (18 * zoom).dp else (110 * zoom).dp, // Left binding margin
-                                            end = if (isCompactScreen) (12 * zoom).dp else (70 * zoom).dp,    // Right margin
-                                            top = if (isCompactScreen) (24 * zoom).dp else (54 * zoom).dp,    // Top margin
-                                            bottom = if (isCompactScreen) (32 * zoom).dp else (64 * zoom).dp  // Bottom margin
+                                            start = responsiveMargins.startDp.dp,
+                                            end = responsiveMargins.endDp.dp,
+                                            top = responsiveMargins.topDp.dp,
+                                            bottom = responsiveMargins.bottomDp.dp
                                         )
                                 ) {
                                 // Top running page number in header (Page 2+, right-aligned "2.")
@@ -2311,7 +2382,7 @@ private fun EditorCanvas(
                                                     isRevisionTrackingEnabled = uiState.isRevisionTrackingEnabled,
                                                     isAiPolishEnabled = isAiPolishEnabled,
                                                     isDictating = uiState.isDictating,
-                                                    isCompactScreen = isCompactScreen,
+                                                    isCompactScreen = responsiveMargins.useCompactIndents,
                                                     isKeyboardActive = isKeyboardActive
                                                 ),
                                                 callbacks = buildBlockCallbacks(
@@ -2377,7 +2448,8 @@ private fun EditorCanvas(
                 } else {
                     Color.White
                 }
-                val cardWidth = if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else (780 * zoom).dp
+                val responsiveMargins = computeResponsivePageMargins(availableWidthDp, zoom, isCompactScreen)
+                val cardWidth = computeResponsivePageWidthDp(availableWidthDp, zoom, 780f).dp
                 Card(
                     colors = CardDefaults.cardColors(containerColor = inlinePageBgColor),
                     shape = RoundedCornerShape(0.dp),
@@ -2392,7 +2464,7 @@ private fun EditorCanvas(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .width(if (isCompactScreen) 24.dp else (100 * zoom).dp)
+                                .width(responsiveMargins.dragGutterDp.dp)
                                 .fillMaxHeight()
                                 .pointerHoverIcon(PointerIcon.Hand)
                                 .pointerInput(Unit) {
@@ -2426,10 +2498,10 @@ private fun EditorCanvas(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
-                                    start = if (isCompactScreen) (18 * zoom).dp else (110 * zoom).dp, // Left binding margin
-                                    end = if (isCompactScreen) (12 * zoom).dp else (70 * zoom).dp,    // Right margin
-                                    top = if (isCompactScreen) (24 * zoom).dp else (54 * zoom).dp,    // Top margin
-                                    bottom = if (isCompactScreen) (32 * zoom).dp else (64 * zoom).dp  // Bottom margin
+                                    start = responsiveMargins.startDp.dp,
+                                    end = responsiveMargins.endDp.dp,
+                                    top = responsiveMargins.topDp.dp,
+                                    bottom = responsiveMargins.bottomDp.dp
                                 )
                         ) {
                         val renderItems = remember(uiState.blocks) {
@@ -2464,7 +2536,7 @@ private fun EditorCanvas(
                                             isRevisionTrackingEnabled = uiState.isRevisionTrackingEnabled && !uiState.firstDraftState.isArcadeLocked,
                                             isAiPolishEnabled = isAiPolishEnabled && uiState.firstDraftState.canUseAiDoctor(),
                                             isDictating = uiState.isDictating,
-                                            isCompactScreen = isCompactScreen,
+                                            isCompactScreen = responsiveMargins.useCompactIndents,
                                             isKeyboardActive = isKeyboardActive,
                                             isEditable = uiState.isBlockEditableInFirstDraft(item.overallIndex),
                                             isArcadeMode = uiState.firstDraftState.isArcadeLocked

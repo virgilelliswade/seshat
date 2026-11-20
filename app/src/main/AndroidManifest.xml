@@ -15,7 +15,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|fontScale|uiMode|keyboard|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,7 +29,7 @@
             android:exported="false"
             android:resizeableActivity="true"
             android:launchMode="standard"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|fontScale|uiMode|keyboard|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
             <layout
                 android:defaultWidth="640dp"

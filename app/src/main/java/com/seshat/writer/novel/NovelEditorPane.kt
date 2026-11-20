@@ -17,6 +17,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -43,6 +44,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.ui.res.painterResource
 import com.seshat.writer.R
+import com.seshat.writer.ui.LocalFoldableWindowState
+import com.seshat.writer.ui.computeResponsivePageWidthDp
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -381,13 +384,14 @@ fun NovelEditorPane(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // SCRIVENER-STYLE LEFT BINDER (Concept C Floating Glass Island, hidden in Focus Mode)
-                AnimatedVisibility(visible = isBinderVisible && !isCompactScreen && !isFocusMode) {
+                // SCRIVENER-STYLE LEFT BINDER (Concept C Floating Glass Island, hidden in Focus Mode / Flex Mode)
+                val foldableState = LocalFoldableWindowState.current
+                AnimatedVisibility(visible = isBinderVisible && !isCompactScreen && !isFocusMode && !foldableState.isTabletopFlex) {
                     val isDarkBinder = LocalSeshatDarkTheme.current
                     Box(
                         modifier = Modifier
                             .padding(start = 10.dp, top = 4.dp, bottom = 10.dp, end = 2.dp)
-                            .width(260.dp)
+                            .width(if (foldableState.isSquareInnerScreen) 236.dp else 260.dp)
                             .fillMaxHeight()
                             .floatingGlassIsland(isDark = isDarkBinder, elevation = 16.dp)
                     ) {
@@ -414,19 +418,21 @@ fun NovelEditorPane(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     ScreenplayMarginRulerBar(isNovelMode = true)
-                    Box(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
                         contentAlignment = Alignment.TopCenter
                     ) {
+                        val availableCanvasWidthDp = maxWidth.value
+                        val isNarrowCanvas = isCompactScreen || availableCanvasWidthDp < 600f
                         Column(
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .width(if (isCompactScreen) (screenWidthDp - 12).coerceAtLeast(280).dp else 760.dp)
+                                .width(computeResponsivePageWidthDp(availableCanvasWidthDp, 1f, 760f).dp)
                                 .padding(
-                                    horizontal = if (isCompactScreen) 6.dp else 16.dp,
-                                    vertical = if (isCompactScreen) 8.dp else 20.dp
+                                    horizontal = if (isNarrowCanvas) 6.dp else 16.dp,
+                                    vertical = if (isNarrowCanvas) 8.dp else 20.dp
                                 )
                         ) {
                     val isChapterEditable = !uiState.firstDraftState.isArcadeLocked ||
